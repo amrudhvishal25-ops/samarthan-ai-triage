@@ -128,12 +128,12 @@ export default function DashboardPage() {
                     onChange={(e) => handleUpdate('fraudType', e.target.value)}
                     className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 bg-gray-50 outline-none transition-all"
                   >
-                    <option value="Women/Children Related Crime">Women/Children Related Crime</option>
                     <option value="Financial Fraud">Financial Fraud</option>
-                    <option value="Hate Speech">Hate Speech</option>
-                    <option value="Online Ragging">Online Ragging</option>
-                    <option value="Social Media Hacking">Social Media Hacking</option>
-                    <option value="Other Cyber Crime">Other Cyber Crime</option>
+                    <option value="Women/Children Crime">Women/Children Crime</option>
+                    <option value="Extortion & Blackmail">Extortion & Blackmail</option>
+                    <option value="Identity Theft">Identity Theft</option>
+                    <option value="E-Commerce Scams">E-Commerce Scams</option>
+                    <option value="Hacking & Malware">Hacking & Malware</option>
                   </select>
                 </div>
 

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, MapPin, Mic, ArrowRight, Bookmark, Building2, Briefcase, DollarSign, List, Shield, User, Globe, Plus, ArrowUp, Smartphone, ShieldCheck } from 'lucide-react'
+import { Mic, ArrowRight, DollarSign, Shield, User, Globe, Plus, ArrowUp, ShieldCheck, ShieldAlert, Fingerprint, ShoppingCart, Cpu } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import { SCENARIOS } from '@/data/scenarios'
 import clsx from 'clsx'
@@ -50,8 +50,8 @@ export default function Home() {
   }
 
   const filters = hi 
-    ? ['वित्तीय धोखाधड़ी', 'सोशल मीडिया हैकिंग', 'महिलाओं/बच्चों के अपराध', 'हेट स्पीच', 'ऑनलाइन रैगिंग', 'अन्य साइबर अपराध']
-    : ['Financial Fraud', 'Social Media Hacking', 'Women/Children Crime', 'Hate Speech', 'Online Ragging', 'Other Cyber Crime']
+    ? ['वित्तीय धोखाधड़ी', 'महिला/बाल अपराध', 'जबरन वसूली (Extortion)', 'पहचान की चोरी', 'ई-कॉमर्स धोखाधड़ी', 'हैकिंग और मैलवेयर']
+    : ['Financial Fraud', 'Women/Children Crime', 'Extortion & Blackmail', 'Identity Theft', 'E-Commerce Scams', 'Hacking & Malware']
 
   return (
     <main className="min-h-screen bg-[#fafafa] font-sans pb-20 relative overflow-hidden">
@@ -197,18 +197,10 @@ export default function Home() {
             { 
               title: 'Financial Fraud', 
               titleHi: 'वित्तीय धोखाधड़ी',
-              desc: 'Report UPI, OTP, and investment scams.',
-              descHi: 'UPI, OTP और निवेश घोटालों की रिपोर्ट करें।',
+              desc: 'Report UPI, banking, and credit card frauds.',
+              descHi: 'UPI, बैंकिंग और क्रेडिट कार्ड धोखाधड़ी की रिपोर्ट करें।',
               bg: 'from-blue-500 to-cyan-400',
               icon: <DollarSign className="w-10 h-10 text-white/90" />
-            },
-            { 
-              title: 'Social Media Hacking', 
-              titleHi: 'सोशल मीडिया हैकिंग',
-              desc: 'Report hacked accounts, fake profiles, and impersonation.',
-              descHi: 'हैक किए गए खाते, फर्जी प्रोफाइल और रूप धरने की रिपोर्ट करें।',
-              bg: 'from-emerald-500 to-teal-400',
-              icon: <Smartphone className="w-10 h-10 text-white/90" />
             },
             { 
               title: 'Women/Children Crime', 
@@ -219,28 +211,36 @@ export default function Home() {
               icon: <User className="w-10 h-10 text-white/90" />
             },
             { 
-              title: 'Hate Speech', 
-              titleHi: 'अभद्र भाषा (Hate Speech)',
-              desc: 'Report inflammatory or threatening content.',
-              descHi: 'भड़काऊ या धमकी भरे सामग्री की रिपोर्ट करें।',
+              title: 'Extortion & Blackmail', 
+              titleHi: 'जबरन वसूली (Extortion)',
+              desc: 'Report digital loan apps, sextortion, and threats.',
+              descHi: 'डिजिटल ऋण ऐप, ब्लैकमेल और धमकियों की रिपोर्ट करें।',
               bg: 'from-orange-500 to-red-500',
-              icon: <Shield className="w-10 h-10 text-white/90" />
+              icon: <ShieldAlert className="w-10 h-10 text-white/90" />
             },
             { 
-              title: 'Online Ragging', 
-              titleHi: 'ऑनलाइन रैगिंग',
-              desc: 'Report online bullying and institutional harassment.',
-              descHi: 'ऑनलाइन बुलिंग और संस्थागत उत्पीड़न की रिपोर्ट करें।',
+              title: 'Identity Theft', 
+              titleHi: 'पहचान की चोरी',
+              desc: 'Report PAN/Aadhaar misuse and fake profiles.',
+              descHi: 'पैन/आधार के दुरुपयोग और फर्जी प्रोफाइल की रिपोर्ट करें।',
               bg: 'from-purple-500 to-indigo-500',
-              icon: <Globe className="w-10 h-10 text-white/90" />
+              icon: <Fingerprint className="w-10 h-10 text-white/90" />
             },
             { 
-              title: 'Other Cyber Crime', 
-              titleHi: 'अन्य साइबर अपराध',
-              desc: 'Report hacking, data theft, and other crimes.',
-              descHi: 'हैकिंग, डेटा चोरी और अन्य अपराधों की रिपोर्ट करें।',
+              title: 'E-Commerce Scams', 
+              titleHi: 'ई-कॉमर्स धोखाधड़ी',
+              desc: 'Report fake websites, OLX, and delivery frauds.',
+              descHi: 'फर्जी वेबसाइटों, OLX और डिलीवरी धोखाधड़ी की रिपोर्ट करें।',
+              bg: 'from-emerald-500 to-teal-400',
+              icon: <ShoppingCart className="w-10 h-10 text-white/90" />
+            },
+            { 
+              title: 'Hacking & Malware', 
+              titleHi: 'हैकिंग और मैलवेयर',
+              desc: 'Report ransomware, viruses, and device breaches.',
+              descHi: 'रैनसमवेयर, वायरस और डिवाइस हैकिंग की रिपोर्ट करें।',
               bg: 'from-gray-700 to-gray-900',
-              icon: <Briefcase className="w-10 h-10 text-white/90" />
+              icon: <Cpu className="w-10 h-10 text-white/90" />
             }
           ].map((cat, i) => (
             <div 
