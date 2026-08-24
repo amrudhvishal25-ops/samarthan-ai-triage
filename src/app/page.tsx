@@ -78,9 +78,9 @@ export default function Home() {
 
       {/* Hero Section */}
       <div className="pt-10 pb-12 px-6 relative z-10 flex flex-col items-center text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider mb-8">
-          <ShieldCheck className="w-4 h-4" />
-          {hi ? 'सुरक्षित और निजी' : 'Secure & Private'}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-gray-200 text-gray-800 text-xs sm:text-sm font-semibold mb-8 shadow-sm">
+          <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+          {hi ? 'समर्थन: Varun Mayya x OpenAI की एक पहल' : 'Samarthan: A Varun Mayya x OpenAI Initiative'}
         </div>
         
         <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tighter leading-tight mb-6 max-w-4xl mx-auto">
