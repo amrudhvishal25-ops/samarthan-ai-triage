@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, MapPin, Mic, ArrowRight, Bookmark, Building2, Briefcase, DollarSign, List, Shield, User, Globe, Plus, ArrowUp } from 'lucide-react'
+import { Search, MapPin, Mic, ArrowRight, Bookmark, Building2, Briefcase, DollarSign, List, Shield, User, Globe, Plus, ArrowUp, Smartphone } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import { SCENARIOS } from '@/data/scenarios'
 import clsx from 'clsx'
@@ -50,8 +50,8 @@ export default function Home() {
   }
 
   const filters = hi 
-    ? ['वित्तीय धोखाधड़ी', 'महिलाओं/बच्चों के अपराध', 'हेट स्पीच', 'ऑनलाइन रैगिंग', 'अन्य साइबर अपराध']
-    : ['Financial Fraud', 'Women/Children Crime', 'Hate Speech', 'Online Ragging', 'Other Cyber Crime']
+    ? ['वित्तीय धोखाधड़ी', 'सोशल मीडिया हैकिंग', 'महिलाओं/बच्चों के अपराध', 'हेट स्पीच', 'ऑनलाइन रैगिंग', 'अन्य साइबर अपराध']
+    : ['Financial Fraud', 'Social Media Hacking', 'Women/Children Crime', 'Hate Speech', 'Online Ragging', 'Other Cyber Crime']
 
   return (
     <main className="min-h-screen bg-white font-sans pb-20">
@@ -183,6 +183,14 @@ export default function Home() {
               descHi: 'UPI, OTP और निवेश घोटालों की रिपोर्ट करें।',
               bg: 'from-blue-500 to-cyan-400',
               icon: <DollarSign className="w-12 h-12 text-white/80" />
+            },
+            { 
+              title: 'Social Media Hacking', 
+              titleHi: 'सोशल मीडिया हैकिंग',
+              desc: 'Report hacked accounts, fake profiles, and impersonation.',
+              descHi: 'हैक किए गए खाते, फर्जी प्रोफाइल और रूप धरने की रिपोर्ट करें।',
+              bg: 'from-emerald-500 to-teal-400',
+              icon: <Smartphone className="w-12 h-12 text-white/80" />
             },
             { 
               title: 'Women/Children Crime', 
