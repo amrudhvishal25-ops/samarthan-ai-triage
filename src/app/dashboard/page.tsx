@@ -190,6 +190,23 @@ export default function DashboardPage() {
                   />
                 </div>
               </motion.div>
+
+              {/* Action buttons */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="grid grid-cols-2 gap-4">
+                <a href="tel:1930" className="flex flex-col items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-2xl py-4 font-bold text-sm transition-all shadow-md hover:shadow-lg">
+                  <Phone className="w-5 h-5" />
+                  {hi ? '1930 कॉल करें' : 'Call 1930'}
+                </a>
+                <button onClick={handleShare} className="flex flex-col items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white rounded-2xl py-4 font-bold text-sm transition-all shadow-md hover:shadow-lg">
+                  <Share2 className="w-5 h-5" />
+                  {hi ? 'परिवार को भेजें' : 'Share Status'}
+                </button>
+              </motion.div>
+
+              <button onClick={() => window.print()} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 rounded-2xl py-4 font-bold text-sm hover:bg-gray-50 transition-all shadow-sm">
+                <Printer className="w-5 h-5" />
+                {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
+              </button>
             </div>
 
             {/* RIGHT COLUMN: Action Steps & Tracking */}
@@ -239,22 +256,7 @@ export default function DashboardPage() {
                 <FreezeStepper steps={r.freezeSteps} language={language} />
               </motion.div>
 
-              {/* Action buttons */}
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="grid grid-cols-2 gap-4">
-                <a href="tel:1930" className="flex flex-col items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-2xl py-4 font-bold text-sm transition-all shadow-md hover:shadow-lg">
-                  <Phone className="w-5 h-5" />
-                  {hi ? '1930 कॉल करें' : 'Call 1930'}
-                </a>
-                <button onClick={handleShare} className="flex flex-col items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white rounded-2xl py-4 font-bold text-sm transition-all shadow-md hover:shadow-lg">
-                  <Share2 className="w-5 h-5" />
-                  {hi ? 'परिवार को भेजें' : 'Share Status'}
-                </button>
-              </motion.div>
 
-              <button onClick={() => window.print()} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 rounded-2xl py-4 font-bold text-sm hover:bg-gray-50 transition-all shadow-sm">
-                <Printer className="w-5 h-5" />
-                {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
-              </button>
 
             </div>
           </div>
