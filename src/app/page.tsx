@@ -50,8 +50,8 @@ export default function Home() {
   }
 
   const filters = hi 
-    ? ['वित्तीय धोखाधड़ी', 'महिला/बाल अपराध', 'जबरन वसूली (Extortion)', 'पहचान की चोरी', 'ई-कॉमर्स धोखाधड़ी', 'हैकिंग और मैलवेयर']
-    : ['Financial Fraud', 'Women/Children Crime', 'Extortion & Blackmail', 'Identity Theft', 'E-Commerce Scams', 'Hacking & Malware']
+    ? ['वित्तीय धोखाधड़ी', 'महिला/बाल अपराध', 'जबरन वसूली (Extortion)', 'पहचान की चोरी', 'ई-कॉमर्स धोखाधड़ी', 'अन्य साइबर अपराध']
+    : ['Financial Fraud', 'Women/Children Crime', 'Extortion & Blackmail', 'Identity Theft', 'E-Commerce Scams', 'Other Cyber Crimes']
 
   return (
     <main className="min-h-screen bg-[#fafafa] font-sans pb-20 relative overflow-hidden">
@@ -235,12 +235,12 @@ export default function Home() {
               icon: <ShoppingCart className="w-10 h-10 text-white/90" />
             },
             { 
-              title: 'Hacking & Malware', 
-              titleHi: 'हैकिंग और मैलवेयर',
-              desc: 'Report ransomware, viruses, and device breaches.',
-              descHi: 'रैनसमवेयर, वायरस और डिवाइस हैकिंग की रिपोर्ट करें।',
+              title: 'Other Cyber Crimes', 
+              titleHi: 'अन्य साइबर अपराध',
+              desc: 'Report hacking, data theft, and other threats.',
+              descHi: 'हैकिंग, डेटा चोरी और अन्य साइबर खतरों की रिपोर्ट करें।',
               bg: 'from-gray-700 to-gray-900',
-              icon: <Cpu className="w-10 h-10 text-white/90" />
+              icon: <Briefcase className="w-10 h-10 text-white/90" />
             }
           ].map((cat, i) => (
             <div 

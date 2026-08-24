@@ -133,7 +133,7 @@ export default function DashboardPage() {
                     <option value="Extortion & Blackmail">Extortion & Blackmail</option>
                     <option value="Identity Theft">Identity Theft</option>
                     <option value="E-Commerce Scams">E-Commerce Scams</option>
-                    <option value="Hacking & Malware">Hacking & Malware</option>
+                    <option value="Other Cyber Crimes">Other Cyber Crimes</option>
                   </select>
                 </div>
 
