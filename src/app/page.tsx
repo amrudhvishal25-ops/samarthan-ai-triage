@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, MapPin, Mic, ArrowRight, Bookmark, Building2, Briefcase, DollarSign, List, Shield, User, Globe, Plus, ArrowUp } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
@@ -9,11 +9,12 @@ import clsx from 'clsx'
 
 export default function Home() {
   const router = useRouter()
-  const { language, setLanguage, setScenarioId, setInputType } = useTriage()
+  const { language, setLanguage, setScenarioId, setInputType, setSharedImage } = useTriage()
   const hi = language === 'hi'
 
   const [selectedScenario, setSelectedScenario] = useState(SCENARIOS[0])
   const [inputText, setInputText] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const handleRunDemo = () => {
     setScenarioId(selectedScenario.id)
@@ -29,9 +30,17 @@ export default function Home() {
   }
 
   const handleAttachClick = () => {
-    setScenarioId(null)
-    setInputType('screenshot')
-    router.push('/intake?category=auto&mode=screenshot')
+    fileRef.current?.click()
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSharedImage(file)
+      setScenarioId(null)
+      setInputType('screenshot')
+      router.push('/intake?category=auto&autoStart=true')
+    }
   }
 
   const handleCategoryPill = (category: string) => {
@@ -45,29 +54,28 @@ export default function Home() {
     : ['Financial Fraud', 'Women/Children Crime', 'Hate Speech', 'Online Ragging', 'Other Cyber Crime']
 
   return (
-    <main className="min-h-screen bg-[#f4f7f9] font-sans pb-20">
-      {/* Top Dark Header Area */}
-      <div className="bg-[#003b5c] pt-12 pb-24 px-6 relative overflow-hidden">
-        {/* Subtle background pattern/shapes could go here */}
+    <main className="min-h-screen bg-white font-sans pb-20">
+      {/* Top Header Area */}
+      <div className="pt-8 pb-12 px-6 relative overflow-hidden">
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-16">
             <div className="flex items-center gap-2">
-              <Shield className="w-8 h-8 text-white" />
-              <span className="text-white font-bold text-2xl tracking-tight">Samarthan</span>
+              <Shield className="w-8 h-8 text-blue-600" />
+              <span className="text-gray-900 font-bold text-2xl tracking-tight">Samarthan</span>
             </div>
             <button
               onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-full transition-colors"
+              className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-full transition-colors"
             >
               <Globe className="w-4 h-4" />
               {language === 'en' ? 'हिन्दी' : 'English'}
             </button>
           </div>
 
-          <h1 className="text-white text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="text-gray-900 text-4xl md:text-5xl font-bold mb-4">
             {hi ? 'अपनी शिकायत दर्ज करें' : "Let's map your cyber report"}
           </h1>
-          <p className="text-[#8db1c7] text-lg max-w-2xl">
+          <p className="text-gray-500 text-lg max-w-2xl">
             {hi 
               ? 'सर्वश्रेष्ठ साइबर सुरक्षा उपकरणों के साथ अपराध की रिपोर्ट करें। AI को काम करने दें।'
               : 'Discover the correct category and generate a formal complaint instantly using AI.'}
@@ -75,20 +83,29 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Floating AI Chatbox */}
-      <div className="max-w-4xl mx-auto px-6 relative -mt-10 z-20">
+      {/* Hidden File Input for Direct Upload */}
+      <input 
+        type="file" 
+        ref={fileRef} 
+        hidden 
+        accept="image/*,.pdf" 
+        onChange={handleFileSelect} 
+      />
+
+      {/* Main AI Chatbox */}
+      <div className="max-w-4xl mx-auto px-6 relative z-20">
         <form 
           onSubmit={handleAutoAnalyze} 
-          className="bg-[#171717] rounded-[32px] shadow-2xl p-4 flex flex-col transition-all duration-300 w-full"
+          className="bg-white border-2 border-gray-100 rounded-[32px] shadow-lg p-6 flex flex-col transition-all duration-300 w-full"
         >
-          <div className="flex-1 w-full relative">
+          <div className="flex-1 w-full relative mb-4">
             <textarea 
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder={hi ? 'कुछ भी पूछें...' : 'Ask anything...'}
-              className="w-full bg-transparent outline-none text-white placeholder-gray-400 resize-none py-2 px-2 text-lg sm:text-xl font-medium"
+              className="w-full bg-transparent outline-none text-gray-900 placeholder-gray-400 resize-none py-2 text-xl md:text-2xl font-medium"
               rows={inputText ? 3 : 1}
-              style={{ minHeight: inputText ? '80px' : '36px' }}
+              style={{ minHeight: inputText ? '80px' : '40px' }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -98,36 +115,40 @@ export default function Home() {
             />
           </div>
 
-          <div className="flex items-center justify-between mt-2 px-2">
-            {/* Left side: Empty as requested to remove GPT 5.5 */}
-            <div></div>
-            
-            {/* Right side controls */}
-            <div className="flex items-center gap-3">
-              <button 
-                type="button" 
-                onClick={handleAttachClick}
-                className="p-2 text-gray-400 hover:text-white transition-colors"
-              >
-                <Plus className="w-6 h-6" />
-              </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button 
+              type="button"
+              onClick={handleAttachClick}
+              className="flex items-center gap-2 px-6 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-full font-semibold transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              {hi ? 'इमेज जोड़ें' : 'Add Image'}
+            </button>
 
-              {inputText.trim() ? (
-                <button 
-                  type="submit"
-                  className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black hover:bg-gray-200 transition-colors shadow-md"
-                >
-                  <ArrowUp className="w-5 h-5" />
-                </button>
-              ) : (
-                <button 
-                  type="button"
-                  className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black hover:bg-gray-200 transition-colors shadow-md"
-                >
-                  <Mic className="w-5 h-5" />
-                </button>
-              )}
-            </div>
+            <button 
+              type="button"
+              onClick={() => {
+                setScenarioId(null)
+                setInputType('voice')
+                router.push('/intake?category=auto&mode=voice')
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-full font-semibold transition-colors"
+            >
+              <Mic className="w-5 h-5" />
+              {hi ? 'बोलें' : 'Speak'}
+            </button>
+            
+            <div className="flex-1"></div>
+
+            {inputText.trim() && (
+              <button 
+                type="submit"
+                className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold transition-colors shadow-md"
+              >
+                {hi ? 'भेजें' : 'Send'}
+                <ArrowUp className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </form>
 
@@ -199,21 +220,20 @@ export default function Home() {
             <div 
               key={i}
               onClick={() => handleCategoryPill(cat.title)}
-              className="bg-[#171717] rounded-[32px] overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300 shadow-xl flex flex-col min-h-[320px]"
+              className="bg-white border border-gray-200 rounded-[32px] overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col min-h-[280px]"
             >
               {/* Top Image / Gradient Area */}
-              <div className={`h-48 bg-gradient-to-br ${cat.bg} flex items-center justify-center relative overflow-hidden`}>
-                {/* Decorative Pattern overlay */}
+              <div className={`h-32 bg-gradient-to-br ${cat.bg} flex items-center justify-center relative overflow-hidden`}>
                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
                 {cat.icon}
               </div>
               
               {/* Bottom Content */}
-              <div className="p-6 flex-1 flex flex-col justify-end">
-                <h3 className="text-2xl font-semibold text-white mb-2">
+              <div className="p-6 flex-1 flex flex-col justify-start">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
                   {hi ? cat.titleHi : cat.title}
                 </h3>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 text-sm">
                   {hi ? cat.descHi : cat.desc}
                 </p>
               </div>

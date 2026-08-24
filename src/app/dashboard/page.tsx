@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import {
   Shield, IndianRupee, Phone, Share2,
   Printer, RotateCcw, User, Building2,
-  CreditCard, Clock, Globe
+  CreditCard, Clock, Globe, Edit3
 } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import UrgencyBadge from '@/components/UrgencyBadge'
@@ -15,7 +15,7 @@ import PrintableComplaint from '@/components/PrintableComplaint'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { triageResult, language, setLanguage, reset } = useTriage()
+  const { triageResult, setTriageResult, language, setLanguage, reset } = useTriage()
   const hi = language === 'hi'
 
   useEffect(() => {
@@ -25,6 +25,10 @@ export default function DashboardPage() {
   if (!triageResult) return null
 
   const r = triageResult
+
+  const handleUpdate = (field: keyof typeof r, value: any) => {
+    setTriageResult({ ...r, [field]: value })
+  }
 
   const handleShare = async () => {
     const text = hi
@@ -40,179 +44,200 @@ export default function DashboardPage() {
     }
   }
 
-  const infoRows = [
-    { icon: User, label: hi ? 'पीड़ित' : 'Victim', value: r.victimName },
-    { icon: Shield, label: hi ? 'धोखाधड़ी प्रकार' : 'Fraud Type', value: r.fraudType },
-    { icon: IndianRupee, label: hi ? 'खोई गई राशि' : 'Amount Lost', value: `₹${r.amount.toLocaleString('en-IN')}` },
-    { icon: Building2, label: hi ? 'बैंक' : 'Bank', value: r.bankName },
-    { icon: CreditCard, label: hi ? 'खाता' : 'Account', value: r.accountNumber },
-    { icon: Phone, label: hi ? 'धोखेबाज संपर्क' : 'Fraudster Contact', value: r.frauderContact },
-    { icon: Clock, label: hi ? 'समय' : 'Timeline', value: r.timeline },
-  ]
-
   return (
-    <main className="min-h-screen bg-slate-50 pb-20">
-      {/* PrintableComplaint is hidden on screen, shown only on print */}
+    <main className="min-h-screen bg-slate-50 pb-20 font-sans">
       <PrintableComplaint result={r} language={language} />
 
-      {/* Sticky top bar */}
-      <div className="bg-civic-blue text-white px-5 py-4 no-print">
-        <div className="flex items-center justify-between mb-3">
+      {/* Top Bar */}
+      <div className="bg-civic-blue text-white px-6 py-4 no-print shadow-md">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-saffron" />
-            <span className="font-bold text-sm">Samarthan</span>
+            <Shield className="w-6 h-6 text-saffron" />
+            <span className="font-bold text-lg tracking-tight">Samarthan</span>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Language toggle */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-              className="flex items-center gap-1 bg-white/15 hover:bg-white/25 text-white text-xs font-medium px-2.5 py-1.5 rounded-full transition-colors"
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-medium px-4 py-2 rounded-full transition-colors"
             >
-              <Globe className="w-3.5 h-3.5" />
+              <Globe className="w-4 h-4" />
               {language === 'en' ? 'हिन्दी' : 'English'}
             </button>
-            {/* Start over */}
             <button
               onClick={() => { reset(); router.push('/') }}
-              className="flex items-center gap-1 bg-white/15 hover:bg-white/25 text-white text-xs font-medium px-2.5 py-1.5 rounded-full transition-colors"
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-medium px-4 py-2 rounded-full transition-colors"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-4 h-4" />
               {hi ? 'फिर से' : 'Reset'}
             </button>
           </div>
         </div>
-
-        {/* Incident ID */}
-        <div className="bg-white/10 rounded-xl px-4 py-3">
-          <p className="text-white/60 text-xs mb-0.5">{hi ? 'घटना संख्या' : 'Incident ID'}</p>
-          <p className="font-mono font-bold text-lg tracking-wider">{r.incidentId}</p>
-        </div>
       </div>
 
-      <div className="px-5 py-6 space-y-6 max-w-lg mx-auto no-print">
+      <div className="max-w-7xl mx-auto px-6 py-8 no-print">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          
+          {/* LEFT COLUMN: AI Summary & Editable Report */}
+          <div className="space-y-6">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Edit3 className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {hi ? 'समीक्षा करें और संपादित करें' : 'Review & Edit Report'}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {hi ? 'AI ने यह जानकारी निकाली है। इसे तुरंत संपादित करें।' : 'AI extracted these details. Edit them instantly below.'}
+                </p>
+              </div>
+            </motion.div>
 
-        {/* Urgency banner */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <UrgencyBadge level={r.urgencyLevel} language={language} size="lg" />
-        </motion.div>
+            {/* Summary */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                {hi ? 'AI सारांश' : 'AI Summary'}
+              </h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                {hi ? r.summaryHi : r.summary}
+              </p>
+            </motion.div>
 
-        {/* Summary */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm"
-        >
-          <h2 className="text-base font-bold text-gray-900 mb-3">
-            {hi ? 'AI सारांश' : 'AI Summary'}
-          </h2>
-          <p className="text-gray-700 text-sm leading-relaxed">
-            {hi ? r.summaryHi : r.summary}
-          </p>
-        </motion.div>
+            {/* Editable Fields */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  {hi ? 'अपराध की श्रेणी' : 'Crime Category'}
+                </label>
+                <select 
+                  value={r.fraudType}
+                  onChange={(e) => handleUpdate('fraudType', e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-civic-blue bg-gray-50 outline-none transition-shadow"
+                >
+                  <option value="Women/Children Related Crime">Women/Children Related Crime</option>
+                  <option value="Financial Fraud">Financial Fraud</option>
+                  <option value="Hate Speech">Hate Speech</option>
+                  <option value="Online Ragging">Online Ragging</option>
+                  <option value="Other Cyber Crime">Other Cyber Crime</option>
+                  <option value="UPI Fraud">UPI Fraud (Legacy)</option>
+                  <option value="OTP Fraud">OTP Fraud (Legacy)</option>
+                  <option value="Investment Scam">Investment Scam (Legacy)</option>
+                </select>
+              </div>
 
-        {/* Incident details */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm"
-        >
-          <h2 className="text-base font-bold text-gray-900 mb-4">
-            {hi ? 'घटना विवरण' : 'Incident Details'}
-          </h2>
-          <div className="space-y-3">
-            {infoRows.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-civic-blueLight flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-civic-blue" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    {hi ? 'पीड़ित का नाम' : 'Victim Name'}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={r.victimName}
+                    onChange={(e) => handleUpdate('victimName', e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-civic-blue outline-none transition-shadow"
+                  />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400 font-medium">{label}</p>
-                  <p className="text-sm font-semibold text-gray-900 break-words">{value}</p>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    {hi ? 'राशि (यदि लागू हो)' : 'Amount Lost (If any)'}
+                  </label>
+                  <input 
+                    type="number" 
+                    value={r.amount}
+                    onChange={(e) => handleUpdate('amount', Number(e.target.value))}
+                    className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-civic-blue outline-none transition-shadow"
+                  />
                 </div>
               </div>
-            ))}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  {hi ? 'आरोपी का संपर्क' : 'Fraudster Contact'}
+                </label>
+                <input 
+                  type="text" 
+                  value={r.frauderContact}
+                  onChange={(e) => handleUpdate('frauderContact', e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-civic-blue outline-none transition-shadow"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex justify-between">
+                  <span>{hi ? 'शिकायत का मसौदा' : 'Complaint Draft'}</span>
+                  <span className="text-civic-blue font-semibold">{hi ? '(संपादित करें)' : '(Editable)'}</span>
+                </label>
+                <textarea 
+                  value={hi ? r.complaintDraftHi : r.complaintDraft}
+                  onChange={(e) => hi 
+                    ? handleUpdate('complaintDraftHi', e.target.value)
+                    : handleUpdate('complaintDraft', e.target.value)
+                  }
+                  rows={10}
+                  className="w-full border border-gray-300 rounded-xl p-4 text-sm font-mono leading-relaxed focus:ring-2 focus:ring-civic-blue outline-none transition-shadow bg-slate-50"
+                />
+              </div>
+            </motion.div>
           </div>
-        </motion.div>
 
-        {/* Freeze steps */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <h2 className="text-base font-bold text-gray-900 mb-1">
-            {hi ? '🚨 अभी यह करें — खाता फ्रीज करें' : '🚨 Act Now — Freeze the Account'}
-          </h2>
-          <p className="text-gray-500 text-sm mb-4">
-            {hi
-              ? 'नीचे दिए गए कदम क्रम से उठाएं। पहला कदम सबसे ज़रूरी है।'
-              : 'Follow these steps in order. Step 1 is most critical.'}
-          </p>
-          <FreezeStepper steps={r.freezeSteps} language={language} />
-        </motion.div>
+          {/* RIGHT COLUMN: Action Steps */}
+          <div className="space-y-6">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {hi ? 'तत्काल कार्रवाई करें' : 'Immediate Action Steps'}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {hi ? 'नीचे दिए गए कदम क्रम से उठाएं।' : 'Follow these steps in order.'}
+                </p>
+              </div>
+            </motion.div>
 
-        {/* Complaint draft */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
-        >
-          <div className="px-5 pt-5 pb-3">
-            <h2 className="text-base font-bold text-gray-900">
-              {hi ? 'AI-जनरेटेड शिकायत मसौदा' : 'AI-Generated Complaint Draft'}
-            </h2>
-            <p className="text-gray-500 text-xs mt-0.5">
-              {hi ? 'इसे cybercrime.gov.in पर paste करें' : 'Paste this on cybercrime.gov.in'}
-            </p>
+            {/* Incident ID & Urgency combined */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex items-stretch gap-4">
+              <div className="bg-civic-blue rounded-2xl p-4 text-white flex-1 flex flex-col justify-center shadow-sm">
+                <p className="text-white/70 text-xs font-medium uppercase tracking-wider mb-1">{hi ? 'घटना संख्या' : 'Incident ID'}</p>
+                <p className="font-mono font-bold text-2xl tracking-wider">{r.incidentId}</p>
+              </div>
+              <div className="flex-1">
+                <UrgencyBadge level={r.urgencyLevel} language={language} size="lg" />
+              </div>
+            </motion.div>
+
+            {/* Freeze steps */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+              <FreezeStepper steps={r.freezeSteps} language={language} />
+            </motion.div>
+
+            {/* Action buttons */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="grid grid-cols-2 gap-4">
+              <a href="tel:1930" className="flex flex-col items-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-2xl py-4 font-bold text-base transition-colors shadow-md">
+                <Phone className="w-6 h-6" />
+                {hi ? '1930 कॉल करें' : 'Call 1930'}
+              </a>
+              <button onClick={handleShare} className="flex flex-col items-center gap-2 bg-civic-blue hover:bg-civic-blueMid text-white rounded-2xl py-4 font-bold text-base transition-colors shadow-md">
+                <Share2 className="w-6 h-6" />
+                {hi ? 'परिवार को भेजें' : 'Share with Family'}
+              </button>
+            </motion.div>
+
+            <button onClick={() => window.print()} className="w-full flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl py-4 font-bold text-base hover:bg-gray-50 transition-colors shadow-sm">
+              <Printer className="w-5 h-5" />
+              {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
+            </button>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-amber-800 text-xs leading-relaxed">
+                <span className="font-bold">⚠️ {hi ? 'महत्वपूर्ण:' : 'Important:'}</span>
+                {hi
+                  ? ' यह एक AI-जनरेटेड मसौदा है। FIR दाखिल करने से पहले सभी विवरणों की जांच करें। सभी परिदृश्य काल्पनिक हैं।'
+                  : ' This is an AI-generated draft for demonstration. Verify all details before filing. All scenarios use synthetic data.'}
+              </p>
+            </div>
           </div>
-          <div className="mx-5 mb-5 bg-slate-50 rounded-xl p-4 max-h-60 overflow-y-auto border border-slate-200">
-            <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
-              {hi ? r.complaintDraftHi : r.complaintDraft}
-            </pre>
-          </div>
-        </motion.div>
-
-        {/* Action buttons */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-2 gap-3"
-        >
-          <a
-            href="tel:1930"
-            className="flex flex-col items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl py-4 font-bold text-sm transition-colors min-h-[56px] justify-center"
-          >
-            <Phone className="w-5 h-5" />
-            {hi ? '1930 कॉल करें' : 'Call 1930'}
-          </a>
-          <button
-            onClick={handleShare}
-            className="flex flex-col items-center gap-1.5 bg-civic-blue hover:bg-civic-blueMid text-white rounded-2xl py-4 font-bold text-sm transition-colors min-h-[56px]"
-          >
-            <Share2 className="w-5 h-5" />
-            {hi ? 'परिवार को भेजें' : 'Share with Family'}
-          </button>
-        </motion.div>
-
-        <button
-          onClick={() => window.print()}
-          className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 text-gray-700 rounded-2xl py-4 font-semibold text-sm hover:bg-gray-50 transition-colors min-h-[56px]"
-        >
-          <Printer className="w-5 h-5" />
-          {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
-        </button>
-
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <p className="text-amber-800 text-xs leading-relaxed">
-            <span className="font-bold">⚠️ {hi ? 'महत्वपूर्ण:' : 'Important:'}</span>
-            {hi
-              ? ' यह एक AI-जनरेटेड मसौदा है। FIR दाखिल करने से पहले सभी विवरणों की जांच करें। सभी परिदृश्य काल्पनिक हैं।'
-              : ' This is an AI-generated draft for demonstration. Verify all details before filing. All scenarios use synthetic data.'}
-          </p>
         </div>
       </div>
     </main>

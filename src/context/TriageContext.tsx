@@ -17,6 +17,8 @@ interface TriageContextValue {
   setTriageResult: (r: TriageResult | null) => void
   isLoading: boolean
   setIsLoading: (v: boolean) => void
+  sharedImage: File | null
+  setSharedImage: (f: File | null) => void
   reset: () => void
 }
 
@@ -30,6 +32,7 @@ export function TriageProvider({ children }: { children: React.ReactNode }) {
   const [inputType, setInputType] = useState<InputType>('text')
   const [triageResult, setTriageResultState] = useState<TriageResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [sharedImage, setSharedImage] = useState<File | null>(null)
 
   // Rehydrate from localStorage on mount
   useEffect(() => {
@@ -61,6 +64,7 @@ export function TriageProvider({ children }: { children: React.ReactNode }) {
     setScenarioId(null)
     setTriageResultState(null)
     setIsLoading(false)
+    setSharedImage(null)
     try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
   }
 
@@ -72,6 +76,7 @@ export function TriageProvider({ children }: { children: React.ReactNode }) {
         inputType, setInputType,
         triageResult, setTriageResult,
         isLoading, setIsLoading,
+        sharedImage, setSharedImage,
         reset,
       }}
     >
