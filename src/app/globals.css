@@ -1,10 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  /* shadcn/Vercel light-mode tokens */
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --ring: #18181b;
+  --radius: 0.75rem;
+
+  /* Legacy tokens kept for backward compat */
   --civic-blue: #1A3A6B;
   --saffron: #FF6B00;
 }
@@ -14,7 +33,9 @@ html {
 }
 
 body {
-  @apply bg-slate-50 text-gray-900;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', 'Noto Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -22,7 +43,6 @@ body {
 /* Large tap targets for mobile */
 button, a, [role="button"] {
   min-height: 44px;
-  min-width: 44px;
 }
 
 /* Print styles for complaint */
@@ -41,15 +61,15 @@ button, a, [role="button"] {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, #e4e4e7 25%, #f4f4f5 50%, #e4e4e7 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--muted); }
+::-webkit-scrollbar-thumb { background: #a1a1aa; border-radius: 3px; }
 
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {
