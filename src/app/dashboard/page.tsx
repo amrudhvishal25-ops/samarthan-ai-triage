@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Shield, Phone, Share2, Printer, RotateCcw, Globe, Edit3, ShieldAlert } from 'lucide-react'
+import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import UrgencyBadge from '@/components/UrgencyBadge'
 import FreezeStepper from '@/components/FreezeStepper'
@@ -11,15 +11,40 @@ import PrintableComplaint from '@/components/PrintableComplaint'
 import EvidenceVault from '@/components/EvidenceVault'
 import SmartActions from '@/components/SmartActions'
 import FIRTracker from '@/components/FIRTracker'
+import Navbar from '@/components/Navbar'
+import { useComplaints } from '@/hooks/useComplaints'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { triageResult, setTriageResult, language, setLanguage, reset, sharedImage } = useTriage()
+  const { save } = useComplaints()
   const hi = language === 'hi'
 
   useEffect(() => {
     if (!triageResult) router.replace('/')
   }, [triageResult, router])
+
+  useEffect(() => {
+    if (!triageResult) return
+    save({
+      incidentId: triageResult.incidentId,
+      fraudType: triageResult.fraudType,
+      victimName: triageResult.victimName,
+      amount: triageResult.amount,
+      urgencyLevel: triageResult.urgencyLevel,
+      summary: triageResult.summary,
+      summaryHi: triageResult.summaryHi,
+      complaintDraft: triageResult.complaintDraft,
+      complaintDraftHi: triageResult.complaintDraftHi,
+      frauderContact: triageResult.frauderContact,
+      bankName: triageResult.bankName,
+      accountNumber: triageResult.accountNumber,
+      upiId: triageResult.upiId,
+      timeline: triageResult.timeline,
+      freezeSteps: triageResult.freezeSteps,
+      language,
+    })
+  }, [triageResult, save, language])
 
   if (!triageResult) return null
 
@@ -45,45 +70,30 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-white pb-20 font-sans">
       <PrintableComplaint result={r} language={language} />
 
-      {/* ── NAVBAR ── */}
-      <header className="border-b border-zinc-200 bg-white sticky top-0 z-50 no-print">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-zinc-900 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-zinc-900 text-sm tracking-tight">Samarthan</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors h-auto min-h-0"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              {language === 'en' ? 'हिन्दी' : 'English'}
-            </button>
-            <button
-              onClick={() => { reset(); router.push('/') }}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors h-auto min-h-0"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              {hi ? 'फिर से' : 'New Report'}
-            </button>
-          </div>
-        </div>
-      </header>
+      <div className="no-print">
+        <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
+      </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8 no-print">
 
         {/* Page Title */}
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
-            {hi ? 'आपकी शिकायत तैयार है' : 'Your Report is Ready'}
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            {hi ? 'AI द्वारा विवरण निकाला गया। संपादित करें और तुरंत कार्रवाई करें।'
-              : 'Details extracted by AI. Review, edit, and take action immediately.'}
-          </p>
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
+              {hi ? 'आपकी शिकायत तैयार है' : 'Your Report is Ready'}
+            </h1>
+            <p className="text-sm text-zinc-500 mt-1">
+              {hi ? 'AI द्वारा विवरण निकाला गया। संपादित करें और तुरंत कार्रवाई करें।'
+                : 'Details extracted by AI. Review, edit, and take action immediately.'}
+            </p>
+          </div>
+          <button
+            onClick={() => { reset(); router.push('/') }}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors h-auto min-h-0"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            {hi ? 'फिर से' : 'New Report'}
+          </button>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
