@@ -84,10 +84,10 @@ export default function Home() {
         </div>
         
         <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tighter leading-tight mb-6 max-w-4xl mx-auto">
-          {hi ? 'साइबर अपराध रिपोर्टिंग' : 'Report Cyber Crime'}
+          {hi ? 'समर्थन साइबर अपराध' : 'Samarthan Cyber Crime'}
           <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
-            {hi ? 'अब हुआ आसान' : 'in Seconds.'}
+            {hi ? 'पोर्टल प्रोजेक्ट' : 'Portal Project'}
           </span>
         </h1>
         <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto font-medium mb-12">
