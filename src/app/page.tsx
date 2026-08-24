@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mic, ArrowRight, DollarSign, Shield, User, Globe, Plus, ArrowUp, ShieldCheck, ShieldAlert, Fingerprint, ShoppingCart, Cpu } from 'lucide-react'
+import { Mic, ArrowRight, DollarSign, Shield, User, Globe, Plus, ArrowUp, ShieldCheck, ShieldAlert, Fingerprint, ShoppingCart, Cpu, Briefcase } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import { SCENARIOS } from '@/data/scenarios'
 import clsx from 'clsx'
