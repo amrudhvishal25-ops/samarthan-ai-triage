@@ -120,7 +120,7 @@ export default function Home() {
       </header>
 
       {/* ── HERO ── */}
-      <section className="max-w-6xl mx-auto px-6 pt-16 pb-12">
+      <section className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex flex-col items-center text-center">
         <div className="inline-flex items-center gap-1.5 border border-zinc-200 rounded-full px-3 py-1 text-xs font-medium text-zinc-600 mb-6">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
           {hi ? 'Varun Mayya x OpenAI की पहल' : 'A Varun Mayya x OpenAI Initiative'}
@@ -143,7 +143,7 @@ export default function Home() {
         {/* ── CHATBOX ── */}
         <input type="file" ref={fileRef} hidden accept="image/*,.pdf" onChange={handleFileSelect} />
 
-        <form onSubmit={handleAutoAnalyze} className="border border-zinc-200 rounded-2xl bg-white shadow-sm overflow-hidden max-w-3xl">
+        <form onSubmit={handleAutoAnalyze} className="border border-zinc-200 rounded-2xl bg-white shadow-sm overflow-hidden w-full max-w-3xl text-left">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -192,7 +192,7 @@ export default function Home() {
         </form>
 
         {/* ── FILTER PILLS ── */}
-        <div className="flex items-center gap-2 mt-5 overflow-x-auto pb-1 scrollbar-hide max-w-3xl">
+        <div className="flex items-center justify-center gap-2 mt-5 flex-wrap pb-1 scrollbar-hide w-full max-w-3xl">
           {filters.map((f, i) => (
             <button
               key={i}
