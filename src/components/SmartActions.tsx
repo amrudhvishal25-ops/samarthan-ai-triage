@@ -1,0 +1,81 @@
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import { MapPin, Mail, Navigation, CheckCircle2, Loader2, ShieldAlert } from 'lucide-react'
+
+export default function SmartActions({ bankName, incidentId, amount, hi }: { bankName: string, incidentId: string, amount: number, hi: boolean }) {
+  const [locating, setLocating] = useState(false)
+  const [policeStation, setPoliceStation] = useState<string | null>(null)
+  
+  const handleBankEmail = () => {
+    const bankMap: Record<string, string> = {
+      'HDFC': 'cyberfraud@hdfcbank.com',
+      'ICICI': 'antifraud@icicibank.com',
+      'SBI': 'report.phishing@sbi.co.in',
+      'Axis': 'nodal.officer@axisbank.com',
+      'Kotak': 'fraud.control@kotak.com'
+    }
+    const cleanBankName = Object.keys(bankMap).find(k => bankName.toLowerCase().includes(k.toLowerCase())) || 'Unknown'
+    const nodalEmail = cleanBankName !== 'Unknown' ? bankMap[cleanBankName] : 'nodal.officer@rbi.org.in'
+    
+    const subject = encodeURIComponent(`URGENT: Fraud Reporting - Incident ${incidentId}`)
+    const body = encodeURIComponent(`Dear Nodal Officer,\n\nI am reporting a cyber fraud on my account.\nIncident ID: ${incidentId}\nAmount: Rs ${amount}\n\nPlease freeze the beneficiary account immediately.\n\nRegards,`)
+    
+    window.open(`mailto:${nodalEmail}?subject=${subject}&body=${body}`, '_blank')
+  }
+
+  const handleRoutePolice = () => {
+    setLocating(true)
+    // Simulate GPS fetch & API delay
+    setTimeout(() => {
+      // Pick a random station for demo
+      const stations = ['Cyber Crime Station, Bandra', 'Cyber Cell, HSR Layout', 'Cyber Police, Connaught Place']
+      setPoliceStation(stations[Math.floor(Math.random() * stations.length)])
+      setLocating(false)
+    }, 2000)
+  }
+
+  return (
+    <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+      <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">
+        {hi ? 'स्मार्ट कार्रवाई' : 'Smart Escalation'}
+      </h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Bank Email */}
+        <button 
+          onClick={handleBankEmail}
+          className="flex flex-col items-start gap-3 p-4 rounded-2xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-left"
+        >
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <Mail className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm mb-1">{hi ? 'बैंक को ईमेल करें' : '1-Click Bank Email'}</h4>
+            <p className="text-xs text-gray-500">{hi ? 'नोडल अधिकारी को ऑटो-ईमेल भेजें' : `Auto-drafts email to ${bankName} Nodal Officer`}</p>
+          </div>
+        </button>
+
+        {/* Police Station */}
+        <button 
+          onClick={policeStation ? undefined : handleRoutePolice}
+          disabled={locating || !!policeStation}
+          className={`flex flex-col items-start gap-3 p-4 rounded-2xl border transition-all text-left ${policeStation ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-saffron hover:bg-orange-50/50'}`}
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${policeStation ? 'bg-green-100' : 'bg-orange-100'}`}>
+            {locating ? <Loader2 className="w-5 h-5 text-saffron animate-spin" /> : policeStation ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Navigation className="w-5 h-5 text-saffron" />}
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm mb-1">{hi ? 'पुलिस स्टेशन भेजें' : 'Route to Police'}</h4>
+            {locating ? (
+              <p className="text-xs text-gray-500">{hi ? 'लोकेशन ट्रैक कर रहा है...' : 'Fetching GPS location...'}</p>
+            ) : policeStation ? (
+              <p className="text-xs text-green-700 font-medium">Routed to: {policeStation}</p>
+            ) : (
+              <p className="text-xs text-gray-500">{hi ? 'नजदीकी साइबर सेल को रिपोर्ट भेजें' : 'Find & route to nearest Cyber Cell'}</p>
+            )}
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+}
