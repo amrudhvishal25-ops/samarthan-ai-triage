@@ -39,7 +39,7 @@ export default function Home() {
       setSharedImage(file)
       setScenarioId(null)
       setInputType('screenshot')
-      router.push('/intake?category=auto&autoStart=true')
+      router.push('/intake?category=auto')
     }
   }
 
