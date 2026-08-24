@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, MapPin, Mic, ArrowRight, Bookmark, Building2, Briefcase, DollarSign, List, Shield, User, Globe, Plus, ArrowUp, Smartphone, ShieldCheck } from 'lucide-react'
