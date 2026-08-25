@@ -49,15 +49,22 @@ A victim has provided an account of an incident (via text, voice note, or screen
 Extract ALL specific details provided and return a STRICT JSON object.
 
 CRITICAL INSTRUCTIONS:
-1. AGGRESSIVELY EXTRACT FRAUDSTER NAME: If the user mentions the name of the person/entity who scammed them (e.g., "he said his name was Ravi", "the caller identified as Amit", "the company was called XYZ Investments"), capture it as victimName.
-2. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
-3. NO HALLUCINATION: Use ONLY the details provided or visible in the evidence. Do not invent data.
-4. FORMAL COMPLAINT DRAFT: Draft a complete, professional, first-person police complaint. Do NOT write meta-statements like "I am unable to provide details" or "No specific details reported". If evidence shows a transaction or chat, state the facts directly (e.g. "I am reporting an unauthorized transaction / cyber fraud incident...").
+1. AGGRESSIVELY EXTRACT FRAUDSTER NAME & HANDLE: 
+   - Look in BOTH the user text AND the evidence image analysis text.
+   - If a contact name, handle, username, or profile name appears in the evidence (e.g. "Contact Name: Rithwik", "Username: rithwik8024", "@username", "User 1: Rithwik8024"), capture it as victimName (e.g. "Rithwik (@rithwik8024)").
+   - Use 'Not Identified' ONLY if no fraudster name, username, or handle exists anywhere in text or evidence.
+
+2. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp, Telegram), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
+
+3. NO HALLUCINATION: Use ONLY the details provided or visible in evidence. Do not invent data.
+
+4. FORMAL COMPLAINT DRAFT: Draft a complete, professional, first-person police complaint written from the perspective of the complainant (Pratham Kamath). State the facts directly.
+
 5. For missing JSON fields below, use "Not Provided".
 
 {
   "incidentId": "MH-2024-XXXXXXXX",  // generate a realistic random ID
-  "victimName": "Extract the FRAUDSTER's name or alias as mentioned by the victim or visible in evidence. Use 'Not Identified' ONLY if completely absent.",
+  "victimName": "Extract the FRAUDSTER's name, handle, or alias (e.g. 'Rithwik (@rithwik8024)'). Use 'Not Identified' ONLY if completely absent.",
   "fraudType": "Financial Fraud | Women/Children Related Crime | Extortion & Blackmail | Identity Theft | E-Commerce Scams | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Fake Customer Care | Investment Scam | Job Scam | Other",
   "frauderContact": "phone/email/WhatsApp/Platform handle if mentioned/visible, else 'Not Provided'",
   "amount": number,  // in INR, 0 if no financial loss is mentioned/visible
