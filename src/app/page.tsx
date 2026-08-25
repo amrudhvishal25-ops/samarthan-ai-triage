@@ -33,7 +33,8 @@ export default function Home() {
       setSharedImage(file)
       setScenarioId(null)
       setInputType('screenshot')
-      router.push('/intake?category=auto')
+      const textQuery = inputText.trim() ? `&text=${encodeURIComponent(inputText)}` : ''
+      router.push(`/intake?category=auto${textQuery}`)
     }
   }
 
@@ -155,7 +156,8 @@ export default function Home() {
               onClick={() => {
                 setScenarioId(null)
                 setInputType('voice')
-                router.push('/intake?category=auto&mode=voice')
+                const textQuery = inputText.trim() ? `&text=${encodeURIComponent(inputText)}` : ''
+                router.push(`/intake?category=auto&mode=voice${textQuery}`)
               }}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-2 transition-all h-auto min-h-0 bg-zinc-50 hover:bg-zinc-100"
             >
