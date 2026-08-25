@@ -24,7 +24,10 @@ export function useAuth() {
     if (typeof window === 'undefined') return null
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
-      return raw ? JSON.parse(raw) : null
+      if (raw) return JSON.parse(raw)
+      // Auto-initialize on first visit — simulate a pre-authenticated DigiLocker session
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_USER))
+      return MOCK_USER
     } catch {
       return null
     }

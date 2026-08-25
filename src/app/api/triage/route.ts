@@ -8,7 +8,7 @@ A victim has provided an account of an incident.
 Extract ALL specific details provided and return a STRICT JSON object.
 
 CRITICAL INSTRUCTIONS:
-1. AGGRESSIVELY EXTRACT NAMES: If the user mentions their name (e.g., "I am Rahul", "My name is...", or signs off with a name), capture it as the victimName.
+1. AGGRESSIVELY EXTRACT FRAUDSTER NAME: If the user mentions the name of the person/entity who scammed them (e.g., "he said his name was Ravi", "the caller identified as Amit", "the company was called XYZ Investments"), capture it as victimName.
 2. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp), banks, amounts, and contact info. Do not miss any provided details.
 3. NO HALLUCINATION: Use ONLY the details provided. Do not invent data.
 4. NATURAL DRAFTING: If a detail is missing, omit it entirely from the complaint draft so it reads naturally. Do NOT use awkward placeholders like "[Your Name]" or "[Bank]".
@@ -16,7 +16,7 @@ CRITICAL INSTRUCTIONS:
 
 {
   "incidentId": "MH-2024-XXXXXXXX",  // generate a realistic random ID
-  "victimName": "Extract the reporter's name. Use 'Not Provided' ONLY if completely absent.",
+  "victimName": "Extract the FRAUDSTER's name or alias as mentioned by the victim. Use 'Not Identified' ONLY if completely absent.",
   "fraudType": "Financial Fraud | Women/Children Related Crime | Extortion & Blackmail | Identity Theft | E-Commerce Scams | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Fake Customer Care | Investment Scam | Job Scam | Other",
   "frauderContact": "phone/email/WhatsApp/Platform handle if mentioned, else 'Not Provided'",
   "amount": number,  // in INR, 0 if no financial loss is mentioned
@@ -91,7 +91,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
       return {
         incidentId: `MH-2024-${Math.floor(10000000 + Math.random() * 90000000)}`,
-        victimName: 'Demo User (Fallback Mode)',
+        victimName: 'Not Identified',
         fraudType: inferredCategory as any,
         frauderContact: 'Unknown',
         amount: inferredCategory === 'Financial Fraud' ? 10000 : 0,
