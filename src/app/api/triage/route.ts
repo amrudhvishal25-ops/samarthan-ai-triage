@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult } from '@/data/scenarios'
 import OpenAI from 'openai'
 import { PDFParse } from 'pdf-parse'
+import sharp from 'sharp'
 
 const TRIAGE_SYSTEM_PROMPT = `You are an expert Indian cybercrime triage assistant. 
 A victim has provided an account of an incident. 
@@ -143,9 +144,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
         }
       }
 
-      // 2a. PDF uploads: extract text directly rather than treating them as
-      // an image (GPT-4o Vision only accepts png/jpeg/gif/webp and 400s on
-      // a PDF data URI).
+      // 2a. PDF uploads: extract text directly using pdf-parse
       if (imageFile && imageFile.size > 0 && imageFile.type === 'application/pdf') {
         let parser: InstanceType<typeof PDFParse> | null = null
         try {
@@ -160,43 +159,50 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
         }
       }
 
-      // 2b. Extract text from image with GPT-4o Vision. Vision only accepts
-      // png/jpeg/gif/webp — anything else must be skipped rather than sent,
-      // or the API 400s and the whole request (including a good
-      // transcription/text) is lost to the generic mock fallback below.
-      const VISION_SUPPORTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+      // 2b. Extract text from image with GPT-4o Vision.
+      // Automatically convert HEIC/HEIF/PNG/WebP/BMP images to JPEG using sharp so Vision never fails on iPhone uploads.
       if (imageFile && imageFile.size > 0 && imageFile.type !== 'application/pdf') {
-        if (VISION_SUPPORTED_TYPES.includes(imageFile.type)) {
+        try {
+          const bytes = await imageFile.arrayBuffer()
+          const inputBuffer = Buffer.from(bytes)
+          let jpegBuffer: Buffer
           try {
-            const bytes = await imageFile.arrayBuffer()
-            const base64 = Buffer.from(bytes).toString('base64')
-            const mime = imageFile.type === 'image/jpg' ? 'image/jpeg' : imageFile.type
-
-            const visionResp = await openai.chat.completions.create({
-              model: 'gpt-4o-mini',
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    { type: 'text', text: 'Extract all text from this image related to an incident. Return only the extracted text.' },
-                    { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } },
-                  ],
-                },
-              ],
-              max_tokens: 1000,
-            })
-            userText = (visionResp.choices[0].message.content || '') + '\n' + userText
-          } catch (visionError: any) {
-            console.warn('[triage] Vision extraction failed:', visionError.message)
+            jpegBuffer = await sharp(inputBuffer).jpeg({ quality: 85 }).toBuffer()
+          } catch (sharpError: any) {
+            console.warn('[triage] sharp conversion warning:', sharpError.message)
+            jpegBuffer = inputBuffer
           }
-        } else {
-          console.warn(`[triage] Skipping Vision for unsupported image type: ${imageFile.type || 'unknown'}`)
+
+          const base64 = jpegBuffer.toString('base64')
+
+          const visionResp = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Extract all text, names, phone numbers, transaction IDs, bank names, amounts, and visible details from this image related to a cybercrime incident.' },
+                  { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+                ],
+              },
+            ],
+            max_tokens: 1000,
+          })
+          const extractedText = visionResp.choices[0].message.content || ''
+          userText = extractedText + '\n' + userText
+        } catch (visionError: any) {
+          console.warn('[triage] Vision extraction failed:', visionError.message)
         }
       }
 
       if (!userText.trim()) {
-        throw new Error('No input provided after processing')
+        if (imageFile || audioFile) {
+          userText = `An evidence file (${imageFile?.name || 'audio recording'}) was submitted by the victim for triage. Please analyze and draft the incident report.`
+        } else {
+          throw new Error('No input provided after processing')
+        }
       }
+
 
       let customPrompt = TRIAGE_SYSTEM_PROMPT
       if (categoryHint && categoryHint !== 'auto') {
