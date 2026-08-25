@@ -3,7 +3,7 @@
 import { useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import {
-  FraudType, UrgencyLevel, FreezeStep,
+  FraudType, UrgencyLevel, FreezeStep, ApplicableLaw,
   ComplaintStatus, ComplaintStatusEvent, COMPLAINT_STATUSES,
 } from '@/data/scenarios'
 
@@ -30,6 +30,7 @@ export interface SavedComplaint {
   upiId?: string
   timeline: string
   freezeSteps: FreezeStep[]
+  applicableLaws: ApplicableLaw[]
   savedAt: string
   language: 'en' | 'hi'
   status: ComplaintStatus
@@ -57,6 +58,7 @@ interface ComplaintRow {
   upi_id: string | null
   timeline: string
   freeze_steps: FreezeStep[]
+  applicable_laws: ApplicableLaw[]
   saved_at: string
   language: 'en' | 'hi'
   status: ComplaintStatus
@@ -81,6 +83,7 @@ function fromRow(row: ComplaintRow): SavedComplaint {
     upiId: row.upi_id ?? undefined,
     timeline: row.timeline,
     freezeSteps: row.freeze_steps,
+    applicableLaws: row.applicable_laws ?? [],
     savedAt: row.saved_at,
     language: row.language,
     status: row.status,
@@ -106,6 +109,7 @@ function toRow(c: SavedComplaint): ComplaintRow {
     upi_id: c.upiId ?? null,
     timeline: c.timeline,
     freeze_steps: c.freezeSteps,
+    applicable_laws: c.applicableLaws,
     saved_at: c.savedAt,
     language: c.language,
     status: c.status,

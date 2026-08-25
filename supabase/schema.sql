@@ -17,6 +17,7 @@ create table if not exists complaints (
   upi_id text,
   timeline text not null,
   freeze_steps jsonb not null default '[]'::jsonb,
+  applicable_laws jsonb not null default '[]'::jsonb,
   saved_at timestamptz not null default now(),
   language text not null default 'en',
   status text not null default 'SUBMITTED',
@@ -43,3 +44,6 @@ create policy "public update" on complaints
 
 -- If the table already existed before evidence_images was added, run:
 -- alter table complaints add column if not exists evidence_images jsonb not null default '[]'::jsonb;
+
+-- If the table already existed before applicable_laws was added, run:
+-- alter table complaints add column if not exists applicable_laws jsonb not null default '[]'::jsonb;

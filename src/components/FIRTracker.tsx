@@ -25,7 +25,7 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
   return (
     <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
       <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wide">
-        {hi ? 'शिकायत स्टेटस' : 'Resolution Tracker'}
+        {hi ? 'शिकायत स्थिति ट्रैकर' : 'Complaint Status Tracker'}
       </h3>
 
       <div className="relative border-l-2 border-gray-100 ml-3 space-y-6">

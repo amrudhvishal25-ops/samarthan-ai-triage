@@ -44,6 +44,7 @@ export default function ComplaintsPage() {
       upiId: c.upiId,
       timeline: c.timeline,
       freezeSteps: c.freezeSteps,
+      applicableLaws: c.applicableLaws,
     })
     router.push('/dashboard')
   }

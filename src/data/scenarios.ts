@@ -29,11 +29,11 @@ export const COMPLAINT_STATUSES = [
 export type ComplaintStatus = typeof COMPLAINT_STATUSES[number]
 
 export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, { en: string; hi: string; simulated: boolean }> = {
-  SUBMITTED: { en: 'Report Submitted', hi: 'रिपोर्ट दर्ज', simulated: false },
-  BANK_NOTIFIED: { en: 'Bank Nodal Notified', hi: 'बैंक नोडल अधिकारी को सूचित', simulated: true },
-  FIR_FILED: { en: 'FIR Filed (NCRP)', hi: 'FIR दर्ज (NCRP)', simulated: true },
+  SUBMITTED: { en: 'Complaint Registered', hi: 'शिकायत पंजीकृत', simulated: false },
+  BANK_NOTIFIED: { en: 'Bank Nodal Officer Notified', hi: 'बैंक नोडल अधिकारी को सूचित', simulated: true },
+  FIR_FILED: { en: 'FIR Registered (NCRP)', hi: 'प्राथमिकी दर्ज (NCRP)', simulated: true },
   UNDER_INVESTIGATION: { en: 'Under Investigation', hi: 'जांच जारी', simulated: true },
-  RESOLVED: { en: 'Resolved', hi: 'समाधान हुआ', simulated: true },
+  RESOLVED: { en: 'Disposed / Resolved', hi: 'निपटाया / समाधान हुआ', simulated: true },
 }
 
 export interface ComplaintStatusEvent {
@@ -51,6 +51,14 @@ export interface FreezeStep {
   url?: string
 }
 
+export interface ApplicableLaw {
+  section: string
+  title: string
+  titleHi: string
+  reason: string
+  reasonHi: string
+}
+
 export interface TriageResult {
   incidentId: string
   victimName: string
@@ -64,6 +72,7 @@ export interface TriageResult {
   complaintDraft: string
   complaintDraftHi: string
   freezeSteps: FreezeStep[]
+  applicableLaws: ApplicableLaw[]
   urgencyLevel: UrgencyLevel
   summary: string
   summaryHi: string
@@ -82,9 +91,29 @@ export interface Scenario {
   mockResponse: TriageResult
 }
 
-const generateId = () =>
-  `MH-${new Date().getFullYear()}-` +
-  Math.floor(10000000 + Math.random() * 90000000).toString()
+// Whitelist of IT Act 2000 sections the AI may cite in applicableLaws.
+// It cannot invent a section not in this list — see TRIAGE_SYSTEM_PROMPT in
+// src/app/api/triage/route.ts. Restricted to IT Act only until BNS 2023
+// section numbers are independently verified (do not add BNS entries here
+// without confirming the exact section number against a trusted source).
+export const IT_ACT_SECTIONS: Record<string, { title: string; titleHi: string }> = {
+  '43': { title: 'Penalty for unauthorized access/damage to a computer system', titleHi: 'कंप्यूटर सिस्टम तक अनधिकृत पहुंच/क्षति के लिए दंड' },
+  '66': { title: 'Computer-related offences (hacking)', titleHi: 'कंप्यूटर संबंधी अपराध (हैकिंग)' },
+  '66B': { title: 'Dishonestly receiving stolen computer resource or communication device', titleHi: 'चोरी के कंप्यूटर संसाधन या संचार उपकरण को बेईमानी से प्राप्त करना' },
+  '66C': { title: 'Identity theft — fraudulent use of password, digital signature, or unique ID', titleHi: 'पहचान की चोरी — पासवर्ड, डिजिटल हस्ताक्षर या अद्वितीय पहचान का धोखाधड़ीपूर्ण उपयोग' },
+  '66D': { title: 'Cheating by personation using a computer resource', titleHi: 'कंप्यूटर संसाधन का उपयोग करके प्रतिरूपण द्वारा धोखाधड़ी' },
+  '66E': { title: 'Violation of privacy — capturing/publishing private images', titleHi: 'गोपनीयता का उल्लंघन — निजी छवियों को कैप्चर/प्रकाशित करना' },
+  '67': { title: 'Publishing or transmitting obscene material in electronic form', titleHi: 'इलेक्ट्रॉनिक रूप में अश्लील सामग्री प्रकाशित या प्रसारित करना' },
+  '67A': { title: 'Publishing or transmitting sexually explicit material', titleHi: 'यौन रूप से स्पष्ट सामग्री प्रकाशित या प्रसारित करना' },
+  '67B': { title: 'Publishing/transmitting material depicting children in a sexually explicit act', titleHi: 'बच्चों को यौन रूप से स्पष्ट कृत्य में दर्शाने वाली सामग्री प्रकाशित/प्रसारित करना' },
+}
+
+// NCRP-style acknowledgement number: 14-digit numeric, no letters/dashes.
+export const generateId = () => {
+  const first = Math.floor(Math.random() * 9) + 1
+  const rest = Array.from({ length: 13 }, () => Math.floor(Math.random() * 10)).join('')
+  return `${first}${rest}`
+}
 
 export const SCENARIOS: Scenario[] = [
   {
@@ -205,6 +234,22 @@ Date: 23/08/2024`,
             'सभी WhatsApp संदेशों, QR कोड और बैंक लेनदेन SMS का स्क्रीनशॉट लें। उन्हें डिलीट न करें।',
         },
       ],
+      applicableLaws: [
+        {
+          section: 'IT Act, Section 66D',
+          title: IT_ACT_SECTIONS['66D'].title,
+          titleHi: IT_ACT_SECTIONS['66D'].titleHi,
+          reason: 'The fraudster impersonated an SBI representative via a fake cashback offer to induce a fraudulent QR scan.',
+          reasonHi: 'धोखेबाज ने नकली कैशबैक ऑफर के जरिए SBI प्रतिनिधि बनकर धोखाधड़ीपूर्ण QR स्कैन करवाया।',
+        },
+        {
+          section: 'IT Act, Section 66C',
+          title: IT_ACT_SECTIONS['66C'].title,
+          titleHi: IT_ACT_SECTIONS['66C'].titleHi,
+          reason: 'The victim\'s UPI/bank credentials were misused to authorize an unauthorized transaction.',
+          reasonHi: 'पीड़ित के UPI/बैंक क्रेडेंशियल का दुरुपयोग करके अनधिकृत लेनदेन को अधिकृत किया गया।',
+        },
+      ],
       urgencyLevel: 'CRITICAL',
     },
   },
@@ -313,6 +358,22 @@ Date: 22/08/2024`,
           url: 'https://cybercrime.gov.in',
         },
       ],
+      applicableLaws: [
+        {
+          section: 'IT Act, Section 66D',
+          title: IT_ACT_SECTIONS['66D'].title,
+          titleHi: IT_ACT_SECTIONS['66D'].titleHi,
+          reason: 'The fraudster posed as a bank representative over a phone call to extract the OTP and authorize a fraudulent transaction.',
+          reasonHi: 'धोखेबाज ने फोन कॉल पर बैंक प्रतिनिधि बनकर OTP प्राप्त किया और धोखाधड़ीपूर्ण लेनदेन को अधिकृत किया।',
+        },
+        {
+          section: 'IT Act, Section 66C',
+          title: IT_ACT_SECTIONS['66C'].title,
+          titleHi: IT_ACT_SECTIONS['66C'].titleHi,
+          reason: 'The victim\'s OTP (a unique authentication credential) was misused to authorize an unauthorized transaction.',
+          reasonHi: 'पीड़ित के OTP (एक अद्वितीय प्रमाणीकरण क्रेडेंशियल) का दुरुपयोग करके अनधिकृत लेनदेन को अधिकृत किया गया।',
+        },
+      ],
       urgencyLevel: 'CRITICAL',
     },
   },
@@ -418,6 +479,15 @@ Date: 22/08/2024`,
             'Export the WhatsApp chat (without media first, then with media). Save all bank transfer screenshots.',
           detailHi:
             'WhatsApp चैट एक्सपोर्ट करें। सभी बैंक ट्रांसफर स्क्रीनशॉट सेव करें।',
+        },
+      ],
+      applicableLaws: [
+        {
+          section: 'IT Act, Section 66D',
+          title: IT_ACT_SECTIONS['66D'].title,
+          titleHi: IT_ACT_SECTIONS['66D'].titleHi,
+          reason: 'The fraudster used a fake investment persona over WhatsApp to induce transfers under false pretenses.',
+          reasonHi: 'धोखेबाज ने WhatsApp पर नकली निवेश पहचान का उपयोग करके झूठे बहाने से ट्रांसफर करवाए।',
         },
       ],
       urgencyLevel: 'HIGH',

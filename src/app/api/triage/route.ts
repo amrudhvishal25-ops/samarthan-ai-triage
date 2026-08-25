@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SCENARIOS, TriageResult } from '@/data/scenarios'
+import { SCENARIOS, TriageResult, generateId, IT_ACT_SECTIONS } from '@/data/scenarios'
 import OpenAI, { toFile } from 'openai'
 import { PDFParse } from 'pdf-parse'
 import sharp from 'sharp'
@@ -63,7 +63,7 @@ CRITICAL INSTRUCTIONS:
 5. For missing JSON fields below, use "Not Provided".
 
 {
-  "incidentId": "MH-2024-XXXXXXXX",  // generate a realistic random ID
+  "incidentId": "XXXXXXXXXXXXXX",  // generate a realistic 14-digit numeric NCRP-style acknowledgement number, no letters or dashes, first digit 1-9
   "victimName": "Extract the FRAUDSTER's name, handle, or alias (e.g. 'Rithwik (@rithwik8024)'). Use 'Not Identified' ONLY if completely absent.",
   "fraudType": "Financial Fraud | Women/Children Related Crime | Extortion & Blackmail | Identity Theft | E-Commerce Scams | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Fake Customer Care | Investment Scam | Job Scam | Other",
   "frauderContact": "phone/email/WhatsApp/Platform handle if mentioned/visible, else 'Not Provided'",
@@ -87,6 +87,15 @@ CRITICAL INSTRUCTIONS:
       "url": "url or null"
     }
   ],
+  "applicableLaws": [
+    {
+      "section": "IT Act, Section <NUMBER>",
+      "title": "exact title text from the whitelist below",
+      "titleHi": "exact Hindi title from the whitelist below",
+      "reason": "One sentence explaining why THIS section applies to THIS specific incident.",
+      "reasonHi": "Hindi translation of the reason."
+    }
+  ],
   "urgencyLevel": "CRITICAL | HIGH | MEDIUM | LOW"
 }
 
@@ -95,6 +104,10 @@ Always include these steps in freezeSteps:
 - Step 2: File complaint on cybercrime.gov.in
 - Include bank-specific freeze steps ONLY if the bank is explicitly mentioned.
 - Preserve evidence step (screenshots, chats, etc.)
+
+APPLICABLE LAWS — WHITELIST ONLY:
+You MUST select applicableLaws ONLY from the exact sections below (Information Technology Act, 2000). Copy the "title"/"titleHi" text EXACTLY as given — do not paraphrase, and NEVER invent a section number that is not in this list. Select every section that plausibly applies to this specific incident (usually 1-3); if truly nothing fits, return an empty array.
+${Object.entries(IT_ACT_SECTIONS).map(([num, s]) => `- Section ${num}: ${s.title} | Hindi: ${s.titleHi}`).join('\n')}
 
 Return ONLY the JSON object. Do not wrap it in markdown block quotes (\`\`\`json).`
 
@@ -139,7 +152,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
       await new Promise(r => setTimeout(r, 1500)) // Simulate processing
 
       return {
-        incidentId: `MH-2024-${Math.floor(10000000 + Math.random() * 90000000)}`,
+        incidentId: generateId(),
         victimName: 'Not Identified',
         fraudType: inferredCategory as any,
         frauderContact: 'Unknown',
@@ -162,6 +175,15 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
             hotline: '1930',
             url: 'https://cybercrime.gov.in'
           }
+        ],
+        applicableLaws: [
+          {
+            section: 'IT Act, Section 66D',
+            title: IT_ACT_SECTIONS['66D'].title,
+            titleHi: IT_ACT_SECTIONS['66D'].titleHi,
+            reason: 'Demo Mode fallback — this section commonly applies to online cheating/impersonation cases like this one.',
+            reasonHi: 'डेमो मोड फॉलबैक — यह धारा इस तरह के ऑनलाइन धोखाधड़ी/प्रतिरूपण मामलों में सामान्यतः लागू होती है।',
+          },
         ],
         urgencyLevel: 'HIGH'
       }
