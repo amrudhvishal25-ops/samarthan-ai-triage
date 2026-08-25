@@ -7,6 +7,13 @@ import {
   ComplaintStatus, ComplaintStatusEvent, COMPLAINT_STATUSES,
 } from '@/data/scenarios'
 
+export interface EvidenceImage {
+  id: string
+  name: string
+  dataUrl: string
+  addedAt: string
+}
+
 export interface SavedComplaint {
   incidentId: string
   fraudType: FraudType
@@ -27,6 +34,7 @@ export interface SavedComplaint {
   language: 'en' | 'hi'
   status: ComplaintStatus
   statusHistory: ComplaintStatusEvent[]
+  evidenceImages: EvidenceImage[]
 }
 
 const STORAGE_KEY = 'samarthan_complaints'
@@ -53,6 +61,7 @@ interface ComplaintRow {
   language: 'en' | 'hi'
   status: ComplaintStatus
   status_history: ComplaintStatusEvent[]
+  evidence_images: EvidenceImage[]
 }
 
 function fromRow(row: ComplaintRow): SavedComplaint {
@@ -76,6 +85,7 @@ function fromRow(row: ComplaintRow): SavedComplaint {
     language: row.language,
     status: row.status,
     statusHistory: row.status_history,
+    evidenceImages: row.evidence_images ?? [],
   }
 }
 
@@ -100,6 +110,7 @@ function toRow(c: SavedComplaint): ComplaintRow {
     language: c.language,
     status: c.status,
     status_history: c.statusHistory,
+    evidence_images: c.evidenceImages,
   }
 }
 
@@ -131,13 +142,14 @@ export function useComplaints() {
     return readLocal()
   }, [])
 
-  const save = useCallback(async (complaint: Omit<SavedComplaint, 'savedAt' | 'status' | 'statusHistory'>) => {
+  const save = useCallback(async (complaint: Omit<SavedComplaint, 'savedAt' | 'status' | 'statusHistory' | 'evidenceImages'>) => {
     const now = new Date().toISOString()
     const record: SavedComplaint = {
       ...complaint,
       savedAt: now,
       status: 'SUBMITTED',
       statusHistory: [{ status: 'SUBMITTED', at: now }],
+      evidenceImages: [],
     }
 
     if (isSupabaseConfigured && supabase) {
@@ -170,12 +182,9 @@ export function useComplaints() {
     return readLocal().find(c => c.incidentId === incidentId)
   }, [])
 
-  const advanceStatus = useCallback(async (incidentId: string): Promise<ComplaintStatus | null> => {
-    const current = await getById(incidentId)
-    if (!current) return null
-    const idx = COMPLAINT_STATUSES.indexOf(current.status)
-    if (idx === -1 || idx === COMPLAINT_STATUSES.length - 1) return current.status
-    const next = COMPLAINT_STATUSES[idx + 1]
+  const writeStatus = useCallback(async (
+    incidentId: string, current: SavedComplaint, next: ComplaintStatus,
+  ): Promise<ComplaintStatus> => {
     const event: ComplaintStatusEvent = { status: next, at: new Date().toISOString() }
     const nextHistory = [...current.statusHistory, event]
 
@@ -194,7 +203,65 @@ export function useComplaints() {
       : c)
     writeLocal(updated)
     return next
+  }, [])
+
+  const advanceStatus = useCallback(async (incidentId: string): Promise<ComplaintStatus | null> => {
+    const current = await getById(incidentId)
+    if (!current) return null
+    const idx = COMPLAINT_STATUSES.indexOf(current.status)
+    if (idx === -1 || idx === COMPLAINT_STATUSES.length - 1) return current.status
+    return writeStatus(incidentId, current, COMPLAINT_STATUSES[idx + 1])
+  }, [getById, writeStatus])
+
+  // Moves status forward to `target` only if the complaint hasn't already
+  // reached or passed it. No-op (returns current status) otherwise.
+  const setStatusAtLeast = useCallback(async (incidentId: string, target: ComplaintStatus): Promise<ComplaintStatus | null> => {
+    const current = await getById(incidentId)
+    if (!current) return null
+    const currentIdx = COMPLAINT_STATUSES.indexOf(current.status)
+    const targetIdx = COMPLAINT_STATUSES.indexOf(target)
+    if (targetIdx <= currentIdx) return current.status
+    return writeStatus(incidentId, current, target)
+  }, [getById, writeStatus])
+
+  const addEvidenceImage = useCallback(async (incidentId: string, image: Omit<EvidenceImage, 'id' | 'addedAt'>): Promise<EvidenceImage[] | null> => {
+    const current = await getById(incidentId)
+    if (!current) return null
+    const entry: EvidenceImage = { ...image, id: crypto.randomUUID(), addedAt: new Date().toISOString() }
+    const nextImages = [...current.evidenceImages, entry]
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase
+        .from(TABLE)
+        .update({ evidence_images: nextImages })
+        .eq('incident_id', incidentId)
+      if (error) throw error
+      return nextImages
+    }
+
+    const all = readLocal()
+    writeLocal(all.map(c => c.incidentId === incidentId ? { ...c, evidenceImages: nextImages } : c))
+    return nextImages
   }, [getById])
 
-  return { getAll, save, getById, advanceStatus }
+  const removeEvidenceImage = useCallback(async (incidentId: string, imageId: string): Promise<EvidenceImage[] | null> => {
+    const current = await getById(incidentId)
+    if (!current) return null
+    const nextImages = current.evidenceImages.filter(img => img.id !== imageId)
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase
+        .from(TABLE)
+        .update({ evidence_images: nextImages })
+        .eq('incident_id', incidentId)
+      if (error) throw error
+      return nextImages
+    }
+
+    const all = readLocal()
+    writeLocal(all.map(c => c.incidentId === incidentId ? { ...c, evidenceImages: nextImages } : c))
+    return nextImages
+  }, [getById])
+
+  return { getAll, save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage }
 }

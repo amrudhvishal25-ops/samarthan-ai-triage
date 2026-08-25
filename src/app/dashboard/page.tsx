@@ -12,14 +12,26 @@ import EvidenceVault from '@/components/EvidenceVault'
 import SmartActions from '@/components/SmartActions'
 import FIRTracker from '@/components/FIRTracker'
 import Navbar from '@/components/Navbar'
-import { useComplaints } from '@/hooks/useComplaints'
+import CallOperatorModal from '@/components/CallOperatorModal'
+import { useComplaints, EvidenceImage } from '@/hooks/useComplaints'
 import { ComplaintStatus } from '@/data/scenarios'
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
 
 export default function DashboardPage() {
   const router = useRouter()
   const { triageResult, setTriageResult, language, setLanguage, reset, sharedImage } = useTriage()
-  const { save, getById, advanceStatus } = useComplaints()
+  const { save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage } = useComplaints()
   const [status, setStatus] = useState<ComplaintStatus>('SUBMITTED')
+  const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>([])
+  const [callModalHotline, setCallModalHotline] = useState<string | null>(null)
   const hi = language === 'hi'
 
   useEffect(() => {
@@ -47,13 +59,48 @@ export default function DashboardPage() {
       language,
     })
       .then(() => getById(triageResult.incidentId))
-      .then(record => { if (record) setStatus(record.status) })
+      .then(async record => {
+        if (!record) return
+        setStatus(record.status)
+        if (record.evidenceImages.length === 0 && sharedImage) {
+          const dataUrl = await readAsDataUrl(sharedImage)
+          const updated = await addEvidenceImage(triageResult.incidentId, { name: sharedImage.name, dataUrl })
+          if (updated) setEvidenceImages(updated)
+        } else {
+          setEvidenceImages(record.evidenceImages)
+        }
+      })
       .catch(err => console.error('Failed to save complaint:', err))
-  }, [triageResult, save, getById, language])
+  }, [triageResult, save, getById, addEvidenceImage, sharedImage, language])
+
+  const handleAddEvidence = async (file: File) => {
+    if (!triageResult) return
+    const dataUrl = await readAsDataUrl(file)
+    const updated = await addEvidenceImage(triageResult.incidentId, { name: file.name, dataUrl })
+    if (updated) setEvidenceImages(updated)
+  }
+
+  const handleRemoveEvidence = async (imageId: string) => {
+    if (!triageResult) return
+    const updated = await removeEvidenceImage(triageResult.incidentId, imageId)
+    if (updated) setEvidenceImages(updated)
+  }
 
   const handleAdvanceStatus = async () => {
     if (!triageResult) return
     const next = await advanceStatus(triageResult.incidentId)
+    if (next) setStatus(next)
+  }
+
+  const handleBankNotified = async () => {
+    if (!triageResult) return
+    const next = await setStatusAtLeast(triageResult.incidentId, 'BANK_NOTIFIED')
+    if (next) setStatus(next)
+  }
+
+  const handlePoliceRouted = async () => {
+    if (!triageResult) return
+    const next = await setStatusAtLeast(triageResult.incidentId, 'FIR_FILED')
     if (next) setStatus(next)
   }
 
@@ -84,6 +131,17 @@ export default function DashboardPage() {
       <div className="no-print">
         <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
       </div>
+
+      <CallOperatorModal
+        open={!!callModalHotline}
+        onClose={() => setCallModalHotline(null)}
+        hotline={callModalHotline || '1930'}
+        hi={hi}
+        incidentId={r.incidentId}
+        fraudType={r.fraudType}
+        amount={r.amount}
+        summary={hi ? r.summaryHi : r.summary}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8 no-print">
 
@@ -126,11 +184,14 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Evidence Vault */}
-            {sharedImage && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <EvidenceVault file={sharedImage} hi={hi} />
-              </motion.div>
-            )}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <EvidenceVault
+                hi={hi}
+                images={evidenceImages}
+                onAdd={handleAddEvidence}
+                onRemove={handleRemoveEvidence}
+              />
+            </motion.div>
 
             {/* Editable Report Details */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
@@ -227,13 +288,13 @@ export default function DashboardPage() {
 
             {/* Action buttons (left column) */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="grid grid-cols-2 gap-3">
-              <a
-                href="tel:1930"
+              <button
+                onClick={() => setCallModalHotline('1930')}
                 className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-xl py-3 font-semibold text-sm transition-all shadow-sm"
               >
                 <Phone className="w-4 h-4" />
                 {hi ? '1930 कॉल करें' : 'Call 1930'}
-              </a>
+              </button>
               <button
                 onClick={handleShare}
                 className="flex items-center justify-center gap-2 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 rounded-xl py-3 font-semibold text-sm transition-all"
@@ -287,7 +348,11 @@ export default function DashboardPage() {
 
             {/* Smart Actions */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              <SmartActions bankName={r.bankName} incidentId={r.incidentId} amount={r.amount} hi={hi} />
+              <SmartActions
+                bankName={r.bankName} incidentId={r.incidentId} amount={r.amount} hi={hi}
+                onBankNotified={handleBankNotified}
+                onPoliceRouted={handlePoliceRouted}
+              />
             </motion.div>
 
             {/* FIR Tracker */}
@@ -301,7 +366,7 @@ export default function DashboardPage() {
               <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">
                 {hi ? 'खाता फ्रीज़ करें' : 'Manual Freeze Steps'}
               </p>
-              <FreezeStepper steps={r.freezeSteps} language={language} />
+              <FreezeStepper steps={r.freezeSteps} language={language} onHotlineClick={setCallModalHotline} />
             </motion.div>
 
           </div>

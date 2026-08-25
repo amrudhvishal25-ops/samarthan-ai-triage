@@ -2,10 +2,20 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Mail, Navigation, CheckCircle2, Loader2, ShieldAlert } from 'lucide-react'
 
-export default function SmartActions({ bankName, incidentId, amount, hi }: { bankName: string, incidentId: string, amount: number, hi: boolean }) {
+interface SmartActionsProps {
+  bankName: string
+  incidentId: string
+  amount: number
+  hi: boolean
+  onBankNotified?: () => void
+  onPoliceRouted?: () => void
+}
+
+export default function SmartActions({ bankName, incidentId, amount, hi, onBankNotified, onPoliceRouted }: SmartActionsProps) {
   const [locating, setLocating] = useState(false)
   const [policeStation, setPoliceStation] = useState<string | null>(null)
-  
+  const [bankNotified, setBankNotified] = useState(false)
+
   const handleBankEmail = () => {
     const bankMap: Record<string, string> = {
       'HDFC': 'cyberfraud@hdfcbank.com',
@@ -16,11 +26,13 @@ export default function SmartActions({ bankName, incidentId, amount, hi }: { ban
     }
     const cleanBankName = Object.keys(bankMap).find(k => bankName.toLowerCase().includes(k.toLowerCase())) || 'Unknown'
     const nodalEmail = cleanBankName !== 'Unknown' ? bankMap[cleanBankName] : 'nodal.officer@rbi.org.in'
-    
+
     const subject = encodeURIComponent(`URGENT: Fraud Reporting - Incident ${incidentId}`)
     const body = encodeURIComponent(`Dear Nodal Officer,\n\nI am reporting a cyber fraud on my account.\nIncident ID: ${incidentId}\nAmount: Rs ${amount}\n\nPlease freeze the beneficiary account immediately.\n\nRegards,`)
-    
+
     window.open(`mailto:${nodalEmail}?subject=${subject}&body=${body}`, '_blank')
+    setBankNotified(true)
+    onBankNotified?.()
   }
 
   const handleRoutePolice = () => {
@@ -31,6 +43,7 @@ export default function SmartActions({ bankName, incidentId, amount, hi }: { ban
       const stations = ['Cyber Crime Station, Bandra', 'Cyber Cell, HSR Layout', 'Cyber Police, Connaught Place']
       setPoliceStation(stations[Math.floor(Math.random() * stations.length)])
       setLocating(false)
+      onPoliceRouted?.()
     }, 2000)
   }
 
@@ -42,12 +55,13 @@ export default function SmartActions({ bankName, incidentId, amount, hi }: { ban
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Bank Email */}
-        <button 
-          onClick={handleBankEmail}
-          className="flex flex-col items-start gap-3 p-4 rounded-2xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all text-left"
+        <button
+          onClick={bankNotified ? undefined : handleBankEmail}
+          disabled={bankNotified}
+          className={`flex flex-col items-start gap-3 p-4 rounded-2xl border transition-all text-left ${bankNotified ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'}`}
         >
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-            <Mail className="w-5 h-5 text-blue-600" />
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${bankNotified ? 'bg-green-100' : 'bg-blue-100'}`}>
+            {bankNotified ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Mail className="w-5 h-5 text-blue-600" />}
           </div>
           <div>
             <h4 className="font-semibold text-gray-900 text-sm mb-1 flex items-center gap-1.5">
@@ -56,7 +70,11 @@ export default function SmartActions({ bankName, incidentId, amount, hi }: { ban
                 {hi ? 'डेमो' : 'Simulated'}
               </span>
             </h4>
-            <p className="text-xs text-gray-500">{hi ? 'नोडल अधिकारी को ऑटो-ईमेल भेजें (डेमो नंबर)' : `Opens a drafted email to a demo nodal-officer address for ${bankName}`}</p>
+            {bankNotified ? (
+              <p className="text-xs text-green-700 font-medium">{hi ? 'बैंक को सूचित किया गया (डेमो)' : 'Bank nodal officer notified (demo)'}</p>
+            ) : (
+              <p className="text-xs text-gray-500">{hi ? 'नोडल अधिकारी को ऑटो-ईमेल भेजें (डेमो नंबर)' : `Opens a drafted email to a demo nodal-officer address for ${bankName}`}</p>
+            )}
           </div>
         </button>
 

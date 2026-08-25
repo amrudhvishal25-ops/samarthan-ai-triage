@@ -9,9 +9,10 @@ import clsx from 'clsx'
 interface FreezeStepperProps {
   steps: FreezeStep[]
   language: 'en' | 'hi'
+  onHotlineClick?: (hotline: string) => void
 }
 
-export default function FreezeStepper({ steps, language }: FreezeStepperProps) {
+export default function FreezeStepper({ steps, language, onHotlineClick }: FreezeStepperProps) {
   const hi = language === 'hi'
   const [copied, setCopied] = useState<number | null>(null)
 
@@ -77,13 +78,23 @@ export default function FreezeStepper({ steps, language }: FreezeStepperProps) {
             {(step.hotline || step.url) && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {step.hotline && (
-                  <a
-                    href={`tel:${step.hotline}`}
-                    className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-civic-blueMid transition-colors min-h-[44px]"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                    {step.hotline}
-                  </a>
+                  onHotlineClick ? (
+                    <button
+                      onClick={() => onHotlineClick(step.hotline!)}
+                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-civic-blueMid transition-colors min-h-[44px]"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      {step.hotline}
+                    </button>
+                  ) : (
+                    <a
+                      href={`tel:${step.hotline}`}
+                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-civic-blueMid transition-colors min-h-[44px]"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      {step.hotline}
+                    </a>
+                  )
                 )}
                 {step.url && (
                   <a

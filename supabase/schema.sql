@@ -20,7 +20,8 @@ create table if not exists complaints (
   saved_at timestamptz not null default now(),
   language text not null default 'en',
   status text not null default 'SUBMITTED',
-  status_history jsonb not null default '[]'::jsonb
+  status_history jsonb not null default '[]'::jsonb,
+  evidence_images jsonb not null default '[]'::jsonb
 );
 
 create index if not exists complaints_saved_at_idx on complaints (saved_at desc);
@@ -39,3 +40,6 @@ create policy "public insert" on complaints
 
 create policy "public update" on complaints
   for update using (true);
+
+-- If the table already existed before evidence_images was added, run:
+-- alter table complaints add column if not exists evidence_images jsonb not null default '[]'::jsonb;
