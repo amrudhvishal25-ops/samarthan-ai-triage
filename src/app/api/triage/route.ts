@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult } from '@/data/scenarios'
 import OpenAI from 'openai'
+import { PDFParse } from 'pdf-parse'
 
 const TRIAGE_SYSTEM_PROMPT = `You are an expert Indian cybercrime triage assistant. 
 A victim has provided an account of an incident. 
@@ -125,37 +126,71 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
       const openai = new OpenAI({ apiKey })
 
-      // 1. Transcribe audio with Whisper
+      // 1. Transcribe audio with Whisper — a transcription failure shouldn't
+      // discard other input the user already provided (text/image).
       if (audioFile && audioFile.size > 0) {
-        const transcription = await openai.audio.transcriptions.create({
-          file: audioFile,
-          model: 'whisper-1',
-          language: 'hi', 
-          response_format: 'text',
-        })
-        userText = (transcription as unknown as string) + '\n' + userText
+        try {
+          const transcription = await openai.audio.transcriptions.create({
+            file: audioFile,
+            model: 'whisper-1',
+            language: 'hi',
+            response_format: 'text',
+          })
+          userText = (transcription as unknown as string) + '\n' + userText
+        } catch (audioError: any) {
+          console.warn('[triage] Whisper transcription failed:', audioError.message)
+        }
       }
 
-      // 2. Extract text from image with GPT-4o Vision
-      if (imageFile && imageFile.size > 0) {
-        const bytes = await imageFile.arrayBuffer()
-        const base64 = Buffer.from(bytes).toString('base64')
-        const mime = imageFile.type || 'image/jpeg'
+      // 2a. PDF uploads: extract text directly rather than treating them as
+      // an image (GPT-4o Vision only accepts png/jpeg/gif/webp and 400s on
+      // a PDF data URI).
+      if (imageFile && imageFile.size > 0 && imageFile.type === 'application/pdf') {
+        let parser: InstanceType<typeof PDFParse> | null = null
+        try {
+          const bytes = await imageFile.arrayBuffer()
+          parser = new PDFParse({ data: Buffer.from(bytes) })
+          const result = await parser.getText()
+          userText = result.text + '\n' + userText
+        } catch (pdfError: any) {
+          console.warn('[triage] PDF text extraction failed:', pdfError.message)
+        } finally {
+          await parser?.destroy()
+        }
+      }
 
-        const visionResp = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: 'Extract all text from this image related to an incident. Return only the extracted text.' },
-                { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } },
+      // 2b. Extract text from image with GPT-4o Vision. Vision only accepts
+      // png/jpeg/gif/webp — anything else must be skipped rather than sent,
+      // or the API 400s and the whole request (including a good
+      // transcription/text) is lost to the generic mock fallback below.
+      const VISION_SUPPORTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+      if (imageFile && imageFile.size > 0 && imageFile.type !== 'application/pdf') {
+        if (VISION_SUPPORTED_TYPES.includes(imageFile.type)) {
+          try {
+            const bytes = await imageFile.arrayBuffer()
+            const base64 = Buffer.from(bytes).toString('base64')
+            const mime = imageFile.type === 'image/jpg' ? 'image/jpeg' : imageFile.type
+
+            const visionResp = await openai.chat.completions.create({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'text', text: 'Extract all text from this image related to an incident. Return only the extracted text.' },
+                    { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } },
+                  ],
+                },
               ],
-            },
-          ],
-          max_tokens: 1000,
-        })
-        userText = (visionResp.choices[0].message.content || '') + '\n' + userText
+              max_tokens: 1000,
+            })
+            userText = (visionResp.choices[0].message.content || '') + '\n' + userText
+          } catch (visionError: any) {
+            console.warn('[triage] Vision extraction failed:', visionError.message)
+          }
+        } else {
+          console.warn(`[triage] Skipping Vision for unsupported image type: ${imageFile.type || 'unknown'}`)
+        }
       }
 
       if (!userText.trim()) {
