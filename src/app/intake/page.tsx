@@ -9,6 +9,7 @@ import { SCENARIOS } from '@/data/scenarios'
 import AudioRecorder from '@/components/AudioRecorder'
 import LoadingTriage from '@/components/LoadingTriage'
 import Navbar from '@/components/Navbar'
+import { useAuth } from '@/hooks/useAuth'
 
 function IntakeContent() {
   const router = useRouter()
@@ -18,6 +19,7 @@ function IntakeContent() {
   const textParam = searchParams.get('text')
 
   const { language, setLanguage, scenarioId, setTriageResult, sharedImage, setSharedImage } = useTriage()
+  const { getUser } = useAuth()
   const hi = language === 'hi'
   const scenario = SCENARIOS.find(s => s.id === scenarioId)
 
@@ -42,6 +44,9 @@ function IntakeContent() {
       if (audioBlob) formData.append('audio', audioBlob, 'recording.webm')
       const finalImg = forcedImg || imageFile
       if (finalImg) formData.append('image', finalImg)
+      // Pass complainant name so AI can reference it in the formal draft
+      const user = getUser()
+      if (user?.name) formData.append('complainantName', user.name)
 
       const resp = await fetch('/api/triage', { method: 'POST', body: formData })
       if (!resp.ok) throw new Error('Failed to process. Please try again.')

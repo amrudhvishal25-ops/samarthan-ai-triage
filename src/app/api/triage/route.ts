@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     const audioFile = formData.get('audio') as File | null
     const imageFile = formData.get('image') as File | null
     const categoryHint = formData.get('fraudType') as string | null
+    const complainantName = (formData.get('complainantName') as string | null)?.trim() || null
 
     let userText = textInput?.trim() || ''
 
@@ -202,6 +203,9 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
         customPrompt += `\n\nNOTE: The user pre-selected the category: "${categoryHint}". Please strongly consider mapping the incident to this category unless it clearly belongs elsewhere.`
       } else {
         customPrompt += `\n\nNOTE: The user did NOT pre-select a category. You must AUTO-MAP their issue to the best fitting category based strictly on their input.`
+      }
+      if (complainantName) {
+        customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..." and sign off as "${complainantName}" at the end. Use this name wherever the complainant's identity is referenced.`
       }
 
       // 3. Structure the data with GPT-4o-mini
