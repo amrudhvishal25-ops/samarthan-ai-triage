@@ -234,7 +234,8 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
       if (!userText.trim()) {
         if (imageFile || audioFile) {
-          userText = `An evidence file (${imageFile?.name || 'audio recording'}) was submitted by the victim for triage. Please analyze and draft the incident report.`
+          const fileName = imageFile?.name || 'audio recording'
+          userText = `INCIDENT REPORT WITH EVIDENCE ATTACHED (${fileName}). The victim uploaded screenshot/file evidence depicting an unauthorized cyber fraud incident. Generate a formal police complaint regarding cyber fraud based on this evidence submission, requesting immediate investigation and account freezing.`
         } else {
           throw new Error('No input provided after processing')
         }
