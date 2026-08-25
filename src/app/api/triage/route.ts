@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult } from '@/data/scenarios'
-import OpenAI from 'openai'
+import OpenAI, { toFile } from 'openai'
 import { PDFParse } from 'pdf-parse'
 import sharp from 'sharp'
 import convertHeic from 'heic-convert'
@@ -175,17 +175,25 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
       const openai = new OpenAI({ apiKey })
 
-      // 1. Transcribe audio with Whisper — a transcription failure shouldn't
-      // discard other input the user already provided (text/image).
+      // 1. Transcribe audio with Whisper — auto-detect language (English, Hindi, Hinglish, etc.)
       if (audioFile && audioFile.size > 0) {
         try {
+          const audioBuffer = Buffer.from(await audioFile.arrayBuffer())
+          const audioName = audioFile.name || 'recording.webm'
+          const fileObj = await toFile(audioBuffer, audioName)
+
           const transcription = await openai.audio.transcriptions.create({
-            file: audioFile,
+            file: fileObj,
             model: 'whisper-1',
-            language: 'hi',
-            response_format: 'text',
           })
-          userText = (transcription as unknown as string) + '\n' + userText
+          const transcribedText = typeof transcription === 'string'
+            ? transcription
+            : (transcription as any).text || ''
+
+          console.log('[triage] Whisper transcribed text:', transcribedText)
+          if (transcribedText.trim()) {
+            userText = `--- VOICE RECORDING TRANSCRIPTION ---\n${transcribedText}\n\n${userText}`
+          }
         } catch (audioError: any) {
           console.warn('[triage] Whisper transcription failed:', audioError.message)
         }

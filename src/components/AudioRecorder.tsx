@@ -35,14 +35,27 @@ export default function AudioRecorder({ language, onAudioReady, theme = 'light' 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      
+      const mimeType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/aac',
+        'audio/ogg'
+      ].find(type => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type)) || ''
+
+      const recorder = mimeType 
+        ? new MediaRecorder(stream, { mimeType }) 
+        : new MediaRecorder(stream)
+
       chunksRef.current = []
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data)
       }
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const type = recorder.mimeType || 'audio/webm'
+        const blob = new Blob(chunksRef.current, { type })
         const url = URL.createObjectURL(blob)
         setBlobUrl(url)
         onAudioReady(blob)
