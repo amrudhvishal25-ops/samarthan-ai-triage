@@ -3,6 +3,46 @@ import { SCENARIOS, TriageResult } from '@/data/scenarios'
 import OpenAI from 'openai'
 import { PDFParse } from 'pdf-parse'
 import sharp from 'sharp'
+import convertHeic from 'heic-convert'
+
+async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileType: string): Promise<Buffer> {
+  const isHeic = fileType.toLowerCase().includes('heic') || 
+                 fileType.toLowerCase().includes('heif') || 
+                 fileName.toLowerCase().endsWith('.heic') || 
+                 fileName.toLowerCase().endsWith('.heif')
+  
+  if (isHeic) {
+    try {
+      const output = await convertHeic({
+        buffer: inputBuffer,
+        format: 'JPEG',
+        quality: 0.85,
+      })
+      console.log('[triage] Successfully converted HEIC image to JPEG via heic-convert')
+      return Buffer.from(output)
+    } catch (e: any) {
+      console.warn('[triage] heic-convert failed:', e.message)
+    }
+  }
+
+  try {
+    return await sharp(inputBuffer).jpeg({ quality: 85 }).toBuffer()
+  } catch (sharpError: any) {
+    console.warn('[triage] sharp conversion failed:', sharpError.message)
+  }
+
+  try {
+    const output = await convertHeic({
+      buffer: inputBuffer,
+      format: 'JPEG',
+      quality: 0.85,
+    })
+    console.log('[triage] Successfully converted image to JPEG via fallback heic-convert')
+    return Buffer.from(output)
+  } catch (e: any) {
+    return inputBuffer
+  }
+}
 
 const TRIAGE_SYSTEM_PROMPT = `You are an expert Indian cybercrime triage assistant. 
 A victim has provided an account of an incident. 
@@ -159,20 +199,13 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
         }
       }
 
-      // 2b. Extract text from image with GPT-4o Vision.
-      // Automatically convert HEIC/HEIF/PNG/WebP/BMP images to JPEG using sharp so Vision never fails on iPhone uploads.
+      // 2b. Extract text & details from image with GPT-4o Vision.
+      // Automatically convert HEIC/HEIF/PNG/WebP/BMP images to JPEG via heic-convert/sharp so Vision gets a valid JPEG.
       if (imageFile && imageFile.size > 0 && imageFile.type !== 'application/pdf') {
         try {
           const bytes = await imageFile.arrayBuffer()
           const inputBuffer = Buffer.from(bytes)
-          let jpegBuffer: Buffer
-          try {
-            jpegBuffer = await sharp(inputBuffer).jpeg({ quality: 85 }).toBuffer()
-          } catch (sharpError: any) {
-            console.warn('[triage] sharp conversion warning:', sharpError.message)
-            jpegBuffer = inputBuffer
-          }
-
+          const jpegBuffer = await convertImageToJpeg(inputBuffer, imageFile.name, imageFile.type)
           const base64 = jpegBuffer.toString('base64')
 
           const visionResp = await openai.chat.completions.create({
@@ -181,14 +214,18 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
               {
                 role: 'user',
                 content: [
-                  { type: 'text', text: 'Extract all text, names, phone numbers, transaction IDs, bank names, amounts, and visible details from this image related to a cybercrime incident.' },
+                  { 
+                    type: 'text', 
+                    text: 'ANALYZE THIS INCIDENT EVIDENCE IMAGE THOROUGHLY. Extract and transcribe ALL visible text, names, phone numbers, transaction IDs, UPI IDs, bank names, dates, amounts, chat messages, and details. List every single detail and verbatim text found in the image.' 
+                  },
                   { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
                 ],
               },
             ],
-            max_tokens: 1000,
+            max_tokens: 1500,
           })
           const extractedText = visionResp.choices[0].message.content || ''
+          console.log('[triage] Vision extraction result length:', extractedText.length)
           userText = extractedText + '\n' + userText
         } catch (visionError: any) {
           console.warn('[triage] Vision extraction failed:', visionError.message)
