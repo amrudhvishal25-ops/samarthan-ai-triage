@@ -189,7 +189,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                   </motion.div>
                   <div className="text-center">
                     <p className="text-sm font-bold text-zinc-900">Verified Successfully</p>
-                    <p className="text-xs text-zinc-500 mt-1">Welcome, Aarav Sharma</p>
+                    <p className="text-xs text-zinc-500 mt-1">Welcome, Pratham Kamath</p>
                   </div>
                 </motion.div>
               )}

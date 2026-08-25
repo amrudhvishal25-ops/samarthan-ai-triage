@@ -45,30 +45,30 @@ async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileTyp
 }
 
 const TRIAGE_SYSTEM_PROMPT = `You are an expert Indian cybercrime triage assistant. 
-A victim has provided an account of an incident. 
+A victim has provided an account of an incident (via text, voice note, or screenshot evidence). 
 Extract ALL specific details provided and return a STRICT JSON object.
 
 CRITICAL INSTRUCTIONS:
 1. AGGRESSIVELY EXTRACT FRAUDSTER NAME: If the user mentions the name of the person/entity who scammed them (e.g., "he said his name was Ravi", "the caller identified as Amit", "the company was called XYZ Investments"), capture it as victimName.
-2. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp), banks, amounts, and contact info. Do not miss any provided details.
-3. NO HALLUCINATION: Use ONLY the details provided. Do not invent data.
-4. NATURAL DRAFTING: If a detail is missing, omit it entirely from the complaint draft so it reads naturally. Do NOT use awkward placeholders like "[Your Name]" or "[Bank]".
+2. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
+3. NO HALLUCINATION: Use ONLY the details provided or visible in the evidence. Do not invent data.
+4. FORMAL COMPLAINT DRAFT: Draft a complete, professional, first-person police complaint. Do NOT write meta-statements like "I am unable to provide details" or "No specific details reported". If evidence shows a transaction or chat, state the facts directly (e.g. "I am reporting an unauthorized transaction / cyber fraud incident...").
 5. For missing JSON fields below, use "Not Provided".
 
 {
   "incidentId": "MH-2024-XXXXXXXX",  // generate a realistic random ID
-  "victimName": "Extract the FRAUDSTER's name or alias as mentioned by the victim. Use 'Not Identified' ONLY if completely absent.",
+  "victimName": "Extract the FRAUDSTER's name or alias as mentioned by the victim or visible in evidence. Use 'Not Identified' ONLY if completely absent.",
   "fraudType": "Financial Fraud | Women/Children Related Crime | Extortion & Blackmail | Identity Theft | E-Commerce Scams | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Fake Customer Care | Investment Scam | Job Scam | Other",
-  "frauderContact": "phone/email/WhatsApp/Platform handle if mentioned, else 'Not Provided'",
-  "amount": number,  // in INR, 0 if no financial loss is mentioned
+  "frauderContact": "phone/email/WhatsApp/Platform handle if mentioned/visible, else 'Not Provided'",
+  "amount": number,  // in INR, 0 if no financial loss is mentioned/visible
   "bankName": "string or 'Not Provided'",
-  "accountNumber": "masked XXXX-XXXX-LAST4 if mentioned, else 'Not Provided'",
+  "accountNumber": "masked XXXX-XXXX-LAST4 if mentioned/visible, else 'Not Provided'",
   "upiId": "string or 'Not Provided'",
-  "timeline": "date/time string if mentioned, else 'Not Provided'",
+  "timeline": "date/time string if mentioned/visible, else 'Not Provided'",
   "summary": "2-sentence English summary of the facts including any specific platforms/details",
   "summaryHi": "2-sentence Hindi summary of the facts",
-  "complaintDraft": "Formal English police complaint written in first-person based ONLY on provided facts.",
-  "complaintDraftHi": "Formal Hindi police complaint written in first-person based ONLY on provided facts.",
+  "complaintDraft": "Formal English police complaint written in first-person based strictly on provided facts/evidence.",
+  "complaintDraftHi": "Formal Hindi police complaint written in first-person based strictly on provided facts/evidence.",
   "freezeSteps": [
     {
       "step": 1,
@@ -209,16 +209,16 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
           const base64 = jpegBuffer.toString('base64')
 
           const visionResp = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4o',
             messages: [
               {
                 role: 'user',
                 content: [
                   { 
                     type: 'text', 
-                    text: 'ANALYZE THIS INCIDENT EVIDENCE IMAGE THOROUGHLY. Extract and transcribe ALL visible text, names, phone numbers, transaction IDs, UPI IDs, bank names, dates, amounts, chat messages, and details. List every single detail and verbatim text found in the image.' 
+                    text: 'ANALYZE THIS CYBERCRIME EVIDENCE SCREENSHOT/PHOTO IN HIGH DETAIL. Extract and transcribe EVERY SINGLE piece of visible text, person/fraudster names, handle/username, phone numbers, transaction IDs, UPI IDs, bank names, dates, timestamps, amounts, chat messages, and details visible in the image. Return a complete verbatim transcription and summary of the evidence.' 
                   },
-                  { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+                  { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}`, detail: 'high' } },
                 ],
               },
             ],
