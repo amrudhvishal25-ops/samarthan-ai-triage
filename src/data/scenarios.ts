@@ -1,6 +1,9 @@
 export type FraudType =
   | 'Financial Fraud'
   | 'Women/Children Related Crime'
+  | 'Extortion & Blackmail'
+  | 'Identity Theft'
+  | 'E-Commerce Scams'
   | 'Hate Speech'
   | 'Online Ragging'
   | 'Other Cyber Crime'
@@ -14,6 +17,29 @@ export type FraudType =
 export type UrgencyLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
 
 export type InputType = 'voice' | 'screenshot' | 'text'
+
+export const COMPLAINT_STATUSES = [
+  'SUBMITTED',
+  'BANK_NOTIFIED',
+  'FIR_FILED',
+  'UNDER_INVESTIGATION',
+  'RESOLVED',
+] as const
+
+export type ComplaintStatus = typeof COMPLAINT_STATUSES[number]
+
+export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, { en: string; hi: string; simulated: boolean }> = {
+  SUBMITTED: { en: 'Report Submitted', hi: 'रिपोर्ट दर्ज', simulated: false },
+  BANK_NOTIFIED: { en: 'Bank Nodal Notified', hi: 'बैंक नोडल अधिकारी को सूचित', simulated: true },
+  FIR_FILED: { en: 'FIR Filed (NCRP)', hi: 'FIR दर्ज (NCRP)', simulated: true },
+  UNDER_INVESTIGATION: { en: 'Under Investigation', hi: 'जांच जारी', simulated: true },
+  RESOLVED: { en: 'Resolved', hi: 'समाधान हुआ', simulated: true },
+}
+
+export interface ComplaintStatusEvent {
+  status: ComplaintStatus
+  at: string
+}
 
 export interface FreezeStep {
   step: number

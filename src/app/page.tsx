@@ -2,9 +2,10 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mic, ArrowRight, DollarSign, Shield, User, Globe, Plus, ArrowUp, ShieldCheck, ShieldAlert, Fingerprint, ShoppingCart, Briefcase } from 'lucide-react'
+import { Mic, ArrowRight, DollarSign, User, Plus, ArrowUp, ShieldCheck, ShieldAlert, Fingerprint, ShoppingCart, Briefcase } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import { SCENARIOS } from '@/data/scenarios'
+import Navbar from '@/components/Navbar'
 
 export default function Home() {
   const router = useRouter()
@@ -44,7 +45,7 @@ export default function Home() {
 
   const filters = hi
     ? ['वित्तीय धोखाधड़ी', 'महिला/बाल अपराध', 'जबरन वसूली', 'पहचान की चोरी', 'ई-कॉमर्स धोखाधड़ी', 'अन्य साइबर अपराध']
-    : ['Financial Fraud', 'Women/Children Crime', 'Extortion & Blackmail', 'Identity Theft', 'E-Commerce Scams', 'Other Cyber Crimes']
+    : ['Financial Fraud', 'Women/Children Related Crime', 'Extortion & Blackmail', 'Identity Theft', 'E-Commerce Scams', 'Other Cyber Crime']
 
   const categories = [
     {
@@ -56,7 +57,7 @@ export default function Home() {
       iconBg: 'bg-blue-50 text-blue-600',
     },
     {
-      title: 'Women/Children Crime',
+      title: 'Women/Children Related Crime',
       titleHi: 'महिला/बाल अपराध',
       desc: 'Report harassment, cyberbullying, and abuse.',
       descHi: 'उत्पीड़न, साइबरबुलिंग और दुर्व्यवहार की रिपोर्ट करें।',
@@ -88,7 +89,7 @@ export default function Home() {
       iconBg: 'bg-emerald-50 text-emerald-600',
     },
     {
-      title: 'Other Cyber Crimes',
+      title: 'Other Cyber Crime',
       titleHi: 'अन्य साइबर अपराध',
       desc: 'Report hacking, data theft, and other threats.',
       descHi: 'हैकिंग, डेटा चोरी और अन्य साइबर खतरों की रिपोर्ट करें।',
@@ -100,24 +101,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white font-sans">
 
-      {/* ── NAVBAR ── */}
-      <header className="border-b border-zinc-200 bg-white sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-zinc-900 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-zinc-900 text-sm tracking-tight">Samarthan</span>
-          </div>
-          <button
-            onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors h-auto min-h-0"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            {language === 'en' ? 'हिन्दी' : 'English'}
-          </button>
-        </div>
-      </header>
+      <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
 
       {/* ── HERO ── */}
       <section className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex flex-col items-center text-center">

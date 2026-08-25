@@ -8,6 +8,7 @@ import { useTriage } from '@/context/TriageContext'
 import { SCENARIOS } from '@/data/scenarios'
 import AudioRecorder from '@/components/AudioRecorder'
 import LoadingTriage from '@/components/LoadingTriage'
+import Navbar from '@/components/Navbar'
 
 function IntakeContent() {
   const router = useRouter()
@@ -16,7 +17,7 @@ function IntakeContent() {
   const autoStartParam = searchParams.get('autoStart')
   const textParam = searchParams.get('text')
 
-  const { language, scenarioId, setTriageResult, sharedImage, setSharedImage } = useTriage()
+  const { language, setLanguage, scenarioId, setTriageResult, sharedImage, setSharedImage } = useTriage()
   const hi = language === 'hi'
   const scenario = SCENARIOS.find(s => s.id === scenarioId)
 
@@ -74,8 +75,10 @@ function IntakeContent() {
   return (
     <main className="min-h-screen bg-white font-sans pb-20">
 
-      {/* ── NAVBAR ── */}
-      <header className="border-b border-zinc-200 bg-white sticky top-0 z-50">
+      <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
+
+      {/* ── BACK BAR ── */}
+      <header className="border-b border-zinc-200 bg-white sticky top-14 z-40">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center gap-3">
           <button
             onClick={() => router.back()}

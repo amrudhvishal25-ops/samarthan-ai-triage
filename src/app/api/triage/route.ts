@@ -16,7 +16,7 @@ CRITICAL INSTRUCTIONS:
 {
   "incidentId": "MH-2024-XXXXXXXX",  // generate a realistic random ID
   "victimName": "Extract the reporter's name. Use 'Not Provided' ONLY if completely absent.",
-  "fraudType": "Financial Fraud | Women/Children Related Crime | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Investment Scam | Other",
+  "fraudType": "Financial Fraud | Women/Children Related Crime | Extortion & Blackmail | Identity Theft | E-Commerce Scams | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Fake Customer Care | Investment Scam | Job Scam | Other",
   "frauderContact": "phone/email/WhatsApp/Platform handle if mentioned, else 'Not Provided'",
   "amount": number,  // in INR, 0 if no financial loss is mentioned
   "bankName": "string or 'Not Provided'",
@@ -53,10 +53,10 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const scenarioId = formData.get('scenarioId') as string | null
-    const textInput = formData.get('textInput') as string | null
+    const textInput = formData.get('text') as string | null
     const audioFile = formData.get('audio') as File | null
     const imageFile = formData.get('image') as File | null
-    const categoryHint = formData.get('category') as string | null
+    const categoryHint = formData.get('fraudType') as string | null
 
     let userText = textInput?.trim() || ''
 

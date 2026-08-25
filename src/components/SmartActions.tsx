@@ -50,8 +50,13 @@ export default function SmartActions({ bankName, incidentId, amount, hi }: { ban
             <Mail className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 text-sm mb-1">{hi ? 'बैंक को ईमेल करें' : '1-Click Bank Email'}</h4>
-            <p className="text-xs text-gray-500">{hi ? 'नोडल अधिकारी को ऑटो-ईमेल भेजें' : `Auto-drafts email to ${bankName} Nodal Officer`}</p>
+            <h4 className="font-semibold text-gray-900 text-sm mb-1 flex items-center gap-1.5">
+              {hi ? 'बैंक को ईमेल करें' : '1-Click Bank Email'}
+              <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                {hi ? 'डेमो' : 'Simulated'}
+              </span>
+            </h4>
+            <p className="text-xs text-gray-500">{hi ? 'नोडल अधिकारी को ऑटो-ईमेल भेजें (डेमो नंबर)' : `Opens a drafted email to a demo nodal-officer address for ${bankName}`}</p>
           </div>
         </button>
 
@@ -65,13 +70,18 @@ export default function SmartActions({ bankName, incidentId, amount, hi }: { ban
             {locating ? <Loader2 className="w-5 h-5 text-saffron animate-spin" /> : policeStation ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Navigation className="w-5 h-5 text-saffron" />}
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 text-sm mb-1">{hi ? 'पुलिस स्टेशन भेजें' : 'Route to Police'}</h4>
+            <h4 className="font-semibold text-gray-900 text-sm mb-1 flex items-center gap-1.5">
+              {hi ? 'पुलिस स्टेशन भेजें' : 'Route to Police'}
+              <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                {hi ? 'डेमो' : 'Simulated'}
+              </span>
+            </h4>
             {locating ? (
-              <p className="text-xs text-gray-500">{hi ? 'लोकेशन ट्रैक कर रहा है...' : 'Fetching GPS location...'}</p>
+              <p className="text-xs text-gray-500">{hi ? 'लोकेशन ट्रैक कर रहा है (डेमो)...' : 'Fetching GPS location (demo)...'}</p>
             ) : policeStation ? (
-              <p className="text-xs text-green-700 font-medium">Routed to: {policeStation}</p>
+              <p className="text-xs text-green-700 font-medium">Routed to: {policeStation} (demo)</p>
             ) : (
-              <p className="text-xs text-gray-500">{hi ? 'नजदीकी साइबर सेल को रिपोर्ट भेजें' : 'Find & route to nearest Cyber Cell'}</p>
+              <p className="text-xs text-gray-500">{hi ? 'नजदीकी साइबर सेल को रिपोर्ट भेजें (डेमो)' : 'Simulates finding the nearest Cyber Cell'}</p>
             )}
           </div>
         </button>

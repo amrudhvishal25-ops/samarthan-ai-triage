@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert } from 'lucide-react'
@@ -13,11 +13,13 @@ import SmartActions from '@/components/SmartActions'
 import FIRTracker from '@/components/FIRTracker'
 import Navbar from '@/components/Navbar'
 import { useComplaints } from '@/hooks/useComplaints'
+import { ComplaintStatus } from '@/data/scenarios'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { triageResult, setTriageResult, language, setLanguage, reset, sharedImage } = useTriage()
-  const { save } = useComplaints()
+  const { save, getById, advanceStatus } = useComplaints()
+  const [status, setStatus] = useState<ComplaintStatus>('SUBMITTED')
   const hi = language === 'hi'
 
   useEffect(() => {
@@ -44,7 +46,16 @@ export default function DashboardPage() {
       freezeSteps: triageResult.freezeSteps,
       language,
     })
-  }, [triageResult, save, language])
+      .then(() => getById(triageResult.incidentId))
+      .then(record => { if (record) setStatus(record.status) })
+      .catch(err => console.error('Failed to save complaint:', err))
+  }, [triageResult, save, getById, language])
+
+  const handleAdvanceStatus = async () => {
+    if (!triageResult) return
+    const next = await advanceStatus(triageResult.incidentId)
+    if (next) setStatus(next)
+  }
 
   if (!triageResult) return null
 
@@ -143,11 +154,19 @@ export default function DashboardPage() {
                     className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   >
                     <option value="Financial Fraud">Financial Fraud</option>
-                    <option value="Women/Children Crime">Women/Children Crime</option>
+                    <option value="UPI Fraud">UPI Fraud</option>
+                    <option value="OTP Fraud">OTP Fraud</option>
+                    <option value="Investment Scam">Investment Scam</option>
+                    <option value="Job Scam">Job Scam</option>
+                    <option value="Fake Customer Care">Fake Customer Care</option>
+                    <option value="Women/Children Related Crime">Women/Children Related Crime</option>
                     <option value="Extortion & Blackmail">Extortion & Blackmail</option>
                     <option value="Identity Theft">Identity Theft</option>
                     <option value="E-Commerce Scams">E-Commerce Scams</option>
-                    <option value="Other Cyber Crimes">Other Cyber Crimes</option>
+                    <option value="Hate Speech">Hate Speech</option>
+                    <option value="Online Ragging">Online Ragging</option>
+                    <option value="Other Cyber Crime">Other Cyber Crime</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
 
@@ -273,7 +292,7 @@ export default function DashboardPage() {
 
             {/* FIR Tracker */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <FIRTracker hi={hi} />
+              <FIRTracker hi={hi} status={status} onAdvance={handleAdvanceStatus} />
             </motion.div>
 
             {/* Freeze Steps */}

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { FileText, AlertCircle, ChevronRight, Clock } from 'lucide-react'
 import { useComplaints, SavedComplaint } from '@/hooks/useComplaints'
 import { useTriage } from '@/context/TriageContext'
+import { COMPLAINT_STATUS_LABELS } from '@/data/scenarios'
 import Navbar from '@/components/Navbar'
 
 const URGENCY_COLORS: Record<string, string> = {
@@ -22,7 +23,7 @@ export default function ComplaintsPage() {
   const hi = language === 'hi'
 
   useEffect(() => {
-    setComplaints(getAll())
+    getAll().then(setComplaints).catch(err => console.error('Failed to load complaints:', err))
   }, [getAll])
 
   const handleOpen = (c: SavedComplaint) => {
@@ -112,6 +113,9 @@ export default function ComplaintsPage() {
                     <span className="text-xs font-mono font-semibold text-zinc-900">{c.incidentId}</span>
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${URGENCY_COLORS[c.urgencyLevel] || URGENCY_COLORS.MEDIUM}`}>
                       {c.urgencyLevel}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-zinc-50 text-zinc-600 border-zinc-200">
+                      {hi ? COMPLAINT_STATUS_LABELS[c.status ?? 'SUBMITTED'].hi : COMPLAINT_STATUS_LABELS[c.status ?? 'SUBMITTED'].en}
                     </span>
                   </div>
                   <p className="text-sm font-medium text-zinc-800 mb-1">{c.fraudType}</p>
