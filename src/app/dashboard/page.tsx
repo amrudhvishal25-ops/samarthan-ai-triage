@@ -170,19 +170,6 @@ export default function DashboardPage() {
           {/* ── LEFT COLUMN ── */}
           <div className="lg:col-span-7 space-y-4">
 
-            {/* AI Summary */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-              className="border border-zinc-200 rounded-2xl bg-white shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-zinc-100">
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                  {hi ? 'AI सारांश' : 'AI Summary'}
-                </p>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-sm text-zinc-800 leading-relaxed">{hi ? r.summaryHi : r.summary}</p>
-              </div>
-            </motion.div>
-
             {/* Evidence Vault */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <EvidenceVault
@@ -231,11 +218,11 @@ export default function DashboardPage() {
                   </select>
                 </div>
 
-                {/* Name + Amount */}
+                {/* Fraudster Name + Amount */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
-                      {hi ? 'पीड़ित का नाम' : 'Victim Name'}
+                      {hi ? 'आरोपी का नाम' : 'Fraudster Name'}
                     </label>
                     <input
                       type="text" value={r.victimName}
