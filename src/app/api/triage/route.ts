@@ -212,11 +212,15 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
             model: 'gpt-4o',
             messages: [
               {
+                role: 'system',
+                content: 'You are an expert digital forensics AI inspecting cybercrime evidence screenshots, payment receipts, chat logs, social media profiles, and documents. Your job is to extract EVERY SINGLE detail, name, phone number, transaction ID, UPI handle, bank name, amount, date, timestamp, and visible text/visual content in full detail.'
+              },
+              {
                 role: 'user',
                 content: [
                   { 
                     type: 'text', 
-                    text: 'ANALYZE THIS CYBERCRIME EVIDENCE SCREENSHOT/PHOTO IN HIGH DETAIL. Extract and transcribe EVERY SINGLE piece of visible text, person/fraudster names, handle/username, phone numbers, transaction IDs, UPI IDs, bank names, dates, timestamps, amounts, chat messages, and details visible in the image. Return a complete verbatim transcription and summary of the evidence.' 
+                    text: 'Thoroughly inspect and analyze this evidence image. Transcribe all text verbatim and describe all visible visual details, names, handles, amounts, transaction IDs, and facts depicted in the image.' 
                   },
                   { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}`, detail: 'high' } },
                 ],
@@ -225,8 +229,8 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
             max_tokens: 1500,
           })
           const extractedText = visionResp.choices[0].message.content || ''
-          console.log('[triage] Vision extraction result length:', extractedText.length)
-          userText = extractedText + '\n' + userText
+          console.log('[triage] Vision extraction text:', extractedText)
+          userText = `--- EVIDENCE IMAGE ANALYSIS (${imageFile.name}) ---\n${extractedText}\n\n${userText}`
         } catch (visionError: any) {
           console.warn('[triage] Vision extraction failed:', visionError.message)
         }
