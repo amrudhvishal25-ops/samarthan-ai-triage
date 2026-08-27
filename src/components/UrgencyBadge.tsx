@@ -42,7 +42,7 @@ const config: Record<UrgencyLevel, {
 }
 
 export default function UrgencyBadge({ level, language, size = 'sm' }: UrgencyBadgeProps) {
-  const c = config[level]
+  const c = config[level] ?? config.MEDIUM
   const { Icon } = c
 
   return (

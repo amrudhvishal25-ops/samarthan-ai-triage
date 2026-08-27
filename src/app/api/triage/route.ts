@@ -313,7 +313,19 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
       })
 
       const raw = completion.choices[0].message.content || '{}'
-      const result: TriageResult = JSON.parse(raw)
+      const parsed = JSON.parse(raw)
+
+      // The model's JSON isn't schema-validated — guard against a bad/missing
+      // urgencyLevel (wrong case, hallucinated value, omitted field) crashing
+      // UrgencyBadge, which indexes a lookup table by this exact value.
+      const VALID_URGENCY = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+      if (typeof parsed.urgencyLevel !== 'string' || !VALID_URGENCY.includes(parsed.urgencyLevel.toUpperCase())) {
+        parsed.urgencyLevel = 'MEDIUM'
+      } else {
+        parsed.urgencyLevel = parsed.urgencyLevel.toUpperCase()
+      }
+
+      const result: TriageResult = parsed
       return NextResponse.json(result)
 
     } catch (apiError: any) {
