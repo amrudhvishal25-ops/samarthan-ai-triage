@@ -1,28 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult, generateId, IT_ACT_SECTIONS } from '@/data/scenarios'
-import OpenAI, { toFile } from 'openai'
+import OpenAI from 'openai'
 import { rateLimit } from '@/lib/rateLimit'
 
-async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileType: string): Promise<Buffer> {
-  const isHeic = fileType.toLowerCase().includes('heic') || 
-                 fileType.toLowerCase().includes('heif') || 
-                 fileName.toLowerCase().endsWith('.heic') || 
-                 fileName.toLowerCase().endsWith('.heif')
-  
-  if (isHeic) {
-    try {
-      const convertHeic = (await import('heic-convert')).default
-      const output = await convertHeic({
-        buffer: inputBuffer,
-        format: 'JPEG',
-        quality: 0.85,
-      })
-      return Buffer.from(output)
-    } catch (e: any) {
-      console.warn('[triage] heic-convert failed:', e.message)
-    }
-  }
-
+async function convertImageToJpeg(inputBuffer: Buffer): Promise<Buffer> {
   return inputBuffer
 }
 
@@ -235,7 +216,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
         try {
           const audioBuffer = Buffer.from(await audioFile.arrayBuffer())
           const audioName = audioFile.name || 'recording.webm'
-          const fileObj = await toFile(audioBuffer, audioName)
+          const fileObj = new File([audioBuffer], audioName, { type: audioFile.type || 'audio/webm' })
 
           const transcription = await openai.audio.transcriptions.create({
             file: fileObj,
@@ -254,19 +235,16 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
         }
       }
 
-      // 2a. PDF uploads: extract text directly using pdf-parse
+      // 2a. PDF uploads: extract text as utf-8 fallback
       if (imageFile && imageFile.size > 0 && imageFile.type === 'application/pdf') {
-        let parser: any = null
         try {
-          const { PDFParse } = await import('pdf-parse')
           const bytes = await imageFile.arrayBuffer()
-          parser = new PDFParse({ data: Buffer.from(bytes) })
-          const result = await parser.getText()
-          userText = result.text + '\n' + userText
+          const text = Buffer.from(bytes).toString('utf-8').replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+          if (text.trim().length > 50) {
+            userText = text.substring(0, 4000) + '\n' + userText
+          }
         } catch (pdfError: any) {
-          console.warn('[triage] PDF text extraction failed:', pdfError.message)
-        } finally {
-          await parser?.destroy()
+          console.warn('[triage] PDF extraction failed:', pdfError?.message)
         }
       }
 
@@ -276,7 +254,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
         try {
           const bytes = await imageFile.arrayBuffer()
           const inputBuffer = Buffer.from(bytes)
-          const jpegBuffer = await convertImageToJpeg(inputBuffer, imageFile.name, imageFile.type)
+          const jpegBuffer = await convertImageToJpeg(inputBuffer)
           const base64 = jpegBuffer.toString('base64')
 
           const visionResp = await openai.chat.completions.create({
