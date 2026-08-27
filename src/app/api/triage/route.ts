@@ -11,19 +11,29 @@ Extract ALL specific details provided and return a STRICT JSON object.
 
 CRITICAL INSTRUCTIONS:
 1. AGGRESSIVELY EXTRACT FRAUDSTER IDENTITY:
-   - victimName field = the FRAUDSTER's actual name, Instagram handle (format: @username), website URL (format: example.com), or whatever primary identifier the victim provided.
-   - Look in BOTH user text AND evidence image analysis for: person names, Instagram/social handles (@username), website URLs, UPI handles, phone numbers registered to a name.
-   - If multiple identifiers exist (e.g., "Rithwik with Instagram @rithwik8024"), prefer the handle/username as it's more verifiable (store as "Rithwik (@rithwik8024)").
-   - If only a website or domain is mentioned (e.g., "the website scamsite.com"), store the full URL as victimName.
-   - Use 'Not Identified' ONLY if no name, handle, URL, or identifier exists anywhere in text or evidence.
+   - victimName field = FRAUDSTER's primary identifier: actual name, Instagram handle (format: @username), website URL (example.com), UPI ID (xxx@ybl), seller username, or phone number.
+   - Look in BOTH text AND evidence for: names, Instagram handles, websites, UPI IDs, phone numbers, email addresses, seller usernames on marketplaces.
+   - PRIORITY ORDER: Named person > Instagram handle > Website/domain > UPI ID > Phone > Email > Seller handle
+   - Examples: "Rithwik", "@rithwik8024", "example.com", "random@ybl", "tech-deals-mumbai", "+91 9876543210"
+   - If multiple identifiers, prefer the most specific/verifiable (e.g., "@handle" over generic name).
+   - Use 'Not Identified' ONLY if absolutely no identifier exists anywhere in text or evidence.
 
-2. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp, Telegram), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
+2. FRAUD TYPE CLASSIFICATION — Use EXACT categories and logic:
+   - Financial Fraud: UPI/bank transfers, credit card misuse, phishing for money, QR code scams, direct money theft via banking
+   - Women/Children Related Crime: Cyberbullying, harassment, abuse, threats, sextortion involving minors or women, fake profiles impersonating someone
+   - Extortion & Blackmail: Ransom demands, threat to expose/leak content, money demanded under threat (includes sextortion of adults)
+   - Identity Theft: Aadhaar/PAN misuse, fake accounts opened in victim's name, credential theft, unauthorized loan applications
+   - E-Commerce Scams: Fake sellers, non-delivery of goods, fake websites, OLX/marketplace fraud
+   - Other Cyber Crime: Ransomware, hacking, data theft, unauthorized access, malware, system compromise
+   Use provided categoryHint if available; otherwise infer from incident description.
 
-3. NO HALLUCINATION: Use ONLY the details provided or visible in evidence. Do not invent data.
+3. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp, Telegram), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
 
-4. FORMAL COMPLAINT DRAFT: Draft a complete, professional, first-person police complaint written from the perspective of the complainant (Pratham Kamath). State the facts directly.
+4. NO HALLUCINATION: Use ONLY the details provided or visible in evidence. Do not invent data.
 
-5. For missing JSON fields below, use "Not Provided".
+5. FORMAL COMPLAINT DRAFT: Draft a complete, professional, first-person police complaint written from the perspective of the complainant (Pratham Kamath). State the facts directly.
+
+6. For missing JSON fields below, use "Not Provided".
 
 {
   "incidentId": "XXXXXXXXXXXXXX",  // generate a realistic 14-digit numeric NCRP-style acknowledgement number, no letters or dashes, first digit 1-9
