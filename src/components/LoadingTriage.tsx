@@ -57,14 +57,7 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center gap-10"
           >
-            <motion.div
-              animate={{ scale: phase === 'inhale' ? 1.04 : 0.98 }}
-              transition={{ duration: BREATH_DURATION / 2 / 1000, ease: 'easeInOut' }}
-              className="flex items-center justify-center"
-            >
-              <BreathingIcon phase={phase} durationMs={BREATH_DURATION / 2} />
-            </motion.div>
-
+            {/* Text on top */}
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2">
                 <span>{hi ? 'गहरी सांस लें — सब ठीक हो जाएगा' : 'Take a deep breath — everything will be okay'}</span>
@@ -88,6 +81,15 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
                 {hi ? 'हमारा AI आपकी मदद कर रहा है' : 'Our AI is working on this for you'}
               </p>
             </div>
+
+            {/* Large orb below — the centrepiece */}
+            <motion.div
+              animate={{ scale: phase === 'inhale' ? 1.04 : 0.97 }}
+              transition={{ duration: BREATH_DURATION / 2 / 1000, ease: 'easeInOut' }}
+              className="flex items-center justify-center"
+            >
+              <BreathingIcon phase={phase} durationMs={BREATH_DURATION / 2} />
+            </motion.div>
           </motion.div>
         ) : (
           <motion.div
