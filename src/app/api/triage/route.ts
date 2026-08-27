@@ -116,6 +116,8 @@ Return ONLY the JSON object. Do not wrap it in markdown block quotes (\`\`\`json
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('[triage] POST request received')
+
     // Rate limit: 10 requests per minute per IP
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
     const { allowed, remaining } = rateLimit(ip)
@@ -126,7 +128,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    console.log('[triage] Parsing FormData...')
     const formData = await req.formData()
+    console.log('[triage] FormData parsed')
     const scenarioId = formData.get('scenarioId') as string | null
     const textInput = formData.get('text') as string | null
     const audioFile = formData.get('audio') as File | null
