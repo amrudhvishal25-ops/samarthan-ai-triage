@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult, generateId, IT_ACT_SECTIONS } from '@/data/scenarios'
 import OpenAI, { toFile } from 'openai'
-import { PDFParse } from 'pdf-parse'
 import { rateLimit } from '@/lib/rateLimit'
-import convertHeic from 'heic-convert'
 
 async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileType: string): Promise<Buffer> {
   const isHeic = fileType.toLowerCase().includes('heic') || 
@@ -13,6 +11,7 @@ async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileTyp
   
   if (isHeic) {
     try {
+      const convertHeic = (await import('heic-convert')).default
       const output = await convertHeic({
         buffer: inputBuffer,
         format: 'JPEG',
@@ -235,8 +234,9 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
       // 2a. PDF uploads: extract text directly using pdf-parse
       if (imageFile && imageFile.size > 0 && imageFile.type === 'application/pdf') {
-        let parser: InstanceType<typeof PDFParse> | null = null
+        let parser: any = null
         try {
+          const { PDFParse } = await import('pdf-parse')
           const bytes = await imageFile.arrayBuffer()
           parser = new PDFParse({ data: Buffer.from(bytes) })
           const result = await parser.getText()

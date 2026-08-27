@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ['openai'],
-  // Removed 'standalone' output — Vercel handles deployment differently
+  serverExternalPackages: ['openai', 'pdf-parse', 'heic-convert', '@neondatabase/serverless'],
 }
 
 module.exports = nextConfig
