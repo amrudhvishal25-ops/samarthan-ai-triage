@@ -86,8 +86,9 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
             <motion.div
               animate={{ scale: phase === 'inhale' ? 1.04 : 0.97 }}
               transition={{ duration: BREATH_DURATION / 2 / 1000, ease: 'easeInOut' }}
-              className="flex items-center justify-center"
+              className="flex items-center justify-center relative"
             >
+              <div className="absolute inset-0 bg-blue-400/20 blur-[60px] animate-pulse rounded-full" />
               <BreathingIcon phase={phase} durationMs={BREATH_DURATION / 2} />
             </motion.div>
           </motion.div>

@@ -139,13 +139,9 @@ function IntakeContent() {
 
         {/* ── PAGE TITLE ── */}
         <div>
-          <h1 className="text-3xl font-extrabold text-zinc-900 tracking-tight">
-            {hi ? 'क्या हुआ?' : 'What happened?'}
+          <h1 className="text-3xl font-extrabold text-zinc-900 tracking-tight mb-2">
+            {hi ? 'कुछ भी कहें...' : 'Say anything...'}
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            {hi ? 'टाइप करें, वॉइस नोट दें, या सबूत अपलोड करें — जो भी आपके लिए आसान हो।'
-              : 'Type, record a voice note, or upload evidence — any combination works.'}
-          </p>
         </div>
 
         {/* ── FORM CARD ── */}

@@ -241,19 +241,11 @@ export default function DashboardPage() {
                     className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   >
                     <option value="Financial Fraud">Financial Fraud</option>
-                    <option value="UPI Fraud">UPI Fraud</option>
-                    <option value="OTP Fraud">OTP Fraud</option>
-                    <option value="Investment Scam">Investment Scam</option>
-                    <option value="Job Scam">Job Scam</option>
-                    <option value="Fake Customer Care">Fake Customer Care</option>
                     <option value="Women/Children Related Crime">Women/Children Related Crime</option>
                     <option value="Extortion & Blackmail">Extortion & Blackmail</option>
                     <option value="Identity Theft">Identity Theft</option>
                     <option value="E-Commerce Scams">E-Commerce Scams</option>
-                    <option value="Hate Speech">Hate Speech</option>
-                    <option value="Online Ragging">Online Ragging</option>
                     <option value="Other Cyber Crime">Other Cyber Crime</option>
-                    <option value="Other">Other</option>
                   </select>
                 </div>
 
@@ -313,46 +305,46 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Action buttons (left column) */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="grid grid-cols-2 gap-3">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-col gap-3">
               <button
                 onClick={() => setCallModalHotline('1930')}
-                className="flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-3 font-semibold text-sm transition-all shadow-sm"
+                className="w-full flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-4 font-semibold text-base transition-all shadow-sm"
               >
-                <div className="flex items-center gap-1.5">
-                  <Phone className="w-4 h-4" />
-                  {hi ? '1930 कॉल करें' : 'Call 1930'}
+                <div className="flex items-center gap-2">
+                  <Phone className="w-5 h-5" />
+                  {hi ? '1930 कॉल करें' : 'Call 1930 Helpline'}
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 rounded px-1.5 py-0.5">
-                  Live Helpline
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 rounded px-1.5 py-0.5 mt-0.5">
+                  Live Emergency
                 </span>
               </button>
-              <button
-                onClick={handleShare}
-                className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 rounded-xl py-3 font-semibold text-sm transition-all"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Share2 className="w-4 h-4" />
-                  {hi ? 'स्थिति साझा करें' : 'Share Status'}
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
-                  Live
-                </span>
-              </button>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
-              <button
-                onClick={() => window.print()}
-                className="w-full flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-xl py-3 font-medium text-sm transition-all"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Printer className="w-4 h-4" />
-                  {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
-                  Live
-                </span>
-              </button>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleShare}
+                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 rounded-xl py-3 font-semibold text-sm transition-all"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Share2 className="w-4 h-4" />
+                    {hi ? 'स्थिति साझा करें' : 'Share Status'}
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
+                    Live
+                  </span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-xl py-3 font-medium text-sm transition-all"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Printer className="w-4 h-4" />
+                    {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
+                    Live
+                  </span>
+                </button>
+              </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
