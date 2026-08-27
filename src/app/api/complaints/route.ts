@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
     const rows = await sql`SELECT * FROM complaints ORDER BY saved_at DESC`
     return NextResponse.json(rows)
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const isDev = process.env.NODE_ENV === 'development'
+    const message = isDev && err instanceof Error ? err.message : 'Database error. Please try again.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
@@ -51,7 +52,8 @@ export async function POST(req: NextRequest) {
     `
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const isDev = process.env.NODE_ENV === 'development'
+    const message = isDev && err instanceof Error ? err.message : 'Database error. Please try again.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
@@ -66,7 +68,8 @@ export async function DELETE(req: NextRequest) {
     await sql`DELETE FROM complaints`
     return NextResponse.json({ ok: true, message: 'All complaints deleted' })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const isDev = process.env.NODE_ENV === 'development'
+    const message = isDev && err instanceof Error ? err.message : 'Database error. Please try again.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
@@ -101,7 +104,8 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const isDev = process.env.NODE_ENV === 'development'
+    const message = isDev && err instanceof Error ? err.message : 'Database error. Please try again.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

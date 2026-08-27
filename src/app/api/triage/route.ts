@@ -3,6 +3,7 @@ import { SCENARIOS, TriageResult, generateId, IT_ACT_SECTIONS } from '@/data/sce
 import OpenAI, { toFile } from 'openai'
 import { PDFParse } from 'pdf-parse'
 import sharp from 'sharp'
+import { rateLimit } from '@/lib/rateLimit'
 import convertHeic from 'heic-convert'
 
 async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileType: string): Promise<Buffer> {
@@ -18,7 +19,7 @@ async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileTyp
         format: 'JPEG',
         quality: 0.85,
       })
-      console.log('[triage] Successfully converted HEIC image to JPEG via heic-convert')
+      // Image conversion successful — do not log content (may contain PII)
       return Buffer.from(output)
     } catch (e: any) {
       console.warn('[triage] heic-convert failed:', e.message)
@@ -37,7 +38,7 @@ async function convertImageToJpeg(inputBuffer: Buffer, fileName: string, fileTyp
       format: 'JPEG',
       quality: 0.85,
     })
-    console.log('[triage] Successfully converted image to JPEG via fallback heic-convert')
+    // Image conversion successful via fallback — do not log content
     return Buffer.from(output)
   } catch (e: any) {
     return inputBuffer
@@ -115,6 +116,16 @@ Return ONLY the JSON object. Do not wrap it in markdown block quotes (\`\`\`json
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: 10 requests per minute per IP
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const { allowed, remaining } = rateLimit(ip)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again in a minute.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
+    }
+
     const formData = await req.formData()
     const scenarioId = formData.get('scenarioId') as string | null
     const textInput = formData.get('text') as string | null
@@ -122,6 +133,16 @@ export async function POST(req: NextRequest) {
     const imageFile = formData.get('image') as File | null
     const categoryHint = formData.get('fraudType') as string | null
     const complainantName = (formData.get('complainantName') as string | null)?.trim() || null
+
+    // Validate file sizes (prevent memory exhaustion / DoS attacks)
+    const MAX_AUDIO_SIZE = 25 * 1024 * 1024 // 25MB (Whisper limit)
+    const MAX_IMAGE_SIZE = 20 * 1024 * 1024 // 20MB (GPT-4o Vision limit)
+    if (audioFile && audioFile.size > MAX_AUDIO_SIZE) {
+      return NextResponse.json({ error: 'Audio file too large (max 25MB)' }, { status: 413 })
+    }
+    if (imageFile && imageFile.size > MAX_IMAGE_SIZE) {
+      return NextResponse.json({ error: 'Image file too large (max 20MB)' }, { status: 413 })
+    }
 
     let userText = textInput?.trim() || ''
 
@@ -214,7 +235,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
             ? transcription
             : (transcription as any).text || ''
 
-          console.log('[triage] Whisper transcribed text:', transcribedText)
+          // Audio transcribed successfully — do not log text (may contain phone numbers, UPI IDs, PII)
           if (transcribedText.trim()) {
             userText = `--- VOICE RECORDING TRANSCRIPTION ---\n${transcribedText}\n\n${userText}`
           }
@@ -268,7 +289,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
             max_tokens: 1500,
           })
           let extractedText = visionResp.choices[0].message.content || ''
-          console.log('[triage] Vision extraction text:', extractedText)
+          // Screenshot extracted successfully — do not log text (may contain bank details, UPI, contact info)
 
           // If OpenAI Vision returned a safety refusal due to profanity in evidence, override it with forensic context
           const isRefusal = /i am unable|can't assist|cannot assist|as an ai|sorry/i.test(extractedText)
@@ -337,7 +358,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
     }
 
   } catch (err: any) {
-    console.error('[triage] Fatal Error:', err)
+    console.error('[triage] Fatal Error:', err instanceof Error ? err.message : String(err))
     return NextResponse.json(
       { error: 'Fatal processing error. Please try again.' },
       { status: 500 }
