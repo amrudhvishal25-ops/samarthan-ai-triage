@@ -171,60 +171,66 @@ export async function POST(req: NextRequest) {
 
     const openai = new OpenAI({ apiKey })
 
-    // Transcribe audio if present
-    if (audioFile && audioFile.size > 0) {
-      try {
-        const audioBuffer = Buffer.from(await audioFile.arrayBuffer())
-        const audioName = audioFile.name || 'recording.webm'
-        const fileObj = new File([audioBuffer], audioName, { type: audioFile.type || 'audio/webm' })
+    // 1. Run Audio Transcription & Image Vision concurrently in parallel
+    const [audioTranscriptionText, imageAnalysisText] = await Promise.all([
+      // Task A: Transcribe audio
+      (async () => {
+        if (!audioFile || audioFile.size === 0) return ''
+        try {
+          const audioBuffer = Buffer.from(await audioFile.arrayBuffer())
+          const audioName = audioFile.name || 'recording.webm'
+          const fileObj = new File([audioBuffer], audioName, { type: audioFile.type || 'audio/webm' })
 
-        const transcription = await openai.audio.transcriptions.create({
-          file: fileObj,
-          model: 'whisper-1',
-        })
-        const transcribedText = typeof transcription === 'string'
-          ? transcription
-          : (transcription as any).text || ''
-
-        if (transcribedText.trim()) {
-          userText = `--- VOICE RECORDING TRANSCRIPTION ---\n${transcribedText}\n\n${userText}`
+          const transcription = await openai.audio.transcriptions.create({
+            file: fileObj,
+            model: 'whisper-1',
+          })
+          return typeof transcription === 'string' ? transcription : (transcription as any).text || ''
+        } catch (audioError: any) {
+          console.warn('[triage] Whisper transcription failed:', audioError?.message)
+          return ''
         }
-      } catch (audioError: any) {
-        console.warn('[triage] Whisper transcription failed:', audioError?.message)
-      }
+      })(),
+
+      // Task B: Analyze screenshot / image evidence
+      (async () => {
+        if (!imageFile || imageFile.size === 0 || imageFile.type === 'application/pdf') return ''
+        try {
+          const bytes = await imageFile.arrayBuffer()
+          const base64 = Buffer.from(bytes).toString('base64')
+          const mimeType = imageFile.type || 'image/jpeg'
+
+          const visionResp = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a neutral digital forensics tool for law enforcement triage. Transcribe visible text verbatim, list all names/handles/numbers/amounts, and state facts neutrally.'
+              },
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Extract all visible text, transaction numbers, amounts, handles, names, and facts from this evidence.' },
+                  { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'low' } },
+                ],
+              },
+            ],
+            max_tokens: 500,
+          })
+          return visionResp.choices[0]?.message?.content || ''
+        } catch (visionError: any) {
+          console.warn('[triage] Vision extraction failed:', visionError?.message)
+          return ''
+        }
+      })(),
+    ])
+
+    if (audioTranscriptionText.trim()) {
+      userText = `--- VOICE RECORDING TRANSCRIPTION ---\n${audioTranscriptionText}\n\n${userText}`
     }
 
-    // Inspect image if present
-    if (imageFile && imageFile.size > 0 && imageFile.type !== 'application/pdf') {
-      try {
-        const bytes = await imageFile.arrayBuffer()
-        const base64 = Buffer.from(bytes).toString('base64')
-        const mimeType = imageFile.type || 'image/jpeg'
-
-        const visionResp = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a neutral digital forensics tool for law enforcement triage. Transcribe visible text verbatim, list all names/handles/numbers/amounts, and state facts neutrally.'
-            },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: 'Analyze this evidence image and extract all visible details, transaction numbers, amounts, handles, and facts.' },
-                { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'low' } },
-              ],
-            },
-          ],
-          max_tokens: 500,
-        })
-        const extractedText = visionResp.choices[0]?.message?.content || ''
-        if (extractedText.trim()) {
-          userText = `--- EVIDENCE IMAGE ANALYSIS ---\n${extractedText}\n\n${userText}`
-        }
-      } catch (visionError: any) {
-        console.warn('[triage] Vision extraction failed:', visionError?.message)
-      }
+    if (imageAnalysisText.trim()) {
+      userText = `--- EVIDENCE IMAGE ANALYSIS ---\n${imageAnalysisText}\n\n${userText}`
     }
 
     if (!userText.trim()) {
@@ -239,14 +245,16 @@ export async function POST(req: NextRequest) {
       customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..."`
     }
 
+    // 2. High-speed structured legal complaint generation
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: customPrompt },
         { role: 'user', content: userText },
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
+      max_tokens: 1500,
     })
 
     const raw = completion.choices[0]?.message?.content || '{}'
