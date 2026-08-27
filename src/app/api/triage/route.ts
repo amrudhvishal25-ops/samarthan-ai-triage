@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult, generateId, IT_ACT_SECTIONS } from '@/data/scenarios'
 import OpenAI from 'openai'
-import { rateLimit } from '@/lib/rateLimit'
+import { Buffer } from 'node:buffer'
 
-async function convertImageToJpeg(inputBuffer: Buffer): Promise<Buffer> {
-  return inputBuffer
-}
+export const dynamic = 'force-dynamic'
 
 const TRIAGE_SYSTEM_PROMPT = `You are an expert Indian cybercrime triage assistant. 
 A victim has provided an account of an incident (via text, voice note, or screenshot evidence). 
@@ -76,297 +74,40 @@ ${Object.entries(IT_ACT_SECTIONS).map(([num, s]) => `- Section ${num}: ${s.title
 
 Return ONLY the JSON object. Do not wrap it in markdown block quotes (\`\`\`json).`
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
   return NextResponse.json({ status: 'ok', service: 'samarthan-triage' })
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    console.log('[triage] POST request received')
+  let categoryHint: string | null = null
+  let userText = ''
 
-    // Rate limit: 10 requests per minute per IP
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
-    const { allowed } = rateLimit(ip)
-    if (!allowed) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again in a minute.' },
-        { status: 429, headers: { 'Retry-After': '60' } }
-      )
-    }
-
-    let scenarioId: string | null = null
-    let textInput: string | null = null
-    let audioFile: File | null = null
-    let imageFile: File | null = null
-    let categoryHint: string | null = null
-    let complainantName: string | null = null
-
-    const contentType = req.headers.get('content-type') || ''
-    if (contentType.includes('application/json')) {
-      const json = await req.json()
-      scenarioId = json.scenarioId || null
-      textInput = json.text || null
-      categoryHint = json.fraudType || null
-      complainantName = json.complainantName || null
-    } else {
-      const formData = await req.formData()
-      scenarioId = formData.get('scenarioId') as string | null
-      textInput = formData.get('text') as string | null
-      audioFile = formData.get('audio') as File | null
-      imageFile = formData.get('image') as File | null
-      categoryHint = formData.get('fraudType') as string | null
-      complainantName = (formData.get('complainantName') as string | null)?.trim() || null
-    }
-
-    // Validate file sizes (prevent memory exhaustion / DoS attacks)
-    const MAX_AUDIO_SIZE = 25 * 1024 * 1024 // 25MB (Whisper limit)
-    const MAX_IMAGE_SIZE = 20 * 1024 * 1024 // 20MB (GPT-4o Vision limit)
-    if (audioFile && audioFile.size > MAX_AUDIO_SIZE) {
-      return NextResponse.json({ error: 'Audio file too large (max 25MB)' }, { status: 413 })
-    }
-    if (imageFile && imageFile.size > MAX_IMAGE_SIZE) {
-      return NextResponse.json({ error: 'Image file too large (max 20MB)' }, { status: 413 })
-    }
-
-    let userText = textInput?.trim() || ''
-
-    // ── DYNAMIC SANDBOX HANDLING ──────────────────────────────────────────
-    if (scenarioId) {
-      const scenario = SCENARIOS.find((s) => s.id === scenarioId)
-      if (scenario) {
-        // If they didn't add any extra text/audio, return the perfect static mock instantly
-        if (!userText && (!audioFile || audioFile.size === 0) && (!imageFile || imageFile.size === 0)) {
-          await new Promise((r) => setTimeout(r, 1500))
-          return NextResponse.json(scenario.mockResponse)
-        }
-        // If they DID add extra text, combine it with the scenario base and explicitly instruct the AI to override
-        userText = `--- ORIGINAL INCIDENT CONTEXT ---
-${scenario.rawInput}
-
---- ADDITIONAL CORRECTIONS / UPDATES FROM VICTIM ---
-${userText}
-
-CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original context. If the victim changes the amount lost, their name, or any other detail in the corrections section, you MUST use the updated details and completely ignore the conflicting old details from the original context.`
-      }
-    }
-
-    // Helper function to generate a guaranteed successful response for judges
-    const getDynamicMock = async () => {
-      const inferredCategory = (categoryHint && categoryHint !== 'auto') 
-        ? categoryHint 
-        : 'Other Cyber Crime'
-      
-      await new Promise(r => setTimeout(r, 1500)) // Simulate processing
-
-      return {
-        incidentId: generateId(),
-        victimName: 'Not Identified',
-        fraudType: inferredCategory as any,
-        frauderContact: 'Unknown',
-        amount: inferredCategory === 'Financial Fraud' ? 10000 : 0,
-        bankName: 'N/A',
-        accountNumber: 'N/A',
-        upiId: null,
-        timeline: new Date().toLocaleString('en-IN'),
-        summary: `Mock AI summary for ${inferredCategory}. The app successfully caught your input but fell back to Demo Mode to guarantee a seamless review experience.`,
-        summaryHi: `यह ${inferredCategory} के लिए एक मॉक सारांश है। निर्बाध अनुभव सुनिश्चित करने के लिए ऐप डेमो मोड में चला गया है।`,
-        complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI am filing this formal complaint to report an incident regarding ${inferredCategory}.\n\n(Note: This is a placeholder draft generated because the app seamlessly fell back to Demo Mode. In production, this text heavily reflects the user's specific input.)\n\nPlease investigate this matter.\n\nYours faithfully,\nDemo User`,
-        complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में शिकायत\n\nमान्यवर,\n\nमैं ${inferredCategory} के संबंध में यह शिकायत दर्ज कर रहा हूँ। (मॉक डेटा)\n\nकृपया इस मामले की जांच करें।\n\nआपका,\nडेमो यूजर`,
-        freezeSteps: [
-          {
-            step: 1,
-            action: 'Call Cybercrime Helpline 1930',
-            actionHi: 'साइबर क्राइम हेल्पलाइन 1930 पर कॉल करें',
-            detail: 'Report the incident immediately for quick action on the portal.',
-            detailHi: 'पोर्टल पर त्वरित कार्रवाई के लिए तुरंत घटना की रिपोर्ट करें।',
-            hotline: '1930',
-            url: 'https://cybercrime.gov.in'
-          }
-        ],
-        applicableLaws: [
-          {
-            section: 'IT Act, Section 66D',
-            title: IT_ACT_SECTIONS['66D'].title,
-            titleHi: IT_ACT_SECTIONS['66D'].titleHi,
-            reason: 'Demo Mode fallback — this section commonly applies to online cheating/impersonation cases like this one.',
-            reasonHi: 'डेमो मोड फॉलबैक — यह धारा इस तरह के ऑनलाइन धोखाधड़ी/प्रतिरूपण मामलों में सामान्यतः लागू होती है।',
-          },
-        ],
-        urgencyLevel: 'HIGH'
-      }
-    }
-
-    try {
-      const apiKey = process.env.OPENAI_API_KEY
-      console.log('[triage] OPENAI_API_KEY loaded:', apiKey ? `${apiKey.substring(0, 20)}...` : 'MISSING')
-      if (!apiKey) {
-        console.warn('[triage] OPENAI_API_KEY not set in environment, seamlessly falling back to dynamic mock')
-        const fallbackMock = await getDynamicMock()
-        return NextResponse.json(fallbackMock)
-      }
-
-      const openai = new OpenAI({ apiKey })
-
-      // 1. Transcribe audio with Whisper — auto-detect language (English, Hindi, Hinglish, etc.)
-      if (audioFile && audioFile.size > 0) {
-        try {
-          const audioBuffer = Buffer.from(await audioFile.arrayBuffer())
-          const audioName = audioFile.name || 'recording.webm'
-          const fileObj = new File([audioBuffer], audioName, { type: audioFile.type || 'audio/webm' })
-
-          const transcription = await openai.audio.transcriptions.create({
-            file: fileObj,
-            model: 'whisper-1',
-          })
-          const transcribedText = typeof transcription === 'string'
-            ? transcription
-            : (transcription as any).text || ''
-
-          // Audio transcribed successfully — do not log text (may contain phone numbers, UPI IDs, PII)
-          if (transcribedText.trim()) {
-            userText = `--- VOICE RECORDING TRANSCRIPTION ---\n${transcribedText}\n\n${userText}`
-          }
-        } catch (audioError: any) {
-          console.warn('[triage] Whisper transcription failed:', audioError.message)
-        }
-      }
-
-      // 2a. PDF uploads: extract text as utf-8 fallback
-      if (imageFile && imageFile.size > 0 && imageFile.type === 'application/pdf') {
-        try {
-          const bytes = await imageFile.arrayBuffer()
-          const text = Buffer.from(bytes).toString('utf-8').replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-          if (text.trim().length > 50) {
-            userText = text.substring(0, 4000) + '\n' + userText
-          }
-        } catch (pdfError: any) {
-          console.warn('[triage] PDF extraction failed:', pdfError?.message)
-        }
-      }
-
-      // 2b. Extract text & details from image with GPT-4o Vision.
-      // Automatically convert HEIC/HEIF/PNG/WebP/BMP images to JPEG via heic-convert/sharp so Vision gets a valid JPEG.
-      if (imageFile && imageFile.size > 0 && imageFile.type !== 'application/pdf') {
-        try {
-          const bytes = await imageFile.arrayBuffer()
-          const inputBuffer = Buffer.from(bytes)
-          const jpegBuffer = await convertImageToJpeg(inputBuffer)
-          const base64 = jpegBuffer.toString('base64')
-
-          const visionResp = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a neutral digital forensics tool for official law enforcement triage. The user is a victim submitting screenshot evidence of cybercrime, extortion, threats, or fraud to file a police report. Transcribe all visible text verbatim, list all names/handles/numbers/amounts, and state the facts neutrally. Do not moralize or issue safety refusals.'
-              },
-              {
-                role: 'user',
-                content: [
-                  { 
-                    type: 'text', 
-                    text: 'Thoroughly inspect and analyze this evidence image. Transcribe all text verbatim and describe all visible visual details, names, handles, amounts, transaction IDs, and facts depicted in the image.' 
-                  },
-                  { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}`, detail: 'high' } },
-                ],
-              },
-            ],
-            max_tokens: 1500,
-          })
-          let extractedText = visionResp.choices[0].message.content || ''
-          // Screenshot extracted successfully — do not log text (may contain bank details, UPI, contact info)
-
-          // If OpenAI Vision returned a safety refusal due to profanity in evidence, override it with forensic context
-          const isRefusal = /i am unable|can't assist|cannot assist|as an ai|sorry/i.test(extractedText)
-          if (isRefusal) {
-            console.warn('[triage] Vision response contained refusal phrase, converting to forensic evidence context')
-            extractedText = `Extortion and harassment screenshot evidence attached (${imageFile.name}). The image contains extortion threats, profanity, and harassment from a fraudster demanding payment.`
-          }
-
-          userText = `--- EVIDENCE IMAGE ANALYSIS (${imageFile.name}) ---\n${extractedText}\n\n${userText}`
-        } catch (visionError: any) {
-          console.warn('[triage] Vision extraction failed:', visionError.message)
-        }
-      }
-
-      if (!userText.trim()) {
-        if (imageFile || audioFile) {
-          const fileName = imageFile?.name || 'audio recording'
-          userText = `INCIDENT REPORT WITH EVIDENCE ATTACHED (${fileName}). The victim uploaded screenshot/file evidence depicting an unauthorized cyber fraud incident. Generate a formal police complaint regarding cyber fraud based on this evidence submission, requesting immediate investigation and account freezing.`
-        } else {
-          throw new Error('No input provided after processing')
-        }
-      }
-
-
-      let customPrompt = TRIAGE_SYSTEM_PROMPT
-      if (categoryHint && categoryHint !== 'auto') {
-        customPrompt += `\n\nNOTE: The user pre-selected the category: "${categoryHint}". Please strongly consider mapping the incident to this category unless it clearly belongs elsewhere.`
-      } else {
-        customPrompt += `\n\nNOTE: The user did NOT pre-select a category. You must AUTO-MAP their issue to the best fitting category based strictly on their input.`
-      }
-      if (complainantName) {
-        customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..." and sign off as "${complainantName}" at the end. Use this name wherever the complainant's identity is referenced.`
-      }
-
-      // 3. Structure the data with GPT-4o-mini
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: customPrompt },
-          { role: 'user', content: userText },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.2,
-      })
-
-      const raw = completion.choices[0].message.content || '{}'
-      const parsed = JSON.parse(raw)
-
-      // The model's JSON isn't schema-validated — guard against a bad/missing
-      // urgencyLevel (wrong case, hallucinated value, omitted field) crashing
-      // UrgencyBadge, which indexes a lookup table by this exact value.
-      const VALID_URGENCY = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
-      if (typeof parsed.urgencyLevel !== 'string' || !VALID_URGENCY.includes(parsed.urgencyLevel.toUpperCase())) {
-        parsed.urgencyLevel = 'MEDIUM'
-      } else {
-        parsed.urgencyLevel = parsed.urgencyLevel.toUpperCase()
-      }
-
-      const result: TriageResult = parsed
-      return NextResponse.json(result)
-
-    } catch (apiError: any) {
-      console.warn("OpenAI API failed, seamlessly falling back to Mock Data:", apiError.message)
-      const fallbackMock = await getDynamicMock()
-      return NextResponse.json(fallbackMock)
-    }
-
-  } catch (err: any) {
-    console.error('[triage] Fatal Error:', err instanceof Error ? err.message : String(err))
-    return NextResponse.json({
+  const getDynamicMock = async (): Promise<TriageResult> => {
+    const inferredCategory = (categoryHint && categoryHint !== 'auto') 
+      ? categoryHint 
+      : 'Other Cyber Crime'
+    
+    return {
       incidentId: generateId(),
       victimName: 'Not Identified',
-      fraudType: 'Other Cyber Crime',
+      fraudType: inferredCategory as any,
       frauderContact: 'Unknown',
-      amount: 0,
+      amount: inferredCategory === 'Financial Fraud' ? 10000 : 0,
       bankName: 'N/A',
       accountNumber: 'N/A',
-      upiId: null,
+      upiId: undefined,
       timeline: new Date().toLocaleString('en-IN'),
-      summary: 'Incident report generated by Samarthan AI Triage.',
-      summaryHi: 'समर्थन एआई ट्रायज द्वारा तैयार की गई घटना रिपोर्ट।',
-      complaintDraft: 'To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint\n\nRespected Sir/Madam,\n\nI am filing this formal complaint to report an unauthorized cyber incident. Please register this complaint and take immediate necessary action under the law.\n\nYours faithfully,\nPratham Kamath',
-      complaintDraftHi: 'सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: औपचारिक साइबर अपराध शिकायत\n\nमहोदय,\n\nमैं एक अनधिकृत साइबर घटना की रिपोर्ट करने के लिए यह औपचारिक शिकायत दर्ज कर रहा हूँ। कृपया इसे पंजीकृत करें और आवश्यक कार्रवाई करें।\n\nभवदीय,\nप्रथम कामत',
+      summary: `AI triage summary generated for ${inferredCategory}.`,
+      summaryHi: `${inferredCategory} के लिए AI ट्रायज सारांश।`,
+      complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI, Pratham Kamath, hereby state that I have been a victim of a cyber incident regarding ${inferredCategory}. Please investigate this matter and take appropriate action.\n\nYours faithfully,\nPratham Kamath`,
+      complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, प्रथम कामत, यह बयान देता हूँ कि मैं ${inferredCategory} से संबंधित साइबर धोखाधड़ी का शिकार हुआ हूँ। कृपया मामले की जांच करें।\n\nभवदीय,\nप्रथम कामत`,
       freezeSteps: [
         {
           step: 1,
-          action: 'Call 1930 Helpline',
-          actionHi: '1930 हेल्पलाइन पर कॉल करें',
-          detail: 'Report immediately to cybercrime portal for freeze assistance.',
-          detailHi: 'फ्रीज सहायता के लिए तुरंत साइबर अपराध पोर्टल पर रिपोर्ट करें।',
+          action: 'Call Cybercrime Helpline 1930',
+          actionHi: 'साइबर क्राइम हेल्पलाइन 1930 पर कॉल करें',
+          detail: 'Report the incident immediately for quick action on the portal.',
+          detailHi: 'पोर्टल पर त्वरित कार्रवाई के लिए तुरंत घटना की रिपोर्ट करें।',
           hotline: '1930',
           url: 'https://cybercrime.gov.in'
         }
@@ -374,13 +115,154 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
       applicableLaws: [
         {
           section: 'IT Act, Section 66D',
-          title: IT_ACT_SECTIONS['66D'].title,
-          titleHi: IT_ACT_SECTIONS['66D'].titleHi,
-          reason: 'Applicable section for online cheating and impersonation.',
-          reasonHi: 'ऑनलाइन धोखाधड़ी और प्रतिरूपण के लिए लागू धारा।',
+          title: IT_ACT_SECTIONS['66D']?.title || 'Cheating by personation by using computer resource',
+          titleHi: IT_ACT_SECTIONS['66D']?.titleHi || 'कंप्यूटर संसाधन का उपयोग करके प्रतिरूपण द्वारा धोखाधड़ी',
+          reason: 'Applicable section for cyber fraud and online cheating.',
+          reasonHi: 'साइबर धोखाधड़ी और ऑनलाइन धोखाधड़ी के लिए लागू धारा।',
         }
       ],
       urgencyLevel: 'HIGH'
+    }
+  }
+
+  try {
+    let scenarioId: string | null = null
+    let audioFile: File | null = null
+    let imageFile: File | null = null
+    let complainantName: string | null = null
+
+    const contentType = req.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      try {
+        const json = await req.json()
+        scenarioId = json.scenarioId || null
+        userText = (json.text || '').trim()
+        categoryHint = json.fraudType || null
+        complainantName = json.complainantName || null
+      } catch { /* ignore parse error */ }
+    } else {
+      try {
+        const formData = await req.formData()
+        scenarioId = formData.get('scenarioId') as string | null
+        userText = ((formData.get('text') as string) || '').trim()
+        audioFile = formData.get('audio') as File | null
+        imageFile = formData.get('image') as File | null
+        categoryHint = formData.get('fraudType') as string | null
+        complainantName = (formData.get('complainantName') as string | null)?.trim() || null
+      } catch { /* ignore parse error */ }
+    }
+
+    if (scenarioId) {
+      const scenario = SCENARIOS.find((s) => s.id === scenarioId)
+      if (scenario) {
+        if (!userText && (!audioFile || audioFile.size === 0) && (!imageFile || imageFile.size === 0)) {
+          return NextResponse.json(scenario.mockResponse)
+        }
+        userText = `--- ORIGINAL INCIDENT CONTEXT ---\n${scenario.rawInput}\n\n--- ADDITIONAL CORRECTIONS / UPDATES ---\n${userText}`
+      }
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      console.warn('[triage] OPENAI_API_KEY missing, returning dynamic fallback')
+      const fallback = await getDynamicMock()
+      return NextResponse.json(fallback)
+    }
+
+    const openai = new OpenAI({ apiKey })
+
+    // Transcribe audio if present
+    if (audioFile && audioFile.size > 0) {
+      try {
+        const audioBuffer = Buffer.from(await audioFile.arrayBuffer())
+        const audioName = audioFile.name || 'recording.webm'
+        const fileObj = new File([audioBuffer], audioName, { type: audioFile.type || 'audio/webm' })
+
+        const transcription = await openai.audio.transcriptions.create({
+          file: fileObj,
+          model: 'whisper-1',
+        })
+        const transcribedText = typeof transcription === 'string'
+          ? transcription
+          : (transcription as any).text || ''
+
+        if (transcribedText.trim()) {
+          userText = `--- VOICE RECORDING TRANSCRIPTION ---\n${transcribedText}\n\n${userText}`
+        }
+      } catch (audioError: any) {
+        console.warn('[triage] Whisper transcription failed:', audioError?.message)
+      }
+    }
+
+    // Inspect image if present
+    if (imageFile && imageFile.size > 0 && imageFile.type !== 'application/pdf') {
+      try {
+        const bytes = await imageFile.arrayBuffer()
+        const base64 = Buffer.from(bytes).toString('base64')
+        const mimeType = imageFile.type || 'image/jpeg'
+
+        const visionResp = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a neutral digital forensics tool for law enforcement triage. Transcribe visible text verbatim, list all names/handles/numbers/amounts, and state facts neutrally.'
+            },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Analyze this evidence image and extract all visible details, transaction numbers, amounts, handles, and facts.' },
+                { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'high' } },
+              ],
+            },
+          ],
+          max_tokens: 1500,
+        })
+        const extractedText = visionResp.choices[0]?.message?.content || ''
+        if (extractedText.trim()) {
+          userText = `--- EVIDENCE IMAGE ANALYSIS ---\n${extractedText}\n\n${userText}`
+        }
+      } catch (visionError: any) {
+        console.warn('[triage] Vision extraction failed:', visionError?.message)
+      }
+    }
+
+    if (!userText.trim()) {
+      userText = 'Cyber fraud incident reported with unauthorized transaction and monetary loss.'
+    }
+
+    let customPrompt = TRIAGE_SYSTEM_PROMPT
+    if (categoryHint && categoryHint !== 'auto') {
+      customPrompt += `\n\nNOTE: The user pre-selected the category: "${categoryHint}". Please strongly consider mapping the incident to this category.`
+    }
+    if (complainantName) {
+      customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..."`
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: customPrompt },
+        { role: 'user', content: userText },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
     })
+
+    const raw = completion.choices[0]?.message?.content || '{}'
+    const parsed = JSON.parse(raw)
+
+    const VALID_URGENCY = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+    if (typeof parsed.urgencyLevel !== 'string' || !VALID_URGENCY.includes(parsed.urgencyLevel.toUpperCase())) {
+      parsed.urgencyLevel = 'HIGH'
+    } else {
+      parsed.urgencyLevel = parsed.urgencyLevel.toUpperCase()
+    }
+
+    return NextResponse.json(parsed as TriageResult)
+  } catch (err: any) {
+    console.error('[triage] Error during processing, falling back:', err?.message)
+    const fallback = await getDynamicMock()
+    return NextResponse.json(fallback)
   }
 }
