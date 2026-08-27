@@ -108,22 +108,16 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex flex-col items-center text-center">
         <div className="inline-flex items-center gap-1.5 border border-zinc-200 rounded-full px-3 py-1 text-xs font-medium text-zinc-600 mb-6">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-          {hi ? 'Varun Mayya x OpenAI की पहल' : 'A Varun Mayya x OpenAI Initiative'}
+          {hi ? 'Aevy TV x OpenAI Hackathon Submission' : 'Aevy TV x OpenAI Hackathon Submission'}
         </div>
 
-        <h1 className="text-5xl md:text-6xl font-extrabold text-zinc-900 tracking-tighter leading-[1.1] mb-5 max-w-3xl">
+        <h1 className="text-5xl md:text-6xl font-extrabold text-zinc-900 tracking-tighter leading-[1.1] mb-10 max-w-3xl">
           {hi ? (
             <>समर्थन साइबर अपराध<br /><span className="text-zinc-400">पोर्टल प्रोजेक्ट</span></>
           ) : (
             <>Samarthan Cyber Crime<br /><span className="text-zinc-400">Portal Project</span></>
           )}
         </h1>
-
-        <p className="text-base text-zinc-500 max-w-xl mb-10 leading-relaxed">
-          {hi
-            ? 'AI-संचालित प्लेटफ़ॉर्म: तुरंत शिकायत का मसौदा तैयार करें, नोडल अधिकारियों को खोजें और अपनी FIR ट्रैक करें।'
-            : 'AI-powered platform to instantly draft formal complaints, alert nodal officers, and track your resolution.'}
-        </p>
 
         {/* ── CHATBOX ── */}
         <input type="file" ref={fileRef} hidden accept="image/*,.pdf" onChange={handleFileSelect} />
