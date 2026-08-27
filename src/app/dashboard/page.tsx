@@ -115,7 +115,17 @@ export default function DashboardPage() {
       console.warn('Failed to generate follow-up action points:', err)
     }
     const updated = await addUpdate(triageResult.incidentId, note, actionPoints, actionPointsHi)
-    if (updated) setUpdates(updated)
+    if (updated) {
+      setUpdates(updated)
+      const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })
+      const newDraft = (triageResult.complaintDraft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nI further report the following fresh evidence/update: ${note}`
+      const newDraftHi = (triageResult.complaintDraftHi || '') + `\n\n[पूरक बयान — ${timeStr}]\nमैं आगे निम्नलिखित नया साक्ष्य/अपडेट रिपोर्ट करता हूँ: ${note}`
+      setTriageResult({
+        ...triageResult,
+        complaintDraft: newDraft,
+        complaintDraftHi: newDraftHi,
+      })
+    }
   }
 
   const handleAdvanceStatus = async () => {
@@ -175,6 +185,7 @@ export default function DashboardPage() {
         amount={r.amount}
         summary={hi ? r.summaryHi : r.summary}
         followUpPoints={allFollowUpPoints}
+        updates={updates}
       />
 
       <div className="max-w-7xl mx-auto px-6 py-8 no-print">

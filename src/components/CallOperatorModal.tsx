@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PhoneCall, X, Headset, CheckCircle2 } from 'lucide-react'
 
+import { ComplaintUpdate } from '@/hooks/useComplaints'
+
 interface CallOperatorModalProps {
   open: boolean
   onClose: () => void
@@ -14,12 +16,13 @@ interface CallOperatorModalProps {
   amount: number
   summary: string
   followUpPoints?: string[]
+  updates?: ComplaintUpdate[]
 }
 
 type Step = 'connecting' | 'connected'
 
 export default function CallOperatorModal({
-  open, onClose, hotline, hi, incidentId, fraudType, amount, summary, followUpPoints = [],
+  open, onClose, hotline, hi, incidentId, fraudType, amount, summary, followUpPoints = [], updates = [],
 }: CallOperatorModalProps) {
   const [step, setStep] = useState<Step>('connecting')
 
@@ -92,13 +95,50 @@ export default function CallOperatorModal({
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">
                   {hi ? 'ऑपरेटर को भेजा गया डेटा' : 'Data shared with the operator'}
                 </p>
-                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-1.5 text-xs text-zinc-700 mb-4">
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-2 text-xs text-zinc-700 mb-4 max-h-[260px] overflow-y-auto">
                   <p><span className="text-zinc-400">{hi ? 'घटना ID' : 'Incident ID'}:</span> <span className="font-mono font-semibold">{incidentId}</span></p>
                   <p><span className="text-zinc-400">{hi ? 'श्रेणी' : 'Category'}:</span> {fraudType}</p>
                   {amount > 0 && <p><span className="text-zinc-400">{hi ? 'राशि' : 'Amount'}:</span> ₹{amount.toLocaleString('en-IN')}</p>}
-                  <p className="pt-1 text-zinc-600 leading-relaxed">{summary}</p>
-                  {followUpPoints.length > 0 && (
-                    <div className="pt-2 mt-2 border-t border-zinc-200">
+                  
+                  {/* Initial summary */}
+                  <div className="pt-1">
+                    <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-0.5">
+                      {hi ? 'प्रारंभिक सारांश:' : 'Initial Complaint Summary:'}
+                    </p>
+                    <p className="text-zinc-700 leading-relaxed bg-white border border-zinc-200/80 rounded-lg p-2.5">
+                      {summary}
+                    </p>
+                  </div>
+
+                  {/* Fresh Updates / Additional Info */}
+                  {updates.length > 0 && (
+                    <div className="pt-2 space-y-1.5">
+                      <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
+                        {hi ? 'नई जानकारी / पूरक विवरण:' : 'Fresh Information & Updates:'}
+                      </p>
+                      {updates.map((u, i) => (
+                        <div key={u.id || i} className="bg-blue-50/70 border border-blue-200/60 rounded-lg p-2.5 space-y-1">
+                          <p className="text-xs text-blue-950 font-medium leading-snug">
+                            {u.note}
+                          </p>
+                          {((hi ? u.actionPointsHi : u.actionPoints) || []).length > 0 && (
+                            <ul className="space-y-0.5 pt-1 border-t border-blue-200/40 text-[11px] text-blue-800">
+                              {((hi ? u.actionPointsHi : u.actionPoints) || []).map((pt, ptIdx) => (
+                                <li key={ptIdx} className="flex gap-1">
+                                  <span>•</span>
+                                  <span>{pt}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {updates.length === 0 && followUpPoints.length > 0 && (
+                    <div className="pt-2 border-t border-zinc-200">
                       <p className="text-zinc-400 mb-1">{hi ? 'नई जानकारी:' : 'Recent updates:'}</p>
                       <ul className="space-y-0.5">
                         {followUpPoints.map((p, i) => (
