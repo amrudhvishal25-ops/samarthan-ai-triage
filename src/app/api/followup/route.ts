@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+export const dynamic = 'force-dynamic'
+
 const FOLLOWUP_SYSTEM_PROMPT = `You are a cybercrime case assistant. A victim has already filed a complaint and is now adding a NEW piece of information to their existing case (a fresh detail, a new message from the fraudster, a new transaction, etc.).
 
 Given the case summary and the new note, return STRICT JSON:

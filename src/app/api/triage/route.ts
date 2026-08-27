@@ -95,13 +95,21 @@ ${Object.entries(IT_ACT_SECTIONS).map(([num, s]) => `- Section ${num}: ${s.title
 
 Return ONLY the JSON object. Do not wrap it in markdown block quotes (\`\`\`json).`
 
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+export const runtime = 'nodejs'
+
+export async function GET() {
+  return NextResponse.json({ status: 'ok', service: 'samarthan-triage' })
+}
+
 export async function POST(req: NextRequest) {
   try {
     console.log('[triage] POST request received')
 
     // Rate limit: 10 requests per minute per IP
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
-    const { allowed, remaining } = rateLimit(ip)
+    const { allowed } = rateLimit(ip)
     if (!allowed) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again in a minute.' },
@@ -109,15 +117,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    console.log('[triage] Parsing FormData...')
-    const formData = await req.formData()
-    console.log('[triage] FormData parsed')
-    const scenarioId = formData.get('scenarioId') as string | null
-    const textInput = formData.get('text') as string | null
-    const audioFile = formData.get('audio') as File | null
-    const imageFile = formData.get('image') as File | null
-    const categoryHint = formData.get('fraudType') as string | null
-    const complainantName = (formData.get('complainantName') as string | null)?.trim() || null
+    let scenarioId: string | null = null
+    let textInput: string | null = null
+    let audioFile: File | null = null
+    let imageFile: File | null = null
+    let categoryHint: string | null = null
+    let complainantName: string | null = null
+
+    const contentType = req.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const json = await req.json()
+      scenarioId = json.scenarioId || null
+      textInput = json.text || null
+      categoryHint = json.fraudType || null
+      complainantName = json.complainantName || null
+    } else {
+      const formData = await req.formData()
+      scenarioId = formData.get('scenarioId') as string | null
+      textInput = formData.get('text') as string | null
+      audioFile = formData.get('audio') as File | null
+      imageFile = formData.get('image') as File | null
+      categoryHint = formData.get('fraudType') as string | null
+      complainantName = (formData.get('complainantName') as string | null)?.trim() || null
+    }
 
     // Validate file sizes (prevent memory exhaustion / DoS attacks)
     const MAX_AUDIO_SIZE = 25 * 1024 * 1024 // 25MB (Whisper limit)
