@@ -204,23 +204,8 @@ export default function DashboardPage() {
           {/* ── LEFT COLUMN ── */}
           <div className="lg:col-span-7 space-y-4">
 
-            {/* Evidence Vault */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <EvidenceVault
-                hi={hi}
-                images={evidenceImages}
-                onAdd={handleAddEvidence}
-                onRemove={handleRemoveEvidence}
-              />
-            </motion.div>
-
-            {/* Complaint Updates */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-              <ComplaintUpdates hi={hi} updates={updates} onAdd={handleAddUpdate} />
-            </motion.div>
-
             {/* Editable Report Details */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="border border-zinc-200 rounded-2xl bg-white shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
                 <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
@@ -302,6 +287,21 @@ export default function DashboardPage() {
                   />
                 </div>
               </div>
+            </motion.div>
+
+            {/* Evidence Vault */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+              <EvidenceVault
+                hi={hi}
+                images={evidenceImages}
+                onAdd={handleAddEvidence}
+                onRemove={handleRemoveEvidence}
+              />
+            </motion.div>
+
+            {/* Complaint Updates */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+              <ComplaintUpdates hi={hi} updates={updates} onAdd={handleAddUpdate} />
             </motion.div>
 
             {/* Action buttons (left column) */}

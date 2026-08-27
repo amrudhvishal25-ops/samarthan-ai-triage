@@ -56,6 +56,21 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// DELETE /api/complaints?force=true  → truncate all complaints
+export async function DELETE(req: NextRequest) {
+  try {
+    const force = req.nextUrl.searchParams.get('force') === 'true'
+    if (!force) return NextResponse.json({ error: 'Missing ?force=true' }, { status: 400 })
+
+    const sql = getDb()
+    await sql`DELETE FROM complaints`
+    return NextResponse.json({ ok: true, message: 'All complaints deleted' })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
 // PATCH /api/complaints  body: { incident_id, ...fields to update }
 export async function PATCH(req: NextRequest) {
   try {

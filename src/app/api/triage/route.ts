@@ -49,10 +49,12 @@ A victim has provided an account of an incident (via text, voice note, or screen
 Extract ALL specific details provided and return a STRICT JSON object.
 
 CRITICAL INSTRUCTIONS:
-1. AGGRESSIVELY EXTRACT FRAUDSTER NAME & HANDLE: 
-   - Look in BOTH the user text AND the evidence image analysis text.
-   - If a contact name, handle, username, or profile name appears in the evidence (e.g. "Contact Name: Rithwik", "Username: rithwik8024", "@username", "User 1: Rithwik8024"), capture it as victimName (e.g. "Rithwik (@rithwik8024)").
-   - Use 'Not Identified' ONLY if no fraudster name, username, or handle exists anywhere in text or evidence.
+1. AGGRESSIVELY EXTRACT FRAUDSTER IDENTITY:
+   - victimName field = the FRAUDSTER's actual name, Instagram handle (format: @username), website URL (format: example.com), or whatever primary identifier the victim provided.
+   - Look in BOTH user text AND evidence image analysis for: person names, Instagram/social handles (@username), website URLs, UPI handles, phone numbers registered to a name.
+   - If multiple identifiers exist (e.g., "Rithwik with Instagram @rithwik8024"), prefer the handle/username as it's more verifiable (store as "Rithwik (@rithwik8024)").
+   - If only a website or domain is mentioned (e.g., "the website scamsite.com"), store the full URL as victimName.
+   - Use 'Not Identified' ONLY if no name, handle, URL, or identifier exists anywhere in text or evidence.
 
 2. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp, Telegram), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
 
@@ -64,9 +66,9 @@ CRITICAL INSTRUCTIONS:
 
 {
   "incidentId": "XXXXXXXXXXXXXX",  // generate a realistic 14-digit numeric NCRP-style acknowledgement number, no letters or dashes, first digit 1-9
-  "victimName": "Extract the FRAUDSTER's name, handle, or alias (e.g. 'Rithwik (@rithwik8024)'). Use 'Not Identified' ONLY if completely absent.",
+  "victimName": "FRAUDSTER's primary identifier: actual name, Instagram handle (format: @username), website/domain URL, or alias. Examples: 'Rithwik', '@rithwik8024', 'example.com', 'Rithwik (@rithwik8024)'. Use 'Not Identified' ONLY if completely absent.",
   "fraudType": "Financial Fraud | Women/Children Related Crime | Extortion & Blackmail | Identity Theft | E-Commerce Scams | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Fake Customer Care | Investment Scam | Job Scam | Other",
-  "frauderContact": "phone/email/WhatsApp/Platform handle if mentioned/visible, else 'Not Provided'",
+  "frauderContact": "Secondary contact details: phone number, email, WhatsApp number, UPI ID, or separate platform handle (distinct from victimName). Use 'Not Provided' if no additional contact info exists.",
   "amount": number,  // in INR, 0 if no financial loss is mentioned/visible
   "bankName": "string or 'Not Provided'",
   "accountNumber": "masked XXXX-XXXX-LAST4 if mentioned/visible, else 'Not Provided'",
@@ -303,7 +305,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
       // 3. Structure the data with GPT-4o-mini
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: customPrompt },
           { role: 'user', content: userText },

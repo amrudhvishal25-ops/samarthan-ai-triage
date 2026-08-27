@@ -55,12 +55,12 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col items-center gap-10"
+            className="flex flex-col items-center gap-16"
           >
             {/* Text on top */}
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2">
-                <span>{hi ? 'गहरी सांस लें — सब ठीक हो जाएगा' : 'Take a deep breath — everything will be okay'}</span>
+                <span>{hi ? 'कृपया प्रतीक्षा करें' : 'Please wait'}</span>
                 <span aria-hidden="true">💙</span>
               </h2>
               <AnimatePresence mode="wait">
@@ -78,7 +78,7 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
                 </motion.p>
               </AnimatePresence>
               <p className="text-gray-400 text-xs mt-2">
-                {hi ? 'हमारा AI आपकी मदद कर रहा है' : 'Our AI is working on this for you'}
+                {hi ? 'AI आपकी रिपोर्ट विश्लेषण कर रहा है' : 'AI is analyzing your report'}
               </p>
             </div>
 
