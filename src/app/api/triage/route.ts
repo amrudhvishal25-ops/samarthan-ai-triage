@@ -239,31 +239,16 @@ export async function POST(req: NextRequest) {
       customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..."`
     }
 
-    // Safety timeout: if OpenAI takes > 8.5s on serverless, fallback to dynamic mock to prevent 504
-    const aiPromise = openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: customPrompt },
         { role: 'user', content: userText },
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: 1500,
     })
 
-    const timeoutPromise = new Promise<'TIMEOUT'>((resolve) => 
-      setTimeout(() => resolve('TIMEOUT'), 8500)
-    )
-
-    const raceResult = await Promise.race([aiPromise, timeoutPromise])
-
-    if (raceResult === 'TIMEOUT') {
-      console.warn('[triage] OpenAI exceeded 8.5s on serverless, returning mock')
-      const fallback = await getDynamicMock()
-      return NextResponse.json(fallback)
-    }
-
-    const completion = raceResult as OpenAI.Chat.Completions.ChatCompletion
     const raw = completion.choices[0]?.message?.content || '{}'
     const parsed = JSON.parse(raw)
 
