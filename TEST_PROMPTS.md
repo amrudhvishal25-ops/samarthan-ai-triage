@@ -1,10 +1,10 @@
 # Samarthan Test Prompts — Fraud Triage Validation
 
-Test these prompts on **https://samarthan-ai.vercel.app** to validate AI extraction, urgency classification, and complaint drafting across all fraud types.
+Test these prompts on **https://samarthan-ai.vercel.app** to validate AI extraction, urgency classification, and complaint drafting across all 6 cyber crime categories.
 
 ---
 
-## Test 1: UPI/Mobile Payment Scam
+## Test 1: Financial Fraud (UPI/Mobile Payment Scam)
 
 **Fraud Type:** Financial Fraud (UPI/Payment)  
 **Expected Urgency:** CRITICAL  
@@ -21,43 +21,97 @@ I was selling my old laptop on OLX yesterday. A buyer contacted me via WhatsApp 
 
 ---
 
-## Test 2: OTP/Account Takeover Fraud
+## Test 2: Women/Children Related Crime (Cyberbullying & Harassment)
 
-**Fraud Type:** Identity Theft / Account Takeover  
+**Fraud Type:** Women/Children Related Crime  
 **Expected Urgency:** CRITICAL  
 **Key Fields to Verify:**
-- Frauder Name: Phone number or website domain
-- Contact: Phone number (+91 98765XXXXX)
-- Amount: Variable (account access compromised)
-- Freeze Steps: Change passwords → Enable 2FA → Report to bank → File FIR
-- Applicable Laws: IT Act 66C (identity theft using digital signature/credentials)
+- Frauder Name: Social media handle (@username)
+- Contact: Social media platform or phone number
+- Amount: N/A (non-financial, reputational harm)
+- Freeze Steps: Block & report profile → Contact platform (Meta/Instagram) → File FIR → Document evidence
+- Applicable Laws: IT Act 67 (publishing obscene content), IPC 509 (outraging modesty)
 
 ### Prompt:
 ```
-Someone called me this morning pretending to be from "HDFC Bank Fraud Department". They said there was suspicious activity on my account and asked me to verify my OTP. I gave them the OTP without thinking. Now I can see my account has been accessed from a different IP, and ₹8,500 has been transferred to an unknown account (beneficiary name: "TechSolutions Pvt Ltd"). The fraudster also sent me a fake bank alert via email from a domain that looked like hdfc-security.net. I'm really scared. My email is john.doe@gmail.com and my phone is +91 9876543210.
+My 16-year-old daughter received explicit messages from an unknown account (@creep_hunter_93 on Instagram). The person threatened to share her photos online unless she sent more. She's completely traumatized. We tried reporting the account but Instagram took hours to respond. The person is now posting her photo on their stories with horrible captions. Please help us file a formal complaint. Her name is Priya and she attends Delhi Public School.
 ```
 
 ---
 
-## Test 3: Investment/Scheme Scam
+## Test 3: Extortion & Blackmail (Sextortion)
 
-**Fraud Type:** Investment Fraud  
+**Fraud Type:** Extortion & Blackmail  
+**Expected Urgency:** CRITICAL  
+**Key Fields to Verify:**
+- Frauder Name: Phone number or app username
+- Contact: WhatsApp, Telegram, or email
+- Amount: Demanded ransom (varies, ₹50k-5L common)
+- Freeze Steps: DO NOT PAY → Block & report → File FIR immediately → Preserve screenshots
+- Applicable Laws: IPC 383 (extortion) + IT Act 66E (privacy violation)
+
+### Prompt:
+```
+I received a WhatsApp message from +91 9999999999 saying "We have your private videos from your webcam. Send ₹1 lakh in Bitcoin in 24 hours or we'll send them to your family and workplace." I'm freaking out. They even know my name (Rajesh) and mentioned my company (TCS). They sent a screenshot of my LinkedIn profile. I don't think they actually have videos but I'm terrified. What do I do?
+```
+
+---
+
+## Test 4: Identity Theft (PAN/Aadhaar Misuse)
+
+**Fraud Type:** Identity Theft  
 **Expected Urgency:** HIGH  
 **Key Fields to Verify:**
-- Frauder Name: Website domain or social media handle
-- Contact: WhatsApp number or Telegram username
-- Amount: ₹50,000 (promised returns are fake)
-- Freeze Steps: Do not transfer more money → Report to SEBI → File complaint
-- Applicable Laws: IT Act 66D + BNS 318(4) (cheating & inducing delivery of property)
+- Frauder Name: Name on fraudulent documents or application
+- Contact: Phone number or email used for application
+- Amount: Potential credit exposure
+- Freeze Steps: Check credit score → Dispute with CIBIL → File police complaint → Monitor bank accounts
+- Applicable Laws: IT Act 66C (identity theft), IT Act 66D (cheating by personation)
 
 ### Prompt:
 ```
-I was scrolling Instagram and saw an ad for "Golden Returns Forex Trading" with testimonials of people making ₹10 lakh in 2 months. The website was goldenreturns-trading.com. I messaged their WhatsApp (+91 7777888899) and spoke to a "Priya Sharma" who convinced me to invest ₹50,000 in their trading platform. They asked me to transfer via UPI to an account in the name of "Sharma Financial Services". After 2 weeks, they promised me ₹1,50,000 returns but now they're ghosting me. I tried logging into the platform but the website is down. I think it was a scam. What should I do?
+I received a letter from Bajaj Finance saying I applied for a ₹5 lakh personal loan but got rejected. I never applied for any loan! Someone has used my Aadhaar number (my PAN is ABCDE1234F) to open a new account with a bank I don't use. I'm scared they might have already taken out loans in my name. My Aadhaar was maybe leaked in one of those data breaches. How do I protect myself?
 ```
 
 ---
 
-## Test 4: Government Impersonation Scam (Bonus)
+## Test 5: E-Commerce Scams (Fake Websites & OLX Fraud)
+
+**Fraud Type:** E-Commerce Scams  
+**Expected Urgency:** HIGH  
+**Key Fields to Verify:**
+- Frauder Name: Website domain or seller profile name
+- Contact: Email or WhatsApp from fake seller
+- Amount: Amount transferred before item never arrives
+- Freeze Steps: Contact seller → Report to OLX/marketplace → Dispute transaction with bank → File complaint
+- Applicable Laws: IT Act 66D (cheating via computer) + BNS 318(4) (inducing delivery of property)
+
+### Prompt:
+```
+I bought an iPhone 15 Pro from a seller on OLX named "tech-deals-mumbai" for ₹70,000. I transferred the full amount via bank transfer to his account (Account: 9876543210, IFSC: SBIN0001234). He sent me tracking screenshots but the courier company says there's no such shipment. Now he's not responding to my messages. The website he asked me to track on looks like a fake courier site. I've lost ₹70,000. The seller's phone number was +91 8765432109.
+```
+
+---
+
+## Test 6: Other Cyber Crime (Hacking, Data Theft, Ransom)
+
+**Fraud Type:** Other Cyber Crime  
+**Expected Urgency:** CRITICAL  
+**Key Fields to Verify:**
+- Frauder Name: Email domain or hacker group name
+- Contact: Email address used in ransom demand
+- Amount: Ransom demand (ransomware cases)
+- Freeze Steps: Disconnect device from internet → Backup data → Report to law enforcement → Do NOT pay ransom
+- Applicable Laws: IT Act 43 (unauthorized access), IT Act 66 (computer-related offenses)
+
+### Prompt:
+```
+My laptop got infected with ransomware yesterday. A message appeared saying "Your files are encrypted. Send 2 Bitcoin (₹50 lakh) to wallet address 1A2B3C... to decrypt them." They want payment within 48 hours or files are deleted forever. I don't have backup for my business documents (5 years of invoices and contracts). The ransom email is from darkweb.ransom@protonmail.com. Is there any way to recover my files without paying?
+```
+
+---
+
+## Test 7: Government Impersonation (Bonus - High-Stakes Fraud)
 
 **Fraud Type:** Financial Fraud (High-stakes impersonation)  
 **Expected Urgency:** CRITICAL  
@@ -94,12 +148,15 @@ I received a call from someone claiming to be "Inspector Verma from Mumbai Cyber
 
 ## Success Criteria
 
-| Test | Pass Criteria |
-|------|---------------|
-| UPI Scam | Urgency CRITICAL, frauder@ybl extracted, bank freeze step included |
-| OTP Fraud | Urgency CRITICAL, phone number + email domain noted, 2FA step included |
-| Investment Scam | Urgency HIGH, website domain extracted, SEBI report step included |
-| Gov Impersonation | Urgency CRITICAL, inspector name noted, immediate 1930 call step |
+| Test | Category | Pass Criteria |
+|------|----------|---------------|
+| 1 | Financial Fraud | Urgency CRITICAL, frauder@ybl extracted, bank freeze step |
+| 2 | Women/Children Crime | Urgency CRITICAL, Instagram handle noted, platform report step |
+| 3 | Extortion & Blackmail | Urgency CRITICAL, phone/Telegram contact noted, immediate police step |
+| 4 | Identity Theft | Urgency HIGH, Aadhaar/PAN mentioned, CIBIL dispute step |
+| 5 | E-Commerce Scams | Urgency HIGH, website/marketplace domain noted, transaction dispute step |
+| 6 | Other Cyber Crime | Urgency CRITICAL, email/wallet noted, ransom refusal guidance |
+| Bonus | Gov Impersonation | Urgency CRITICAL, inspector name noted, immediate 1930 call step |
 
 ---
 
