@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Shield, Globe, FileText, LogOut, User, ChevronDown } from 'lucide-react'
+import { Globe, FileText, LogOut, User, ChevronDown } from 'lucide-react'
 import { useAuth, DigiLockerUser } from '@/hooks/useAuth'
 import DigiLockerModal from './DigiLockerModal'
+import { BotMessageSquareIcon } from './BotMessageSquareIcon'
 
 interface NavbarProps {
   language: 'en' | 'hi'
@@ -44,9 +45,9 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
 
           {/* Logo */}
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 h-auto min-h-0">
-            <div className="w-7 h-7 rounded-md bg-zinc-900 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 h-auto min-h-0 group">
+            <div className="w-7 h-7 rounded-md bg-zinc-900 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors">
+              <BotMessageSquareIcon size={16} />
             </div>
             <span className="font-semibold text-zinc-900 text-sm tracking-tight">Samarthan</span>
           </button>
