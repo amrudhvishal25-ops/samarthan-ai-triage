@@ -2,8 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['openai'],
-  output: 'standalone',
-  // Request size limit set in /api/triage/route.ts via FormData validation
+  // Removed 'standalone' output — Vercel handles deployment differently
 }
 
 module.exports = nextConfig
