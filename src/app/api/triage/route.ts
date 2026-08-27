@@ -37,8 +37,8 @@ CRITICAL INSTRUCTIONS:
 
 {
   "incidentId": "XXXXXXXXXXXXXX",  // generate a realistic 14-digit numeric NCRP-style acknowledgement number, no letters or dashes, first digit 1-9
-  "victimName": "FRAUDSTER's primary identifier: actual name, Instagram handle (format: @username), website/domain URL, or alias. Examples: 'Rithwik', '@rithwik8024', 'example.com', 'Rithwik (@rithwik8024)'. Use 'Not Identified' ONLY if completely absent.",
-  "fraudType": "Financial Fraud | Women/Children Related Crime | Extortion & Blackmail | Identity Theft | E-Commerce Scams | Hate Speech | Online Ragging | Other Cyber Crime | UPI Fraud | OTP Fraud | Fake Customer Care | Investment Scam | Job Scam | Other",
+  "victimName": "FRAUDSTER's primary identifier ONLY (name, @handle, UPI ID, domain, seller username, phone). Examples: 'Rithwik', '@rithwik8024', 'random@ybl', 'example.com', 'tech-deals-mumbai'. Use 'Not Identified' ONLY if absolutely none exist.",
+  "fraudType": "Classify STRICTLY by incident type: Financial Fraud (UPI/bank money theft, QR scams), Women/Children Related Crime (harassment of minors/women, cyberbullying, fake impersonation profiles), Extortion & Blackmail (adult sextortion, ransom threats), Identity Theft (Aadhaar/PAN misuse), E-Commerce Scams (OLX/marketplace fake sellers), Other Cyber Crime (ransomware, hacking, data theft). DO NOT confuse cyberbullying with extortion—if victim is minor/woman and being harassed/threatened, it's Women/Children Related Crime.",
   "frauderContact": "Secondary contact details: phone number, email, WhatsApp number, UPI ID, or separate platform handle (distinct from victimName). Use 'Not Provided' if no additional contact info exists.",
   "amount": number,  // in INR, 0 if no financial loss is mentioned/visible
   "bankName": "string or 'Not Provided'",
