@@ -77,8 +77,6 @@ ${Object.entries(IT_ACT_SECTIONS).map(([num, s]) => `- Section ${num}: ${s.title
 Return ONLY the JSON object. Do not wrap it in markdown block quotes (\`\`\`json).`
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 15
-export const runtime = 'nodejs'
 
 export async function GET() {
   return NextResponse.json({ status: 'ok', service: 'samarthan-triage' })
