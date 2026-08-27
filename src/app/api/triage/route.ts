@@ -214,8 +214,10 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
     try {
       const apiKey = process.env.OPENAI_API_KEY
+      console.log('[triage] OPENAI_API_KEY loaded:', apiKey ? `${apiKey.substring(0, 20)}...` : 'MISSING')
       if (!apiKey) {
-        throw new Error('No OpenAI API key configured')
+        console.error('[triage] Fatal: OPENAI_API_KEY not set in environment')
+        return NextResponse.json({ error: 'OpenAI API key not configured on server' }, { status: 500 })
       }
 
       const openai = new OpenAI({ apiKey })
