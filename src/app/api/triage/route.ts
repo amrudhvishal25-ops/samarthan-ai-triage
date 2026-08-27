@@ -77,7 +77,7 @@ ${Object.entries(IT_ACT_SECTIONS).map(([num, s]) => `- Section ${num}: ${s.title
 Return ONLY the JSON object. Do not wrap it in markdown block quotes (\`\`\`json).`
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 15
 export const runtime = 'nodejs'
 
 export async function GET() {
@@ -315,7 +315,7 @@ CRITICAL AI INSTRUCTION: The "Additional Corrections" override the original cont
 
       // 3. Structure the data with GPT-4o-mini
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: customPrompt },
           { role: 'user', content: userText },
