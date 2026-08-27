@@ -12,10 +12,11 @@ Extract ALL specific details provided and return a STRICT JSON object.
 CRITICAL INSTRUCTIONS:
 1. AGGRESSIVELY EXTRACT FRAUDSTER IDENTITY:
    - victimName field = FRAUDSTER's primary identifier: actual name, Instagram handle (format: @username), website URL (example.com), UPI ID (xxx@ybl), seller username, or phone number.
-   - Look in BOTH text AND evidence for: names, Instagram handles, websites, UPI IDs, phone numbers, email addresses, seller usernames on marketplaces.
-   - PRIORITY ORDER: Named person > Instagram handle > Website/domain > UPI ID > Phone > Email > Seller handle
-   - Examples: "Rithwik", "@rithwik8024", "example.com", "random@ybl", "tech-deals-mumbai", "+91 9876543210"
-   - If multiple identifiers, prefer the most specific/verifiable (e.g., "@handle" over generic name).
+   - Look in BOTH text AND evidence for: names, Instagram handles (@username), websites (example.com), UPI IDs (xxx@ybl or xxx@okhdfcbank), phone numbers (+91 xxxx), email addresses, seller usernames.
+   - PRIORITY ORDER: Named person > Instagram handle (with @) > Website/domain > UPI ID (look for @ybl, @okhdfcbank patterns) > Phone > Email > Seller handle
+   - EXPLICIT EXAMPLES: "Rithwik", "@rithwik8024", "example.com", "random@ybl", "suspicious@okhdfcbank", "tech-deals-mumbai", "+91 9876543210", "fraud@gmail.com"
+   - If victim says "The UPI ID was random@ybl", extract victimName as "random@ybl" EXACTLY.
+   - If multiple identifiers exist, prefer the most specific/verifiable (e.g., "@handle" or "UPI@ybl" over generic name).
    - Use 'Not Identified' ONLY if absolutely no identifier exists anywhere in text or evidence.
 
 2. FRAUD TYPE CLASSIFICATION — Use EXACT categories and logic:
