@@ -66,7 +66,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
             className="relative bg-white rounded-2xl border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
           >
             {step !== 'success' && (
-              <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
+              <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
                 <X className="w-4 h-4" />
               </button>
             )}

@@ -13,12 +13,13 @@ interface CallOperatorModalProps {
   fraudType: string
   amount: number
   summary: string
+  followUpPoints?: string[]
 }
 
 type Step = 'connecting' | 'connected'
 
 export default function CallOperatorModal({
-  open, onClose, hotline, hi, incidentId, fraudType, amount, summary,
+  open, onClose, hotline, hi, incidentId, fraudType, amount, summary, followUpPoints = [],
 }: CallOperatorModalProps) {
   const [step, setStep] = useState<Step>('connecting')
 
@@ -48,7 +49,7 @@ export default function CallOperatorModal({
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="relative bg-white rounded-2xl border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
           >
-            <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
+            <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
               <X className="w-4 h-4" />
             </button>
 
@@ -96,6 +97,19 @@ export default function CallOperatorModal({
                   <p><span className="text-zinc-400">{hi ? 'श्रेणी' : 'Category'}:</span> {fraudType}</p>
                   {amount > 0 && <p><span className="text-zinc-400">{hi ? 'राशि' : 'Amount'}:</span> ₹{amount.toLocaleString('en-IN')}</p>}
                   <p className="pt-1 text-zinc-600 leading-relaxed">{summary}</p>
+                  {followUpPoints.length > 0 && (
+                    <div className="pt-2 mt-2 border-t border-zinc-200">
+                      <p className="text-zinc-400 mb-1">{hi ? 'नई जानकारी:' : 'Recent updates:'}</p>
+                      <ul className="space-y-0.5">
+                        {followUpPoints.map((p, i) => (
+                          <li key={i} className="flex gap-1.5">
+                            <span className="text-zinc-300">•</span>
+                            <span>{p}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 <a

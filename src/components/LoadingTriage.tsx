@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Brain } from 'lucide-react'
+import { Brain, HeartHandshake } from 'lucide-react'
 
 interface LoadingTriageProps {
   language: 'en' | 'hi'
@@ -29,6 +29,24 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
 
   return (
     <div className="flex flex-col items-center gap-8 py-12 px-6">
+      {/* Reassurance banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-sm flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3.5"
+      >
+        <HeartHandshake className="w-5 h-5 text-green-600 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-green-800">
+            {hi ? 'गहरी सांस लें, सब ठीक हो जाएगा' : 'Take a deep breath — everything will be okay'}
+          </p>
+          <p className="text-xs text-green-700 mt-0.5">
+            {hi ? 'हमारा AI आपकी मदद कर रहा है' : 'Our AI is working on this for you'}
+          </p>
+        </div>
+      </motion.div>
+
       {/* Pulsing brain icon */}
       <motion.div
         animate={{ scale: [1, 1.08, 1] }}

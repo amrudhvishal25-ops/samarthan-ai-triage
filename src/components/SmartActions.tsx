@@ -7,11 +7,12 @@ interface SmartActionsProps {
   incidentId: string
   amount: number
   hi: boolean
+  followUpPoints?: string[]
   onBankNotified?: () => void
   onPoliceRouted?: () => void
 }
 
-export default function SmartActions({ bankName, incidentId, amount, hi, onBankNotified, onPoliceRouted }: SmartActionsProps) {
+export default function SmartActions({ bankName, incidentId, amount, hi, followUpPoints = [], onBankNotified, onPoliceRouted }: SmartActionsProps) {
   const [locating, setLocating] = useState(false)
   const [policeStation, setPoliceStation] = useState<string | null>(null)
   const [bankNotified, setBankNotified] = useState(false)
@@ -28,7 +29,10 @@ export default function SmartActions({ bankName, incidentId, amount, hi, onBankN
     const nodalEmail = cleanBankName !== 'Unknown' ? bankMap[cleanBankName] : 'nodal.officer@rbi.org.in'
 
     const subject = encodeURIComponent(`URGENT: Fraud Reporting - Incident ${incidentId}`)
-    const body = encodeURIComponent(`Dear Nodal Officer,\n\nI am reporting a cyber fraud on my account.\nIncident ID: ${incidentId}\nAmount: Rs ${amount}\n\nPlease freeze the beneficiary account immediately.\n\nRegards,`)
+    const followUpText = followUpPoints.length > 0
+      ? `\n\nAdditional updates since filing:\n${followUpPoints.map(p => `- ${p}`).join('\n')}`
+      : ''
+    const body = encodeURIComponent(`Dear Nodal Officer,\n\nI am reporting a cyber fraud on my account.\nIncident ID: ${incidentId}\nAmount: Rs ${amount}\n\nPlease freeze the beneficiary account immediately.${followUpText}\n\nRegards,`)
 
     window.open(`mailto:${nodalEmail}?subject=${subject}&body=${body}`, '_blank')
     setBankNotified(true)

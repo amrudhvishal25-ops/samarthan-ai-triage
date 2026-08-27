@@ -14,6 +14,14 @@ export interface EvidenceImage {
   addedAt: string
 }
 
+export interface ComplaintUpdate {
+  id: string
+  note: string
+  actionPoints: string[]
+  actionPointsHi: string[]
+  addedAt: string
+}
+
 export interface SavedComplaint {
   incidentId: string
   fraudType: FraudType
@@ -36,6 +44,7 @@ export interface SavedComplaint {
   status: ComplaintStatus
   statusHistory: ComplaintStatusEvent[]
   evidenceImages: EvidenceImage[]
+  updates: ComplaintUpdate[]
 }
 
 const STORAGE_KEY = 'samarthan_complaints'
@@ -64,10 +73,11 @@ interface ComplaintRow {
   status: ComplaintStatus
   status_history: ComplaintStatusEvent[]
   evidence_images: EvidenceImage[]
+  updates: ComplaintUpdate[]
 }
 
 function fromRow(row: ComplaintRow): SavedComplaint {
-  return {
+  return normalize({
     incidentId: row.incident_id,
     fraudType: row.fraud_type,
     victimName: row.victim_name,
@@ -83,13 +93,14 @@ function fromRow(row: ComplaintRow): SavedComplaint {
     upiId: row.upi_id ?? undefined,
     timeline: row.timeline,
     freezeSteps: row.freeze_steps,
-    applicableLaws: row.applicable_laws ?? [],
+    applicableLaws: row.applicable_laws,
     savedAt: row.saved_at,
     language: row.language,
     status: row.status,
     statusHistory: row.status_history,
-    evidenceImages: row.evidence_images ?? [],
-  }
+    evidenceImages: row.evidence_images,
+    updates: row.updates,
+  })
 }
 
 function toRow(c: SavedComplaint): ComplaintRow {
@@ -115,14 +126,35 @@ function toRow(c: SavedComplaint): ComplaintRow {
     status: c.status,
     status_history: c.statusHistory,
     evidence_images: c.evidenceImages,
+    updates: c.updates,
   }
+}
+
+// Fills in fields that didn't exist yet when a complaint was first saved
+// (e.g. records written before evidenceImages/applicableLaws/updates were
+// added to the schema), so older localStorage entries don't crash the UI.
+function normalize(c: Partial<SavedComplaint>): SavedComplaint {
+  return {
+    ...c,
+    freezeSteps: c.freezeSteps ?? [],
+    applicableLaws: c.applicableLaws ?? [],
+    statusHistory: c.statusHistory ?? [],
+    evidenceImages: c.evidenceImages ?? [],
+    updates: (c.updates ?? []).map(u => ({
+      ...u,
+      actionPoints: u.actionPoints ?? [],
+      actionPointsHi: u.actionPointsHi ?? [],
+    })),
+    status: c.status ?? 'SUBMITTED',
+  } as SavedComplaint
 }
 
 function readLocal(): SavedComplaint[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.map(normalize) : []
   } catch {
     return []
   }
@@ -146,7 +178,7 @@ export function useComplaints() {
     return readLocal()
   }, [])
 
-  const save = useCallback(async (complaint: Omit<SavedComplaint, 'savedAt' | 'status' | 'statusHistory' | 'evidenceImages'>) => {
+  const save = useCallback(async (complaint: Omit<SavedComplaint, 'savedAt' | 'status' | 'statusHistory' | 'evidenceImages' | 'updates'>) => {
     const now = new Date().toISOString()
     const record: SavedComplaint = {
       ...complaint,
@@ -154,6 +186,7 @@ export function useComplaints() {
       status: 'SUBMITTED',
       statusHistory: [{ status: 'SUBMITTED', at: now }],
       evidenceImages: [],
+      updates: [],
     }
 
     if (isSupabaseConfigured && supabase) {
@@ -267,5 +300,27 @@ export function useComplaints() {
     return nextImages
   }, [getById])
 
-  return { getAll, save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage }
+  const addUpdate = useCallback(async (
+    incidentId: string, note: string, actionPoints: string[] = [], actionPointsHi: string[] = [],
+  ): Promise<ComplaintUpdate[] | null> => {
+    const current = await getById(incidentId)
+    if (!current) return null
+    const entry: ComplaintUpdate = { id: crypto.randomUUID(), note, actionPoints, actionPointsHi, addedAt: new Date().toISOString() }
+    const nextUpdates = [...current.updates, entry]
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase
+        .from(TABLE)
+        .update({ updates: nextUpdates })
+        .eq('incident_id', incidentId)
+      if (error) throw error
+      return nextUpdates
+    }
+
+    const all = readLocal()
+    writeLocal(all.map(c => c.incidentId === incidentId ? { ...c, updates: nextUpdates } : c))
+    return nextUpdates
+  }, [getById])
+
+  return { getAll, save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage, addUpdate }
 }

@@ -34,6 +34,18 @@ function IntakeContent() {
   const handleAIAnalyze = async (forcedText?: string, forcedImg?: File) => {
     setIsLoading(true)
     setError('')
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError(hi
+        ? 'आप ऑफ़लाइन हैं। कृपया इंटरनेट कनेक्शन जांचें और फिर से कोशिश करें।'
+        : "You're offline. Check your internet connection and try again.")
+      setIsLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 25000)
+
     try {
       const formData = new FormData()
       formData.append('language', language)
@@ -48,14 +60,21 @@ function IntakeContent() {
       const user = getUser()
       if (user?.name) formData.append('complainantName', user.name)
 
-      const resp = await fetch('/api/triage', { method: 'POST', body: formData })
-      if (!resp.ok) throw new Error('Failed to process. Please try again.')
+      const resp = await fetch('/api/triage', { method: 'POST', body: formData, signal: controller.signal })
+      if (!resp.ok) throw new Error(hi ? 'प्रोसेस करने में विफल। कृपया फिर से कोशिश करें।' : 'Failed to process. Please try again.')
       const result = await resp.json()
       setTriageResult(result)
       router.push('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError(hi
+          ? 'यह सामान्य से अधिक समय ले रहा है। आपका इंटरनेट धीमा हो सकता है — कृपया फिर से कोशिश करें।'
+          : "This is taking longer than usual — your connection may be slow. Please try again.")
+      } else {
+        setError(err instanceof Error ? err.message : (hi ? 'कुछ गलत हो गया।' : 'Something went wrong.'))
+      }
     } finally {
+      clearTimeout(timeoutId)
       setIsLoading(false)
     }
   }
@@ -87,6 +106,7 @@ function IntakeContent() {
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center gap-3">
           <button
             onClick={() => router.back()}
+            aria-label={hi ? 'वापस जाएं' : 'Go back'}
             className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors h-auto min-h-0"
           >
             <ArrowLeft className="w-4 h-4" />

@@ -14,7 +14,8 @@ import FIRTracker from '@/components/FIRTracker'
 import Navbar from '@/components/Navbar'
 import CallOperatorModal from '@/components/CallOperatorModal'
 import ApplicableLaws from '@/components/ApplicableLaws'
-import { useComplaints, EvidenceImage } from '@/hooks/useComplaints'
+import ComplaintUpdates from '@/components/ComplaintUpdates'
+import { useComplaints, EvidenceImage, ComplaintUpdate } from '@/hooks/useComplaints'
 import { ComplaintStatus } from '@/data/scenarios'
 
 function readAsDataUrl(file: File): Promise<string> {
@@ -29,9 +30,10 @@ function readAsDataUrl(file: File): Promise<string> {
 export default function DashboardPage() {
   const router = useRouter()
   const { triageResult, setTriageResult, language, setLanguage, reset, sharedImage } = useTriage()
-  const { save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage } = useComplaints()
+  const { save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage, addUpdate } = useComplaints()
   const [status, setStatus] = useState<ComplaintStatus>('SUBMITTED')
   const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>([])
+  const [updates, setUpdates] = useState<ComplaintUpdate[]>([])
   const [callModalHotline, setCallModalHotline] = useState<string | null>(null)
   const hi = language === 'hi'
 
@@ -71,6 +73,7 @@ export default function DashboardPage() {
         } else {
           setEvidenceImages(record.evidenceImages)
         }
+        setUpdates(record.updates)
       })
       .catch(err => console.error('Failed to save complaint:', err))
   }, [triageResult, save, getById, addEvidenceImage, sharedImage, language])
@@ -86,6 +89,33 @@ export default function DashboardPage() {
     if (!triageResult) return
     const updated = await removeEvidenceImage(triageResult.incidentId, imageId)
     if (updated) setEvidenceImages(updated)
+  }
+
+  const handleAddUpdate = async (note: string) => {
+    if (!triageResult) return
+    let actionPoints: string[] = []
+    let actionPointsHi: string[] = []
+    try {
+      const resp = await fetch('/api/followup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          note,
+          fraudType: triageResult.fraudType,
+          summary: triageResult.summary,
+          frauderContact: triageResult.frauderContact,
+        }),
+      })
+      if (resp.ok) {
+        const data = await resp.json()
+        actionPoints = data.actionPoints ?? []
+        actionPointsHi = data.actionPointsHi ?? []
+      }
+    } catch (err) {
+      console.warn('Failed to generate follow-up action points:', err)
+    }
+    const updated = await addUpdate(triageResult.incidentId, note, actionPoints, actionPointsHi)
+    if (updated) setUpdates(updated)
   }
 
   const handleAdvanceStatus = async () => {
@@ -109,6 +139,7 @@ export default function DashboardPage() {
   if (!triageResult) return null
 
   const r = triageResult
+  const allFollowUpPoints = updates.flatMap(u => hi ? u.actionPointsHi : u.actionPoints)
 
   const handleUpdate = (field: keyof typeof r, value: any) => {
     setTriageResult({ ...r, [field]: value })
@@ -143,6 +174,7 @@ export default function DashboardPage() {
         fraudType={r.fraudType}
         amount={r.amount}
         summary={hi ? r.summaryHi : r.summary}
+        followUpPoints={allFollowUpPoints}
       />
 
       <div className="max-w-7xl mx-auto px-6 py-8 no-print">
@@ -180,6 +212,11 @@ export default function DashboardPage() {
                 onAdd={handleAddEvidence}
                 onRemove={handleRemoveEvidence}
               />
+            </motion.div>
+
+            {/* Complaint Updates */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+              <ComplaintUpdates hi={hi} updates={updates} onAdd={handleAddUpdate} />
             </motion.div>
 
             {/* Editable Report Details */}
@@ -358,6 +395,7 @@ export default function DashboardPage() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               <SmartActions
                 bankName={r.bankName} incidentId={r.incidentId} amount={r.amount} hi={hi}
+                followUpPoints={allFollowUpPoints}
                 onBankNotified={handleBankNotified}
                 onPoliceRouted={handlePoliceRouted}
               />

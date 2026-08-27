@@ -22,7 +22,8 @@ create table if not exists complaints (
   language text not null default 'en',
   status text not null default 'SUBMITTED',
   status_history jsonb not null default '[]'::jsonb,
-  evidence_images jsonb not null default '[]'::jsonb
+  evidence_images jsonb not null default '[]'::jsonb,
+  updates jsonb not null default '[]'::jsonb
 );
 
 create index if not exists complaints_saved_at_idx on complaints (saved_at desc);
@@ -47,3 +48,6 @@ create policy "public update" on complaints
 
 -- If the table already existed before applicable_laws was added, run:
 -- alter table complaints add column if not exists applicable_laws jsonb not null default '[]'::jsonb;
+
+-- If the table already existed before updates was added, run:
+-- alter table complaints add column if not exists updates jsonb not null default '[]'::jsonb;
