@@ -46,7 +46,7 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
   }, [])
 
   return (
-    <div className="flex flex-col items-center gap-8 py-12 px-6 min-h-[420px]">
+    <div className="flex flex-col items-center justify-center gap-8 py-12 px-6 min-h-[520px] w-full text-center">
       <AnimatePresence mode="wait">
         {breathing ? (
           <motion.div
@@ -55,10 +55,10 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col items-center gap-6 py-8"
+            className="flex flex-col items-center gap-10"
           >
             <motion.div
-              animate={{ scale: phase === 'inhale' ? 1.06 : 0.97 }}
+              animate={{ scale: phase === 'inhale' ? 1.04 : 0.98 }}
               transition={{ duration: BREATH_DURATION / 2 / 1000, ease: 'easeInOut' }}
               className="flex items-center justify-center"
             >
@@ -66,7 +66,7 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
             </motion.div>
 
             <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center justify-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2">
                 <span>{hi ? 'गहरी सांस लें — सब ठीक हो जाएगा' : 'Take a deep breath — everything will be okay'}</span>
                 <span aria-hidden="true">💙</span>
               </h2>
