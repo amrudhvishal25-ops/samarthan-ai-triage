@@ -11,22 +11,24 @@ Extract ALL specific details provided and return a STRICT JSON object.
 
 CRITICAL INSTRUCTIONS:
 1. AGGRESSIVELY EXTRACT FRAUDSTER IDENTITY:
-   - victimName field = FRAUDSTER's primary identifier: actual name, Instagram handle (format: @username), website URL (example.com), UPI ID (xxx@ybl), seller username, or phone number.
-   - Look in BOTH text AND evidence for: names, Instagram handles (@username), websites (example.com), UPI IDs (xxx@ybl or xxx@okhdfcbank), phone numbers (+91 xxxx), email addresses, seller usernames.
-   - PRIORITY ORDER: Named person > Instagram handle (with @) > Website/domain > UPI ID (look for @ybl, @okhdfcbank patterns) > Phone > Email > Seller handle
-   - EXPLICIT EXAMPLES: "Rithwik", "@rithwik8024", "example.com", "random@ybl", "suspicious@okhdfcbank", "tech-deals-mumbai", "+91 9876543210", "fraud@gmail.com"
-   - If victim says "The UPI ID was random@ybl", extract victimName as "random@ybl" EXACTLY.
-   - If multiple identifiers exist, prefer the most specific/verifiable (e.g., "@handle" or "UPI@ybl" over generic name).
-   - Use 'Not Identified' ONLY if absolutely no identifier exists anywhere in text or evidence.
+   - victimName field = FRAUDSTER's PRIMARY identifier: person name, Instagram handle, website, UPI ID, APP NAME, BANK NAME, seller username, channel name, email, or phone.
+   - AGGRESSIVELY look for: person names, @handles, domains, UPI@patterns, APP NAMES (StockPro, QuickCash, SBI Bank, HDFC Bank), Telegram channels (Truth Warriors India), WhatsApp groups, seller usernames.
+   - PRIORITY: Named person > @handle > domain > APP/BANK/SERVICE NAME > UPI ID > Phone > Channel/Group name > Email
+   - CRITICAL EXAMPLES TO EXTRACT: "StockPro" (app name), "QuickCash" (app), "HDFC Bank" (bank), "SBI" (bank), "Truth Warriors India" (Telegram), "Rakesh Jhunjhunwala Tips Official" (WhatsApp group), "bestdeal-mobile.in" (website)
+   - If text says "app called StockPro" → extract "StockPro" as victimName.
+   - If "bank HDFC" → extract "HDFC Bank" or "HDFC".
+   - If "Telegram channel called Truth Warriors India" → extract "Truth Warriors India".
+   - If "WhatsApp group Rakesh Jhunjhunwala" → extract group name.
+   - Use 'Not Identified' ONLY if zero identifiers found (no person, no handle, no app, no bank, no website, no channel).
 
 2. FRAUD TYPE CLASSIFICATION — Use EXACT categories and logic:
-   - Financial Fraud: UPI/bank transfers, credit card misuse, phishing for money, QR code scams, direct money theft via banking
-   - Women/Children Related Crime: Cyberbullying, harassment, abuse, threats, sextortion involving minors or women, fake profiles impersonating someone
-   - Extortion & Blackmail: Ransom demands, threat to expose/leak content, money demanded under threat (includes sextortion of adults)
-   - Identity Theft: Aadhaar/PAN misuse, fake accounts opened in victim's name, credential theft, unauthorized loan applications
-   - E-Commerce Scams: Fake sellers, non-delivery of goods, fake websites, OLX/marketplace fraud
-   - Other Cyber Crime: Ransomware, hacking, data theft, unauthorized access, malware, system compromise
-   Use provided categoryHint if available; otherwise infer from incident description.
+   - Financial Fraud: Direct bank/UPI transfers phished, credit card misuse, phishing for money, OTP theft leading to bank debit, direct money theft via banking channels (NOT marketplace).
+   - Women/Children Related Crime: Cyberbullying, harassment, abuse, threats involving minors or women, sextortion of minors/women, fake impersonation profiles targeting someone.
+   - Extortion & Blackmail: Adult sextortion, ransom demands, threat to expose/leak content, money demanded under threat, harassment with threat to publish content.
+   - Identity Theft: Aadhaar/PAN misuse, fake accounts opened in victim's name, credential theft, unauthorized loan applications using stolen identity.
+   - E-Commerce Scams: Fake sellers on OLX/marketplace (including QR code scams on OLX), non-delivery of goods, fake websites selling products, marketplace fraud, delivery scams.
+   - Other Cyber Crime: Ransomware, hacking/unauthorized access, data theft, malware, hate speech, online ragging with threats.
+   CRITICAL: If incident involves OLX/marketplace/seller → E-Commerce. If involves bank/UPI phishing without marketplace → Financial. If involves fake profile pretending to be victim (not predator) → Identity Theft. If predator harassing minor/woman → Women/Children (even if money demanded).
 
 3. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp, Telegram), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
 
