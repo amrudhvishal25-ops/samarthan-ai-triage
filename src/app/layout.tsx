@@ -3,8 +3,8 @@ import './globals.css'
 import { TriageProvider } from '@/context/TriageContext'
 
 export const metadata: Metadata = {
-  title: 'Samarthan — Golden Hour Fraud Triage',
-  description: 'AI-powered, one-click fraud triage for Indian citizens. Report scams instantly.',
+  title: 'Samarthan — Aevy TV X OpenAI',
+  description: 'AI-powered cybercrime triage platform',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
