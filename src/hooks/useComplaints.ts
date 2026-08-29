@@ -148,14 +148,25 @@ async function apiPatch(body: unknown): Promise<Response> {
   return fetch('/api/complaints', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 }
 
+const CACHE_KEY = 'samarthan_complaints_cache'
+const CACHE_TTL = 30000 // 30s
+
 export function useComplaints() {
   const getAll = useCallback(async (): Promise<SavedComplaint[]> => {
+    // Check memory cache first
+    const cached = (globalThis as any).__complaintsCache
+    if (cached && Date.now() - cached.time < CACHE_TTL) {
+      return cached.data
+    }
+
     try {
       const res = await apiGet()
       if (res.ok) {
         const rows = await res.json()
         const remote: SavedComplaint[] = rows.map(fromRow)
         writeLocal(remote)
+        // Cache in memory
+        (globalThis as any).__complaintsCache = { data: remote, time: Date.now() }
         return remote
       }
     } catch { /* fall through */ }

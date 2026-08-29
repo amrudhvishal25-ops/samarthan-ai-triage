@@ -10,7 +10,7 @@ function getDb() {
 }
 
 // GET /api/complaints?id=xxx  → single complaint
-// GET /api/complaints          → all complaints ordered by saved_at desc
+// GET /api/complaints          → all complaints ordered by saved_at desc (LIMIT 100)
 export async function GET(req: NextRequest) {
   try {
     const sql = getDb()
@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
       const rows = await sql`SELECT * FROM complaints WHERE incident_id = ${id} LIMIT 1`
       return NextResponse.json(rows[0] ?? null)
     }
-    const rows = await sql`SELECT * FROM complaints ORDER BY saved_at DESC`
-    return NextResponse.json(rows)
+    const rows = await sql`SELECT * FROM complaints ORDER BY saved_at DESC LIMIT 100`
+    return NextResponse.json(rows, { headers: { 'Cache-Control': 'public, max-age=30' } })
   } catch (err: unknown) {
     const isDev = process.env.NODE_ENV === 'development'
     const message = isDev && err instanceof Error ? err.message : 'Database error. Please try again.'
