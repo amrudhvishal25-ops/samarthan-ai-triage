@@ -12,14 +12,16 @@ Extract ALL specific details provided and return a STRICT JSON object.
 CRITICAL INSTRUCTIONS:
 1. AGGRESSIVELY EXTRACT FRAUDSTER IDENTITY:
    - victimName field = FRAUDSTER's PRIMARY identifier: person name, Instagram handle, website, UPI ID, APP NAME, BANK NAME, seller username, channel name, email, or phone.
-   - AGGRESSIVELY look for: person names, @handles, domains, UPI@patterns, APP NAMES (StockPro, QuickCash, SBI Bank, HDFC Bank), Telegram channels (Truth Warriors India), WhatsApp groups, seller usernames.
-   - PRIORITY: Named person > @handle > domain > APP/BANK/SERVICE NAME > UPI ID > Phone > Channel/Group name > Email
-   - CRITICAL EXAMPLES TO EXTRACT: "StockPro" (app name), "QuickCash" (app), "HDFC Bank" (bank), "SBI" (bank), "Truth Warriors India" (Telegram), "Rakesh Jhunjhunwala Tips Official" (WhatsApp group), "bestdeal-mobile.in" (website)
-   - If text says "app called StockPro" → extract "StockPro" as victimName.
-   - If "bank HDFC" → extract "HDFC Bank" or "HDFC".
-   - If "Telegram channel called Truth Warriors India" → extract "Truth Warriors India".
-   - If "WhatsApp group Rakesh Jhunjhunwala" → extract group name.
-   - Use 'Not Identified' ONLY if zero identifiers found (no person, no handle, no app, no bank, no website, no channel).
+   - CRITICAL: If victim says "mera naam X hai" or "My name is X" or "I am X" or "mai X hoon" — that is the COMPLAINANT, NOT the fraudster. Do NOT extract complainant name as fraudster. Only extract the person/entity who perpetrated the fraud.
+   - AGGRESSIVELY look for: person names (of fraudster/scammer/imposter ONLY), @handles, domains, UPI@patterns, APP NAMES (StockPro, QuickCash, SBI Bank, HDFC Bank), Telegram channels (Truth Warriors India), WhatsApp groups, seller usernames.
+   - PRIORITY: Named FRAUDSTER/SCAMMER > @handle > domain > APP/BANK/SERVICE NAME > UPI ID > Phone > Channel/Group name > Email
+   - CRITICAL EXAMPLES TO EXTRACT: "StockPro" (app name), "QuickCash" (app), "HDFC Bank" (bank), "SBI" (bank), "Truth Warriors India" (Telegram), "Rakesh Jhunjhunwala Tips Official" (WhatsApp group), "bestdeal-mobile.in" (website), "Inspector Verma" (imposter police officer), "Priya Sharma" (fake advisor).
+   - If text says "I am Ramesh Iyer" → Ramesh Iyer is COMPLAINANT. Extract the fraudster instead (e.g., "Inspector Verma" who called, or "Priya Sharma" the fake advisor).
+   - If text says "app called StockPro" → extract "StockPro" as victimName (the fraudulent app/entity, not the victim's name).
+   - If "bank HDFC" used fraudulently → extract "HDFC Bank" or "HDFC".
+   - If "Telegram channel called Truth Warriors India" scammed me → extract "Truth Warriors India".
+   - If "WhatsApp group Rakesh Jhunjhunwala" impersonated → extract group name.
+   - Use 'Not Identified' ONLY if zero identifiers found for the fraudster (no scammer name, no handle, no app, no fake bank, no website, no channel).
 
 2. FRAUD TYPE CLASSIFICATION — Use EXACT categories and logic:
    - Financial Fraud: Direct bank/UPI transfers phished, credit card misuse, phishing for money, OTP theft leading to bank debit, direct money theft via banking channels (NOT marketplace).
