@@ -56,7 +56,7 @@ CRITICAL INSTRUCTIONS:
 6. For missing JSON fields below, use "Not Provided".
 
 {
-  "incidentId": "XXXXXXXXXXXXXX",  // generate a realistic 14-digit numeric NCRP-style acknowledgement number, no letters or dashes, first digit 1-9
+  "incidentId": "",  // leave this EMPTY — the server assigns the acknowledgement number
   "fraudsterIdentifier": "FRAUDSTER's primary identifier ONLY (name, @handle, UPI ID, domain, seller username, phone). Examples: 'Rithwik', '@rithwik8024', 'random@ybl', 'example.com', 'tech-deals-mumbai'. Use 'Not Identified' ONLY if absolutely none exist.",
   "complainantName": "The victim / complainant's own name if stated ('I am X', 'mera naam X hai'). Empty string if not stated.",
   "recommendedChannel": "bank | platform | agency | helpline — see rule 3b. The escalation route this victim should take FIRST.",
@@ -329,6 +329,13 @@ export async function POST(req: NextRequest) {
       parsed.urgencyLevel = 'HIGH'
     } else {
       parsed.urgencyLevel = parsed.urgencyLevel.toUpperCase()
+    }
+
+    // Always use a server-generated acknowledgement number. The model tends to
+    // echo the schema example ("12345678901234") verbatim, which collides across
+    // every complaint and breaks the DB upsert / tracker lookup.
+    if (!/^[1-9]\d{13}$/.test(String(parsed.incidentId)) || String(parsed.incidentId) === '12345678901234') {
+      parsed.incidentId = generateId()
     }
 
     return NextResponse.json(parsed as TriageResult)

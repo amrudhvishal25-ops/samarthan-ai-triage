@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, AlertCircle, FileText, Mic, ImagePlus, ShieldAlert, CheckCircle2, X } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
-import { SCENARIOS, TriageResult } from '@/data/scenarios'
+import { SCENARIOS, TriageResult, generateId } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
 import AudioRecorder from '@/components/AudioRecorder'
 import LoadingTriage from '@/components/LoadingTriage'
@@ -44,8 +44,75 @@ function IntakeContent() {
       return
     }
 
+    // Client abort sits ABOVE the route's own 60s maxDuration so the server
+    // always gets to answer first (with a real result, or its own fallback).
+    // The client only aborts on a genuine network hang.
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 60000)
+    const timeoutId = setTimeout(() => controller.abort(), 90000)
+
+    const finalTxtForFallback = forcedText || textValue
+    const buildClientFallback = (): TriageResult => {
+      const finalTxt = finalTxtForFallback
+      const user = getUser()
+      const inferredCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
+      const rawAmount = (finalTxt.match(/(?:₹|rs\.?|inr)\s*([\d,]+)/i) || finalTxt.match(/(\d+)\s*(?:rupees|rs)/i))?.[1]
+      const cleanAmount = rawAmount ? parseInt(rawAmount.replace(/,/g, ''), 10) : 0
+      const idNum = generateId()
+
+      const categoryMap: Record<string, string> = {'वित्तीय धोखाधड़ी': 'Financial Fraud', 'महिला/बाल अपराध': 'Women/Children Related Crime', 'जबरन वसूली': 'Extortion & Blackmail', 'पहचान की चोरी': 'Identity Theft', 'ई-कॉमर्स धोखाधड़ी': 'E-Commerce Scams', 'अन्य साइबर अपराध': 'Other Cyber Crime'}
+      const mappedCat = categoryMap[inferredCat] || inferredCat
+      const inferred = inferChannelFromFraudType(mappedCat as any)
+      return {
+        incidentId: idNum,
+        fraudsterIdentifier: 'Not Identified', complainantName: '',
+        fraudType: inferredCat as any,
+        recommendedChannel: inferred.channel,
+        recommendedChannelTarget:
+          inferred.channel === 'bank'
+            ? (finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'the bank')
+            : inferred.target,
+        frauderContact: 'Unknown',
+        amount: cleanAmount || (inferredCat === 'Financial Fraud' ? 15000 : 0),
+        bankName: finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'N/A',
+        accountNumber: 'N/A',
+        upiId: finalTxt.match(/[\w.-]+@[\w.-]+/)?.[0] || undefined,
+        timeline: new Date().toLocaleString('en-IN'),
+        summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${inferredCat}.`,
+        summaryHi: `${inferredCat} के तहत साइबर घटना दर्ज की गई।`,
+        complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${user?.name || 'Pratham Kamath'}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${user?.name || 'Pratham Kamath'}`,
+        complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${user?.name || 'प्रथम कामत'}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${user?.name || 'प्रथम कामत'}`,
+        freezeSteps: [
+          {
+            step: 1,
+            action: 'Call 1930 Cybercrime Helpline',
+            actionHi: '1930 साइबर हेल्पलाइन पर कॉल करें',
+            detail: 'Report immediately for emergency bank account freezing and golden hour triage.',
+            detailHi: 'आपातकालीन बैंक खाता फ्रीज करने के लिए तुरंत रिपोर्ट करें।',
+            hotline: '1930',
+            url: 'https://cybercrime.gov.in'
+          },
+          {
+            step: 2,
+            action: 'File Official NCRP Complaint',
+            actionHi: 'NCRP पोर्टल पर आधिकारिक शिकायत दर्ज करें',
+            detail: 'Submit this complaint draft to cybercrime.gov.in for police jurisdiction.',
+            detailHi: 'पुलिस अधिकार क्षेत्र के लिए cybercrime.gov.in पर यह शिकायत ड्राफ्ट जमा करें।',
+            hotline: undefined,
+            url: 'https://cybercrime.gov.in'
+          }
+        ],
+        applicableLaws: [
+          {
+            section: 'IT Act, Section 66D',
+            title: 'Cheating by personation by using computer resource',
+            titleHi: 'कंप्यूटर संसाधन का उपयोग करके प्रतिरूपण द्वारा धोखाधड़ी',
+            reason: 'Applies to online fraud, digital cheating, and cyber extortion.',
+            reasonHi: 'ऑनलाइन धोखाधड़ी और डिजिटल ठगी पर लागू होता है।',
+          }
+        ],
+        urgencyLevel: 'HIGH' as const,
+      }
+    }
 
     try {
       const formData = new FormData()
@@ -68,72 +135,17 @@ function IntakeContent() {
         result = await resp.json()
       } else {
         console.warn('[intake] Serverless triage non-ok, using smart dynamic client fallback')
-        const inferredCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
-        const rawAmount = (finalTxt.match(/(?:₹|rs\.?|inr)\s*([\d,]+)/i) || finalTxt.match(/(\d+)\s*(?:rupees|rs)/i))?.[1]
-        const cleanAmount = rawAmount ? parseInt(rawAmount.replace(/,/g, ''), 10) : 0
-        const idNum = Math.floor(10000000000000 + Math.random() * 90000000000000).toString()
-
-        const categoryMap: Record<string, string> = {'वित्तीय धोखाधड़ी': 'Financial Fraud', 'महिला/बाल अपराध': 'Women/Children Related Crime', 'जबरन वसूली': 'Extortion & Blackmail', 'पहचान की चोरी': 'Identity Theft', 'ई-कॉमर्स धोखाधड़ी': 'E-Commerce Scams', 'अन्य साइबर अपराध': 'Other Cyber Crime'}
-        const mappedCat = categoryMap[inferredCat] || inferredCat
-        const inferred = inferChannelFromFraudType(mappedCat as any)
-        result = {
-          incidentId: idNum,
-          fraudsterIdentifier: 'Not Identified', complainantName: '',
-          fraudType: inferredCat as any,
-          recommendedChannel: inferred.channel,
-          recommendedChannelTarget:
-            inferred.channel === 'bank'
-              ? (finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'the bank')
-              : inferred.target,
-          frauderContact: 'Unknown',
-          amount: cleanAmount || (inferredCat === 'Financial Fraud' ? 15000 : 0),
-          bankName: finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'N/A',
-          accountNumber: 'N/A',
-          upiId: finalTxt.match(/[\w.-]+@[\w.-]+/)?.[0] || undefined,
-          timeline: new Date().toLocaleString('en-IN'),
-          summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${inferredCat}.`,
-          summaryHi: `${inferredCat} के तहत साइबर घटना दर्ज की गई।`,
-          complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${user?.name || 'Pratham Kamath'}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${user?.name || 'Pratham Kamath'}`,
-          complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${user?.name || 'प्रथम कामत'}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${user?.name || 'प्रथम कामत'}`,
-          freezeSteps: [
-            {
-              step: 1,
-              action: 'Call 1930 Cybercrime Helpline',
-              actionHi: '1930 साइबर हेल्पलाइन पर कॉल करें',
-              detail: 'Report immediately for emergency bank account freezing and golden hour triage.',
-              detailHi: 'आपातकालीन बैंक खाता फ्रीज करने के लिए तुरंत रिपोर्ट करें।',
-              hotline: '1930',
-              url: 'https://cybercrime.gov.in'
-            },
-            {
-              step: 2,
-              action: 'File Official NCRP Complaint',
-              actionHi: 'NCRP पोर्टल पर आधिकारिक शिकायत दर्ज करें',
-              detail: 'Submit this complaint draft to cybercrime.gov.in for police jurisdiction.',
-              detailHi: 'पुलिस अधिकार क्षेत्र के लिए cybercrime.gov.in पर यह शिकायत ड्राफ्ट जमा करें।',
-              hotline: undefined,
-              url: 'https://cybercrime.gov.in'
-            }
-          ],
-          applicableLaws: [
-            {
-              section: 'IT Act, Section 66D',
-              title: 'Cheating by personation by using computer resource',
-              titleHi: 'कंप्यूटर संसाधन का उपयोग करके प्रतिरूपण द्वारा धोखाधड़ी',
-              reason: 'Applies to online fraud, digital cheating, and cyber extortion.',
-              reasonHi: 'ऑनलाइन धोखाधड़ी और डिजिटल ठगी पर लागू होता है।',
-            }
-          ],
-          urgencyLevel: 'HIGH'
-        }
+        result = buildClientFallback()
       }
       setTriageResult(result)
       router.push('/dashboard')
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
-        setError(hi
-          ? 'यह सामान्य से अधिक समय ले रहा है। आपका इंटरनेट धीमा हो सकता है — कृपया फिर से कोशिश करें।'
-          : "This is taking longer than usual — your connection may be slow. Please try again.")
+        // Network hang past 90s — don't dead-end the user. Serve the
+        // rule-based client result and continue to the dashboard.
+        console.warn('[intake] Triage request timed out, using client fallback')
+        setTriageResult(buildClientFallback())
+        router.push('/dashboard')
       } else {
         setError(err instanceof Error ? err.message : (hi ? 'कुछ गलत हो गया।' : 'Something went wrong.'))
       }
