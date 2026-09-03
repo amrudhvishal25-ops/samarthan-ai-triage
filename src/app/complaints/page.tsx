@@ -11,6 +11,7 @@ import { inferChannelFromFraudType } from '@/data/escalationChannels'
 import Navbar from '@/components/Navbar'
 
 const URGENCY_COLORS: Record<string, string> = {
+  CRITICAL: 'bg-red-100 text-red-800',
   HIGH:   'bg-red-50 text-red-700 border-red-200',
   MEDIUM: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   LOW:    'bg-green-50 text-green-700 border-green-200',
@@ -21,10 +22,14 @@ export default function ComplaintsPage() {
   const { getAll } = useComplaints()
   const { setTriageResult, language, setLanguage } = useTriage()
   const [complaints, setComplaints] = useState<SavedComplaint[]>([])
+  const [loading, setLoading] = useState(true)
   const hi = language === 'hi'
 
   useEffect(() => {
-    getAll().then(setComplaints).catch(err => console.error('Failed to load complaints:', err))
+    getAll()
+      .then(setComplaints)
+      .catch(err => console.error('Failed to load complaints:', err))
+      .finally(() => setLoading(false))
   }, [getAll])
 
   const handleOpen = (c: SavedComplaint) => {
@@ -32,7 +37,7 @@ export default function ComplaintsPage() {
     setTriageResult({
       incidentId: c.incidentId,
       fraudType: c.fraudType,
-      victimName: c.victimName,
+      fraudsterIdentifier: c.fraudsterIdentifier, complainantName: c.complainantName,
       amount: c.amount,
       urgencyLevel: c.urgencyLevel,
       summary: c.summary,
@@ -74,7 +79,9 @@ export default function ComplaintsPage() {
           </p>
         </div>
 
-        {complaints.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div></div>
+        ) : complaints.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="border border-dashed border-zinc-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center"
@@ -105,7 +112,10 @@ export default function ComplaintsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => handleOpen(c)}
-                className="group cursor-pointer border border-zinc-200 rounded-2xl bg-white hover:border-zinc-400 hover:shadow-md transition-all p-5 flex items-start gap-4"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOpen(c) }}
+                role="button"
+                tabIndex={0}
+                className="group cursor-pointer border border-zinc-200 rounded-2xl bg-white hover:border-zinc-400 hover:shadow-md transition-all p-5 flex items-start gap-4 focus:outline-none focus:ring-2 focus:ring-zinc-900"
               >
                 {/* Icon */}
                 <div className="w-9 h-9 rounded-lg bg-zinc-100 flex items-center justify-center flex-shrink-0 mt-0.5">

@@ -1,12 +1,14 @@
 import { neon } from '@neondatabase/serverless'
 
-const DB = 'postgresql://neondb_owner:npg_9UVPupCwLb0c@ep-blue-lab-azl82wp3.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require'
+const DB = process.env.DATABASE_URL
+if (!DB) { console.error('❌ DATABASE_URL not set'); process.exit(1) }
 const sql = neon(DB)
 
 const c1 = {
   incident_id: 'INC-2026-9041',
   fraud_type: 'Financial Fraud',
-  victim_name: 'Unknown Scammer (Olx)',
+  fraudster_identifier: 'Unknown OLX Buyer (+91 9876543210)',
+  complainant_name: 'Pratham Kamath',
   amount: 45000,
   urgency_level: 'HIGH',
   summary: 'Victim attempted to sell a sofa on OLX. Scammer sent a QR code claiming it was to "receive" money. Scanning it deducted ₹45,000 from the victim\'s SBI account.',
@@ -21,12 +23,12 @@ const c1 = {
   recommended_channel: 'bank',
   recommended_channel_target: 'State Bank of India',
   freeze_steps: JSON.stringify([
-    { title: 'Call 1930', desc: 'Report the transaction immediately.' },
-    { title: 'Contact SBI', desc: 'Call 1800-425-3800 to block your debit card.' }
+    { step: 1, action: 'Call 1930 Helpline', actionHi: 'हेल्पलाइन 1930 पर कॉल करें', detail: 'Report the transaction immediately for fastest freeze initiation.', detailHi: 'सबसे तेज फ्रीज के लिए तुरंत लेनदेन की रिपोर्ट करें।', hotline: '1930' },
+    { step: 2, action: 'Contact SBI', actionHi: 'SBI से संपर्क करें', detail: 'Call SBI helpline 1800-425-3800 to block your debit card and freeze outgoing transactions.', detailHi: 'अपना डेबिट कार्ड ब्लॉक करने के लिए SBI हेल्पलाइन 1800-425-3800 पर कॉल करें।', hotline: '1800-425-3800', url: 'https://www.onlinesbi.sbi/' }
   ]),
   applicable_laws: JSON.stringify([
-    { id: 'sec_318_4', title: 'BNS Section 318(4)', desc: 'Cheating and dishonestly inducing delivery of property.' },
-    { id: 'it_66d', title: 'IT Act Section 66D', desc: 'Cheating by personation by using computer resource.' }
+    { section: 'IT Act, Section 66D', title: 'Cheating by personation using a computer resource', titleHi: 'कंप्यूटर संसाधन का उपयोग करके प्रतिरूपण द्वारा धोखाधड़ी', reason: 'The scammer posed as a genuine buyer using a fraudulent QR code to cheat the victim.', reasonHi: 'धोखेबाज ने धोखाधड़ीपूर्ण QR कोड का उपयोग करके असली खरीदार बनकर पीड़ित को ठगा।' },
+    { section: 'IT Act, Section 66C', title: 'Identity theft — fraudulent use of password, digital signature, or unique ID', titleHi: 'पहचान की चोरी — पासवर्ड, डिजिटल हस्ताक्षर या अद्वितीय पहचान का धोखाधड़ीपूर्ण उपयोग', reason: 'The victim\'s UPI credentials were misused to authorize an unauthorized debit.', reasonHi: 'पीड़ित के UPI क्रेडेंशियल का दुरुपयोग करके अनधिकृत डेबिट को अधिकृत किया गया।' }
   ]),
   saved_at: '2026-08-20T10:00:00.000Z',
   language: 'en',
@@ -47,7 +49,8 @@ const c1 = {
 const c2 = {
   incident_id: 'INC-2026-7288',
   fraud_type: 'Identity Theft',
-  victim_name: 'Fake Instagram Profile',
+  fraudster_identifier: '@pratham_kamath_urgent (Fake Instagram)',
+  complainant_name: 'Pratham Kamath',
   amount: 0,
   urgency_level: 'MEDIUM',
   summary: 'Someone created a fake Instagram profile using the victim\'s photos and is messaging friends asking for money citing a medical emergency.',
@@ -62,11 +65,11 @@ const c2 = {
   recommended_channel: 'platform',
   recommended_channel_target: 'Instagram',
   freeze_steps: JSON.stringify([
-    { title: 'Report Profile', desc: 'Use Instagram in-app reporting for impersonation.' },
-    { title: 'Warn Contacts', desc: 'Post a status warning friends not to send money.' }
+    { step: 1, action: 'Report Profile on Instagram', actionHi: 'इंस्टाग्राम पर प्रोफ़ाइल रिपोर्ट करें', detail: 'Use Instagram in-app reporting for impersonation. Go to the fake profile → tap three dots → Report → Impersonation.', detailHi: 'इंस्टाग्राम इन-ऐप रिपोर्टिंग का उपयोग करें। फर्जी प्रोफ़ाइल पर जाएं → तीन बिंदुओं पर टैप करें → रिपोर्ट → प्रतिरूपण।', url: 'https://help.instagram.com/' },
+    { step: 2, action: 'Warn Contacts', actionHi: 'संपर्कों को चेतावनी दें', detail: 'Post a status warning friends not to send money to the fake account.', detailHi: 'दोस्तों को चेतावनी देते हुए एक स्टेटस पोस्ट करें कि नकली खाते में पैसे न भेजें।' }
   ]),
   applicable_laws: JSON.stringify([
-    { id: 'it_66c', title: 'IT Act Section 66C', desc: 'Identity theft.' }
+    { section: 'IT Act, Section 66C', title: 'Identity theft — fraudulent use of password, digital signature, or unique ID', titleHi: 'पहचान की चोरी — पासवर्ड, डिजिटल हस्ताक्षर या अद्वितीय पहचान का धोखाधड़ीपूर्ण उपयोग', reason: 'The fraudster stole the victim\'s identity by creating a fake profile with their photos.', reasonHi: 'धोखेबाज ने पीड़ित की तस्वीरों के साथ एक नकली प्रोफ़ाइल बनाकर उनकी पहचान चुराई।' }
   ]),
   saved_at: '2026-08-10T14:00:00.000Z',
   language: 'en',
@@ -86,14 +89,16 @@ async function seed() {
   for (const c of [c1, c2]) {
     await sql`
       INSERT INTO complaints (
-        incident_id, fraud_type, victim_name, amount, urgency_level,
+        incident_id, fraud_type, fraudster_identifier, complainant_name,
+        amount, urgency_level,
         summary, summary_hi, complaint_draft, complaint_draft_hi,
         frauder_contact, bank_name, account_number, upi_id, timeline,
         freeze_steps, applicable_laws, saved_at, language,
         status, status_history, evidence_images, updates,
         recommended_channel, recommended_channel_target
       ) VALUES (
-        ${c.incident_id}, ${c.fraud_type}, ${c.victim_name}, ${c.amount}, ${c.urgency_level},
+        ${c.incident_id}, ${c.fraud_type}, ${c.fraudster_identifier}, ${c.complainant_name},
+        ${c.amount}, ${c.urgency_level},
         ${c.summary}, ${c.summary_hi}, ${c.complaint_draft}, ${c.complaint_draft_hi},
         ${c.frauder_contact}, ${c.bank_name}, ${c.account_number}, ${c.upi_id}, ${c.timeline},
         ${c.freeze_steps}, ${c.applicable_laws}, ${c.saved_at}, ${c.language},
@@ -106,4 +111,4 @@ async function seed() {
   console.log('✅ Seeded 2 demo complaints into Neon')
 }
 
-seed().catch(console.error)
+seed().catch(err => { console.error('❌ Seed failed:', err.message); process.exit(1) })

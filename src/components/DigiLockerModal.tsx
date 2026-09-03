@@ -26,6 +26,15 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
     }
   }, [open])
 
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   const handleRedirect = () => {
     setStep('redirecting')
     // Simulate the DigiLocker redirect + return
@@ -64,6 +73,8 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="relative bg-white rounded-2xl border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
+            role="dialog"
+            aria-modal="true"
           >
             {step !== 'success' && (
               <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
@@ -155,11 +166,15 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                     <p className="text-sm font-mono font-semibold text-zinc-900">XXXX-XXXX-8421</p>
                   </div>
 
-                  <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                  <label htmlFor="otp-input" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
                     6-Digit OTP
                   </label>
                   <input
-                    type="number"
+                    id="otp-input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="one-time-code"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                     placeholder="______"

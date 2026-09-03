@@ -2,9 +2,8 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mic, ArrowRight, DollarSign, User, Plus, ArrowUp, ShieldCheck, ShieldAlert, Fingerprint, ShoppingCart, Briefcase } from 'lucide-react'
+import { Mic, ArrowRight, DollarSign, User, Plus, ArrowUp, ShieldAlert, Fingerprint, ShoppingCart, Briefcase } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
-import { SCENARIOS } from '@/data/scenarios'
 import Navbar from '@/components/Navbar'
 
 export default function Home() {
@@ -41,7 +40,9 @@ export default function Home() {
   const handleCategoryPill = (category: string) => {
     setScenarioId(null)
     setInputType('text')
-    router.push(`/intake?category=${encodeURIComponent(category)}`)
+    const categoryMap: Record<string, string> = {'वित्तीय धोखाधड़ी': 'Financial Fraud', 'महिला/बाल अपराध': 'Women/Children Related Crime', 'जबरन वसूली': 'Extortion & Blackmail', 'पहचान की चोरी': 'Identity Theft', 'ई-कॉमर्स धोखाधड़ी': 'E-Commerce Scams', 'अन्य साइबर अपराध': 'Other Cyber Crime'}
+    const mappedCategory = categoryMap[category] || category
+    router.push(`/intake?category=${encodeURIComponent(mappedCategory)}`)
   }
 
   const filters = hi
@@ -140,7 +141,7 @@ export default function Home() {
             <button
               type="button"
               onClick={handleAttachClick}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-2 transition-all h-auto min-h-0 bg-zinc-50 hover:bg-zinc-100"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-2 transition-all bg-zinc-50 hover:bg-zinc-100"
             >
               <Plus className="w-3.5 h-3.5" />
               {hi ? 'सबूत जोड़ें' : 'Add Evidence'}
@@ -153,7 +154,7 @@ export default function Home() {
                 const textQuery = inputText.trim() ? `&text=${encodeURIComponent(inputText)}` : ''
                 router.push(`/intake?category=auto&mode=voice${textQuery}`)
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-2 transition-all h-auto min-h-0 bg-zinc-50 hover:bg-zinc-100"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-2 transition-all bg-zinc-50 hover:bg-zinc-100"
             >
               <Mic className="w-3.5 h-3.5" />
               {hi ? 'बोलें' : 'Voice'}
@@ -162,7 +163,7 @@ export default function Home() {
             {inputText.trim() && (
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-700 text-white rounded-lg px-4 py-2 transition-all h-auto min-h-0"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-700 text-white rounded-lg px-4 py-2 transition-all "
               >
                 {hi ? 'विश्लेषण करें' : 'Analyze'}
                 <ArrowUp className="w-3.5 h-3.5" />
@@ -177,7 +178,7 @@ export default function Home() {
             <button
               key={i}
               onClick={() => handleCategoryPill(f)}
-              className="flex-shrink-0 inline-flex items-center text-xs font-medium text-zinc-600 border border-zinc-200 hover:border-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-all h-auto min-h-0"
+              className="flex-shrink-0 inline-flex items-center text-xs font-medium text-zinc-600 border border-zinc-200 hover:border-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-all "
             >
               {f}
             </button>
@@ -199,6 +200,9 @@ export default function Home() {
               key={i}
               onClick={() => handleCategoryPill(cat.title)}
               className="group cursor-pointer bg-white border border-zinc-200 rounded-2xl p-6 hover:border-zinc-400 hover:shadow-md transition-all duration-200 flex flex-col"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCategoryPill(cat.title) }}
             >
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-4 ${cat.iconBg}`}>
                 {cat.icon}

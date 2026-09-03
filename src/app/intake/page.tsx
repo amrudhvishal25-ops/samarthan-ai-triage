@@ -73,10 +73,12 @@ function IntakeContent() {
         const cleanAmount = rawAmount ? parseInt(rawAmount.replace(/,/g, ''), 10) : 0
         const idNum = Math.floor(10000000000000 + Math.random() * 90000000000000).toString()
 
-        const inferred = inferChannelFromFraudType(inferredCat as any)
+        const categoryMap: Record<string, string> = {'वित्तीय धोखाधड़ी': 'Financial Fraud', 'महिला/बाल अपराध': 'Women/Children Related Crime', 'जबरन वसूली': 'Extortion & Blackmail', 'पहचान की चोरी': 'Identity Theft', 'ई-कॉमर्स धोखाधड़ी': 'E-Commerce Scams', 'अन्य साइबर अपराध': 'Other Cyber Crime'}
+        const mappedCat = categoryMap[inferredCat] || inferredCat
+        const inferred = inferChannelFromFraudType(mappedCat as any)
         result = {
           incidentId: idNum,
-          victimName: 'Not Identified',
+          fraudsterIdentifier: 'Not Identified', complainantName: '',
           fraudType: inferredCat as any,
           recommendedChannel: inferred.channel,
           recommendedChannelTarget:
@@ -169,7 +171,7 @@ function IntakeContent() {
           <button
             onClick={() => router.back()}
             aria-label={hi ? 'वापस जाएं' : 'Go back'}
-            className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors h-auto min-h-0"
+            className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors "
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -249,7 +251,7 @@ function IntakeContent() {
                 </div>
                 <button
                   onClick={() => { setImageFile(null); setSharedImage(null) }}
-                  className="p-1.5 hover:bg-zinc-200 rounded-md text-zinc-500 transition-colors h-auto min-h-0"
+                  className="p-1.5 hover:bg-zinc-200 rounded-md text-zinc-500 transition-colors "
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -257,7 +259,7 @@ function IntakeContent() {
             ) : (
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full h-20 rounded-xl border-2 border-dashed border-zinc-200 hover:border-zinc-400 bg-zinc-50 hover:bg-zinc-100 flex flex-col items-center justify-center gap-1 text-zinc-400 hover:text-zinc-600 transition-all h-auto min-h-[80px]"
+                className="w-full h-20 rounded-xl border-2 border-dashed border-zinc-200 hover:border-zinc-400 bg-zinc-50 hover:bg-zinc-100 flex flex-col items-center justify-center gap-1 text-zinc-400 hover:text-zinc-600 transition-all "
               >
                 <ImagePlus className="w-5 h-5" />
                 <span className="text-xs font-medium">{hi ? 'फ़ाइल अपलोड करें' : 'Upload Screenshot or File'}</span>

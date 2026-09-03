@@ -25,7 +25,8 @@ export interface ComplaintUpdate {
 export interface SavedComplaint {
   incidentId: string
   fraudType: FraudType
-  victimName: string
+  fraudsterIdentifier: string
+  complainantName: string
   amount: number
   urgencyLevel: UrgencyLevel
   summary: string
@@ -74,8 +75,9 @@ function fromRow(row: Record<string, any>): SavedComplaint {
   return normalize({
     incidentId: row.incident_id,
     fraudType: row.fraud_type,
-    victimName: row.victim_name,
-    amount: row.amount,
+    fraudsterIdentifier: row.fraudster_identifier ?? row.victim_name ?? '',
+    complainantName: row.complainant_name ?? '',
+    amount: Number(row.amount) || 0,
     urgencyLevel: row.urgency_level,
     summary: row.summary,
     summaryHi: row.summary_hi,
@@ -103,7 +105,8 @@ function toRow(c: SavedComplaint) {
   return {
     incident_id: c.incidentId,
     fraud_type: c.fraudType,
-    victim_name: c.victimName,
+    fraudster_identifier: c.fraudsterIdentifier,
+    complainant_name: c.complainantName,
     amount: c.amount,
     urgency_level: c.urgencyLevel,
     summary: c.summary,
@@ -141,7 +144,20 @@ function readLocal(): SavedComplaint[] {
 
 function writeLocal(all: SavedComplaint[]) {
   if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  } catch {
+    // QuotaExceededError — strip base64 evidence images and retry
+    try {
+      const slim = all.map(c => ({ ...c, evidenceImages: c.evidenceImages.map(img => ({ ...img, dataUrl: '' })) }))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
+    } catch { /* give up on local persistence */ }
+  }
+}
+
+function invalidateCache() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (globalThis as any).__complaintsCache
 }
 
 async function apiGet(id?: string): Promise<Response> {
@@ -157,7 +173,6 @@ async function apiPatch(body: unknown): Promise<Response> {
   return fetch('/api/complaints', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 }
 
-const CACHE_KEY = 'samarthan_complaints_cache'
 const CACHE_TTL = 30000 // 30s
 
 export function useComplaints() {
@@ -201,6 +216,8 @@ export function useComplaints() {
     try {
       await apiPost(toRow(record))
     } catch { /* localStorage already saved */ }
+
+    invalidateCache()
   }, [])
 
   const getById = useCallback(async (incidentId: string): Promise<SavedComplaint | undefined> => {
@@ -229,6 +246,7 @@ export function useComplaints() {
       await apiPatch({ incident_id: incidentId, status: next, status_history: nextHistory })
     } catch { /* localStorage already updated */ }
 
+    invalidateCache()
     return next
   }, [])
 
@@ -262,6 +280,7 @@ export function useComplaints() {
       await apiPatch({ incident_id: incidentId, evidence_images: nextImages })
     } catch { /* localStorage already updated */ }
 
+    invalidateCache()
     return nextImages
   }, [getById])
 
@@ -277,6 +296,7 @@ export function useComplaints() {
       await apiPatch({ incident_id: incidentId, evidence_images: nextImages })
     } catch { /* localStorage already updated */ }
 
+    invalidateCache()
     return nextImages
   }, [getById])
 
@@ -295,6 +315,7 @@ export function useComplaints() {
       await apiPatch({ incident_id: incidentId, updates: nextUpdates })
     } catch { /* localStorage already updated */ }
 
+    invalidateCache()
     return nextUpdates
   }, [getById])
 

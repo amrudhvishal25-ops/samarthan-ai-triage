@@ -27,7 +27,7 @@ const TriageContext = createContext<TriageContextValue | undefined>(undefined)
 const STORAGE_KEY = 'samarthan_triage_v1'
 
 export function TriageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en')
+  const [language, setLanguageState] = useState<Language>('en')
   const [scenarioId, setScenarioId] = useState<string | null>(null)
   const [inputType, setInputType] = useState<InputType>('text')
   const [triageResult, setTriageResultState] = useState<TriageResult | null>(null)
@@ -49,11 +49,22 @@ export function TriageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const setLanguage = (l: Language) => {
+    setLanguageState(l)
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      const parsed = stored ? JSON.parse(stored) : {}
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...parsed, language: l }))
+    } catch { /* ignore storage errors */ }
+  }
+
   const setTriageResult = (r: TriageResult | null) => {
     setTriageResultState(r)
     try {
       if (r) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ triageResult: r, scenarioId, language }))
+      } else {
+        localStorage.removeItem(STORAGE_KEY)
       }
     } catch {
       // ignore storage errors
@@ -62,24 +73,25 @@ export function TriageProvider({ children }: { children: React.ReactNode }) {
 
   const reset = () => {
     setScenarioId(null)
+    setInputType('text')
     setTriageResultState(null)
     setIsLoading(false)
     setSharedImage(null)
     try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
   }
 
+  const value = React.useMemo(() => ({
+    language, setLanguage,
+    scenarioId, setScenarioId,
+    inputType, setInputType,
+    triageResult, setTriageResult,
+    isLoading, setIsLoading,
+    sharedImage, setSharedImage,
+    reset,
+  }), [language, scenarioId, inputType, triageResult, isLoading, sharedImage])
+
   return (
-    <TriageContext.Provider
-      value={{
-        language, setLanguage,
-        scenarioId, setScenarioId,
-        inputType, setInputType,
-        triageResult, setTriageResult,
-        isLoading, setIsLoading,
-        sharedImage, setSharedImage,
-        reset,
-      }}
-    >
+    <TriageContext.Provider value={value}>
       {children}
     </TriageContext.Provider>
   )

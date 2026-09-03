@@ -20,7 +20,7 @@ export default function PrintableComplaint({ result, language }: PrintableCompla
     ['Category', 'श्रेणी', result.fraudType],
     ['Urgency', 'प्राथमिकता', result.urgencyLevel],
     ['Amount Involved', 'राशि', result.amount > 0 ? `₹${result.amount.toLocaleString('en-IN')}` : 'N/A'],
-    ['Reported Against', 'आरोपी', result.victimName],
+    ['Reported Against', 'आरोपी', result.fraudsterIdentifier],
     ['Contact/Handle', 'संपर्क', result.frauderContact],
     ['Financial Institution', 'बैंक', result.bankName],
     ['Incident Timeline', 'समयरेखा', result.timeline],

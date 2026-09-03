@@ -24,17 +24,8 @@ export function useAuth() {
     if (typeof window === 'undefined') return null
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (parsed.name === 'Aarav Sharma' || !parsed.name) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_USER))
-          return MOCK_USER
-        }
-        return parsed
-      }
-      // Auto-initialize on first visit — simulate a pre-authenticated DigiLocker session
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_USER))
-      return MOCK_USER
+      if (!raw) return null
+      return JSON.parse(raw)
     } catch {
       return null
     }

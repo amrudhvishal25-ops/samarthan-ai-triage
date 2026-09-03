@@ -18,50 +18,46 @@ Rules:
 - Return ONLY the JSON object, no markdown.`
 
 export async function POST(req: NextRequest) {
+  let body: { note?: string; fraudType?: string; summary?: string; frauderContact?: string }
   try {
-    const body = await req.json()
-    const { note, fraudType, summary, frauderContact } = body as {
-      note: string
-      fraudType?: string
-      summary?: string
-      frauderContact?: string
-    }
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 })
+  }
 
-    if (!note || !note.trim()) {
-      return NextResponse.json({ actionPoints: [], actionPointsHi: [] })
-    }
+  const { note, fraudType, summary, frauderContact } = body
 
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      return NextResponse.json({ actionPoints: [], actionPointsHi: [] })
-    }
+  if (!note || !note.trim()) {
+    return NextResponse.json({ error: 'Note is required' }, { status: 400 })
+  }
 
-    try {
-      const openai = new OpenAI({ apiKey })
-      const context = `CASE CONTEXT:\nFraud type: ${fraudType || 'Unknown'}\nExisting summary: ${summary || 'Not available'}\nKnown fraudster contact: ${frauderContact || 'Not available'}\n\nNEW UPDATE FROM VICTIM:\n${note}`
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 503 })
+  }
 
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: FOLLOWUP_SYSTEM_PROMPT },
-          { role: 'user', content: context },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.2,
-      })
+  try {
+    const openai = new OpenAI({ apiKey })
+    const context = `CASE CONTEXT:\nFraud type: ${fraudType || 'Unknown'}\nExisting summary: ${summary || 'Not available'}\nKnown fraudster contact: ${frauderContact || 'Not available'}\n\nNEW UPDATE FROM VICTIM:\n${note}`
 
-      const raw = completion.choices[0].message.content || '{"actionPoints":[],"actionPointsHi":[]}'
-      const parsed = JSON.parse(raw)
-      return NextResponse.json({
-        actionPoints: Array.isArray(parsed.actionPoints) ? parsed.actionPoints : [],
-        actionPointsHi: Array.isArray(parsed.actionPointsHi) ? parsed.actionPointsHi : [],
-      })
-    } catch (apiError: any) {
-      console.warn('[followup] OpenAI call failed, returning empty action points:', apiError.message)
-      return NextResponse.json({ actionPoints: [], actionPointsHi: [] })
-    }
-  } catch (err: any) {
-    console.error('[followup] Fatal error:', err)
-    return NextResponse.json({ actionPoints: [], actionPointsHi: [] })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: FOLLOWUP_SYSTEM_PROMPT },
+        { role: 'user', content: context },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
+    })
+
+    const raw = completion.choices[0]?.message?.content || '{"actionPoints":[],"actionPointsHi":[]}'
+    const parsed = JSON.parse(raw)
+    return NextResponse.json({
+      actionPoints: Array.isArray(parsed.actionPoints) ? parsed.actionPoints : [],
+      actionPointsHi: Array.isArray(parsed.actionPointsHi) ? parsed.actionPointsHi : [],
+    })
+  } catch (apiError: any) {
+    console.warn('[followup] OpenAI call failed:', apiError?.message)
+    return NextResponse.json({ error: 'AI processing failed', actionPoints: [], actionPointsHi: [] }, { status: 502 })
   }
 }

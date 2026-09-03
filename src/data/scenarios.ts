@@ -71,7 +71,8 @@ export interface ApplicableLaw {
 
 export interface TriageResult {
   incidentId: string
-  victimName: string
+  fraudsterIdentifier: string
+  complainantName: string
   fraudType: FraudType
   frauderContact: string
   amount: number
@@ -145,7 +146,8 @@ export const SCENARIOS: Scenario[] = [
       'Bhai mujhe kal ek WhatsApp message aaya. Usne bola SBI cashback offer hai, ₹15,000 milenge. Unhone ek QR code bheja. Maine scan kiya toh mere account se ₹15,000 kat gaye. Fraudster ka number 9876543210 tha. Mera SBI account hai, last 4 digits 7823.',
     mockResponse: {
       incidentId: generateId(),
-      victimName: 'Rajesh Kumar (Synthetic)',
+      fraudsterIdentifier: '+91-9876543210 (WhatsApp)',
+      complainantName: 'Rajesh Kumar (Synthetic)',
       fraudType: 'UPI Fraud',
       recommendedChannel: 'bank',
       recommendedChannelTarget: 'State Bank of India',
@@ -284,7 +286,8 @@ Date: 23/08/2024`,
       'Yesterday I got a call from someone saying they are from HDFC bank. They said my KYC is expiring and I will lose access to my account. They asked me to share the OTP I received to verify my identity. I trusted them and shared the OTP. Within minutes ₹42,000 was debited from my account. The caller ID showed 022-61606161. My HDFC account number ends in 9012.',
     mockResponse: {
       incidentId: generateId(),
-      victimName: 'Priya Sharma (Synthetic)',
+      fraudsterIdentifier: '022-61606161 (Spoofed HDFC)',
+      complainantName: 'Priya Sharma (Synthetic)',
       fraudType: 'OTP Fraud',
       recommendedChannel: 'bank',
       recommendedChannelTarget: 'HDFC Bank',
@@ -410,7 +413,8 @@ Date: 22/08/2024`,
       'Three weeks ago I was added to a WhatsApp group called "Rakesh Jhunjhunwala Tips Official". They showed fake profit screenshots and asked me to invest on their app called StockPro. I transferred ₹1,20,000 in three transactions to account number 8876543210 IFSC HDFC0001234. When I tried to withdraw my so-called profits of ₹3,80,000 they asked for a 20% tax payment first. I realized it was a scam.',
     mockResponse: {
       incidentId: generateId(),
-      victimName: 'Amit Verma (Synthetic)',
+      fraudsterIdentifier: 'WhatsApp Group: "Rakesh Jhunjhunwala Tips Official"',
+      complainantName: 'Amit Verma (Synthetic)',
       fraudType: 'Investment Scam',
       recommendedChannel: 'agency',
       recommendedChannelTarget: 'RBI Sachet',

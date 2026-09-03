@@ -9,12 +9,14 @@ export function inferChannelFromFraudType(
     case 'Women/Children Related Crime':
     case 'Hate Speech':
     case 'Online Ragging':
+    case 'Extortion & Blackmail':
       return { channel: 'platform', target: 'the platform' }
     case 'Identity Theft':
       return { channel: 'agency', target: 'UIDAI' }
     case 'Investment Scam':
       return { channel: 'agency', target: 'RBI Sachet' }
     case 'E-Commerce Scams':
+    case 'Job Scam':
       return { channel: 'agency', target: 'National Consumer Helpline' }
     case 'Financial Fraud':
     case 'UPI Fraud':

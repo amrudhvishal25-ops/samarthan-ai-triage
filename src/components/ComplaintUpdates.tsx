@@ -33,25 +33,28 @@ export default function ComplaintUpdates({ hi, updates = [], onAdd }: ComplaintU
   const allActionPoints = updates.flatMap(u => hi ? u.actionPointsHi : u.actionPoints)
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-      <h3 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide flex items-center gap-2">
+    <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
+      <h3 className="text-sm font-bold text-zinc-900 mb-1 uppercase tracking-wide flex items-center gap-2">
         <MessageSquarePlus className="w-4 h-4 text-blue-500" />
         {hi ? 'नई जानकारी जोड़ें' : 'Add an Update'}
       </h3>
-      <p className="text-xs text-gray-500 mb-4">
+      <p className="text-xs text-zinc-500 mb-4">
         {hi
           ? 'क्या याद आया कुछ नया? नई जानकारी, लेन-देन, या संपर्क यहाँ जोड़ें — यह आपकी शिकायत के साथ सुरक्षित रहेगा।'
           : 'Remembered something new? Add a fresh detail, transaction, or contact here — it stays attached to this complaint.'}
       </p>
 
-      <div className="flex gap-2 mb-4">
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={2}
-          placeholder={hi ? 'उदाहरण: मुझे एक और मैसेज मिला उसी नंबर से…' : 'e.g. I got another message from the same number…'}
-          className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 placeholder-zinc-400 resize-none outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
-        />
+      <div className="flex flex-col gap-2 mb-4">
+        <label htmlFor="update-note" className="sr-only">{hi ? 'अपडेट नोट' : 'Update Note'}</label>
+        <div className="flex gap-2">
+          <textarea
+            id="update-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+            placeholder={hi ? 'उदाहरण: मुझे एक और मैसेज मिला उसी नंबर से…' : 'e.g. I got another message from the same number…'}
+            className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 placeholder-zinc-400 resize-none outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
+          />
         <button
           onClick={handleSubmit}
           disabled={submitting || !note.trim()}
@@ -59,6 +62,7 @@ export default function ComplaintUpdates({ hi, updates = [], onAdd }: ComplaintU
         >
           {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (hi ? 'जोड़ें' : 'Add')}
         </button>
+        </div>
       </div>
 
       {allActionPoints.length > 0 && (
@@ -79,20 +83,20 @@ export default function ComplaintUpdates({ hi, updates = [], onAdd }: ComplaintU
       )}
 
       {updates.length > 0 && (
-        <div className="space-y-3 pt-3 border-t border-dashed border-gray-200">
+        <div className="space-y-3 pt-3 border-t border-dashed border-zinc-200">
           {[...updates].reverse().map((u) => {
             const points = hi ? u.actionPointsHi : u.actionPoints
             return (
               <div key={u.id} className="flex items-start gap-2 text-xs">
-                <Clock className="w-3.5 h-3.5 text-gray-300 flex-shrink-0 mt-0.5" />
+                <Clock className="w-3.5 h-3.5 text-zinc-300 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-gray-700 leading-relaxed">{u.note}</p>
-                  <p className="text-gray-400 mt-0.5">{formatDate(u.addedAt)}</p>
+                  <p className="text-zinc-700 leading-relaxed">{u.note}</p>
+                  <p className="text-zinc-400 mt-0.5">{formatDate(u.addedAt)}</p>
                   {points.length > 0 && (
                     <ul className="mt-1.5 space-y-0.5">
                       {points.map((p, i) => (
-                        <li key={i} className="text-gray-500 flex gap-1.5">
-                          <span className="text-gray-300">→</span>
+                        <li key={i} className="text-zinc-500 flex gap-1.5">
+                          <span className="text-zinc-300">→</span>
                           <span>{p}</span>
                         </li>
                       ))}

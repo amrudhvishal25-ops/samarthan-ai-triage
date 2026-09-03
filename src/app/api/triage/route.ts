@@ -12,15 +12,15 @@ Extract ALL specific details provided and return a STRICT JSON object.
 
 CRITICAL INSTRUCTIONS:
 1. AGGRESSIVELY EXTRACT FRAUDSTER IDENTITY:
-   - victimName field = FRAUDSTER's PRIMARY identifier: person name, Instagram handle, website, UPI ID, APP NAME, BANK NAME, seller username, channel name, email, or phone.
+   - fraudsterIdentifier field = FRAUDSTER's PRIMARY identifier: person name, Instagram handle, website, UPI ID, APP NAME, BANK NAME, seller username, channel name, email, or phone.
    - CRITICAL: If victim says "mera naam X hai" or "My name is X" or "I am X" or "mai X hoon" — that is the COMPLAINANT, NOT the fraudster. Do NOT extract complainant name as fraudster. Only extract the person/entity who perpetrated the fraud.
    - AGGRESSIVELY look for: person names (of fraudster/scammer/imposter ONLY), @handles, domains, UPI@patterns, APP NAMES (StockPro, QuickCash, SBI Bank, HDFC Bank), Telegram channels (Truth Warriors India), WhatsApp groups, seller usernames.
    - PRIORITY (strict, top wins): (1) the NAME OF A HUMAN who perpetrated, orchestrated, or fronted the fraud — a scammer, imposter, fake advisor, group admin, "tips provider", the person you spoke to — even if an app/website/channel was also used > (2) @handle of the fraudster > (3) fraudulent domain > (4) APP / BANK / SERVICE NAME (only when NO human fraudster is named) > (5) UPI ID > (6) phone > (7) Telegram channel / WhatsApp group name > (8) email.
-   - A named person BEATS an app or channel. "Vinod Agarwal gave tips in a group and made me invest in the ProfitMax app" → victimName = "Vinod Agarwal" (NOT "ProfitMax"). The app is only the tool. Put the app/channel name in the summary.
+   - A named person BEATS an app or channel. "Vinod Agarwal gave tips in a group and made me invest in the ProfitMax app" → fraudsterIdentifier = "Vinod Agarwal" (NOT "ProfitMax"). The app is only the tool. Put the app/channel name in the summary.
    - If several people are named, pick the one who most directly ran the scam (the caller / the advisor / the admin); mention the others in the summary.
    - CRITICAL EXAMPLES TO EXTRACT: "Inspector Verma" (imposter police officer), "Priya Sharma" (fake advisor), "Vinod Agarwal" (group tips-provider) — these WIN over any app. Only when nobody is named: "StockPro" (app), "HDFC Bank" (bank), "Truth Warriors India" (Telegram), "Rakesh Jhunjhunwala Tips Official" (WhatsApp group), "bestdeal-mobile.in" (website).
    - If text says "I am Ramesh Iyer" → Ramesh Iyer is COMPLAINANT. Extract the fraudster instead (e.g., "Inspector Verma" who called, or "Priya Sharma" the fake advisor).
-   - If text names NO human and says "app called StockPro" → extract "StockPro" as victimName (the fraudulent app/entity, not the victim's name).
+   - If text names NO human and says "app called StockPro" → extract "StockPro" as fraudsterIdentifier (the fraudulent app/entity, not the victim's name).
    - If "bank HDFC" used fraudulently → extract "HDFC Bank" or "HDFC".
    - If "Telegram channel called Truth Warriors India" scammed me → extract "Truth Warriors India".
    - If "WhatsApp group Rakesh Jhunjhunwala" impersonated → extract group name.
@@ -53,7 +53,8 @@ CRITICAL INSTRUCTIONS:
 
 {
   "incidentId": "XXXXXXXXXXXXXX",  // generate a realistic 14-digit numeric NCRP-style acknowledgement number, no letters or dashes, first digit 1-9
-  "victimName": "FRAUDSTER's primary identifier ONLY (name, @handle, UPI ID, domain, seller username, phone). Examples: 'Rithwik', '@rithwik8024', 'random@ybl', 'example.com', 'tech-deals-mumbai'. Use 'Not Identified' ONLY if absolutely none exist.",
+  "fraudsterIdentifier": "FRAUDSTER's primary identifier ONLY (name, @handle, UPI ID, domain, seller username, phone). Examples: 'Rithwik', '@rithwik8024', 'random@ybl', 'example.com', 'tech-deals-mumbai'. Use 'Not Identified' ONLY if absolutely none exist.",
+  "complainantName": "The victim / complainant's own name if stated ('I am X', 'mera naam X hai'). Empty string if not stated.",
   "recommendedChannel": "bank | platform | agency | helpline — see rule 3b. The escalation route this victim should take FIRST.",
   "recommendedChannelTarget": "Who to escalate to: bank name, platform name (Instagram/WhatsApp/…), 'UIDAI', 'Income Tax', 'RBI Sachet', 'National Consumer Helpline', or '1930'.",
   "fraudType": "Classify STRICTLY by incident type: Financial Fraud (UPI/bank money theft, QR scams), Women/Children Related Crime (harassment of minors/women, cyberbullying, fake impersonation profiles), Extortion & Blackmail (adult sextortion, ransom threats), Identity Theft (Aadhaar/PAN misuse), E-Commerce Scams (ordered product never delivered), Investment Scam (money put into a trading/crypto/investment app for promised returns, cannot withdraw), Other Cyber Crime (ransomware, hacking of the victim's own accounts, data theft). DO NOT confuse cyberbullying with extortion—if victim is minor/woman and being harassed/threatened, it's Women/Children Related Crime. DO NOT classify a trading-app deposit scam as E-Commerce — that is Investment Scam.",
@@ -125,7 +126,8 @@ export async function POST(req: NextRequest) {
 
     return {
       incidentId: generateId(),
-      victimName: 'Not Identified',
+      fraudsterIdentifier: 'Not Identified',
+      complainantName: '',
       fraudType: inferredCategory as any,
       recommendedChannel: mockChannel,
       recommendedChannelTarget: mockChannelTarget,

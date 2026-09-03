@@ -40,10 +40,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Large tap targets for mobile */
-button, a, [role="button"] {
-  min-height: 44px;
-}
 
 /* Print styles for complaint */
 @media print {

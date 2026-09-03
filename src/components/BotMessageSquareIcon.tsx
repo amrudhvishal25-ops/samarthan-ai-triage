@@ -52,6 +52,7 @@ export const BotMessageSquareIcon = forwardRef<
 
   return (
     <div
+      aria-hidden="true"
       className={cn("inline-flex items-center justify-center", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

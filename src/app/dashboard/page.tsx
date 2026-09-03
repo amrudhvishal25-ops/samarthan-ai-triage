@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import UrgencyBadge from '@/components/UrgencyBadge'
@@ -35,49 +35,68 @@ export default function DashboardPage() {
   const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>([])
   const [updates, setUpdates] = useState<ComplaintUpdate[]>([])
   const [callModalHotline, setCallModalHotline] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
   const hi = language === 'hi'
+  const mounted = useRef(false)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    if (!triageResult) router.replace('/')
+    setTimeout(() => { mounted.current = true }, 0)
+  }, [])
+
+  useEffect(() => {
+    if (mounted.current && !triageResult) router.replace('/')
   }, [triageResult, router])
+
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
 
   useEffect(() => {
     if (!triageResult) return
-    save({
-      incidentId: triageResult.incidentId,
-      fraudType: triageResult.fraudType,
-      victimName: triageResult.victimName,
-      amount: triageResult.amount,
-      urgencyLevel: triageResult.urgencyLevel,
-      summary: triageResult.summary,
-      summaryHi: triageResult.summaryHi,
-      complaintDraft: triageResult.complaintDraft,
-      complaintDraftHi: triageResult.complaintDraftHi,
-      frauderContact: triageResult.frauderContact,
-      bankName: triageResult.bankName,
-      accountNumber: triageResult.accountNumber,
-      upiId: triageResult.upiId,
-      timeline: triageResult.timeline,
-      freezeSteps: triageResult.freezeSteps,
-      applicableLaws: triageResult.applicableLaws,
-      recommendedChannel: triageResult.recommendedChannel ?? 'helpline',
-      recommendedChannelTarget: triageResult.recommendedChannelTarget ?? '1930',
-      language,
-    })
-      .then(() => getById(triageResult.incidentId))
-      .then(async record => {
-        if (!record) return
-        setStatus(record.status)
-        if (record.evidenceImages.length === 0 && sharedImage) {
-          const dataUrl = await readAsDataUrl(sharedImage)
-          const updated = await addEvidenceImage(triageResult.incidentId, { name: sharedImage.name, dataUrl })
-          if (updated) setEvidenceImages(updated)
-        } else {
-          setEvidenceImages(record.evidenceImages)
-        }
-        setUpdates(record.updates)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+
+    saveTimeoutRef.current = setTimeout(() => {
+      save({
+        incidentId: triageResult.incidentId,
+        fraudType: triageResult.fraudType,
+        fraudsterIdentifier: triageResult.fraudsterIdentifier,
+        complainantName: triageResult.complainantName,
+        amount: triageResult.amount,
+        urgencyLevel: triageResult.urgencyLevel,
+        summary: triageResult.summary,
+        summaryHi: triageResult.summaryHi,
+        complaintDraft: triageResult.complaintDraft,
+        complaintDraftHi: triageResult.complaintDraftHi,
+        frauderContact: triageResult.frauderContact,
+        bankName: triageResult.bankName,
+        accountNumber: triageResult.accountNumber,
+        upiId: triageResult.upiId,
+        timeline: triageResult.timeline,
+        freezeSteps: triageResult.freezeSteps,
+        applicableLaws: triageResult.applicableLaws,
+        recommendedChannel: triageResult.recommendedChannel ?? 'helpline',
+        recommendedChannelTarget: triageResult.recommendedChannelTarget ?? '1930',
+        language,
       })
-      .catch(err => console.error('Failed to save complaint:', err))
+        .then(() => getById(triageResult.incidentId))
+        .then(async record => {
+          if (!record) return
+          setStatus(record.status)
+          if (record.evidenceImages.length === 0 && sharedImage) {
+            const dataUrl = await readAsDataUrl(sharedImage)
+            const updated = await addEvidenceImage(triageResult.incidentId, { name: sharedImage.name, dataUrl })
+            if (updated) setEvidenceImages(updated)
+          } else {
+            setEvidenceImages(record.evidenceImages)
+          }
+          setUpdates(record.updates)
+        })
+        .catch(err => console.error('Failed to save complaint:', err))
+    }, 2000)
+
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }
   }, [triageResult, save, getById, addEvidenceImage, sharedImage, language])
 
   const handleAddEvidence = async (file: File) => {
@@ -171,12 +190,24 @@ export default function DashboardPage() {
       try { await navigator.share({ title: 'Samarthan Fraud Report', text }) } catch { }
     } else {
       await navigator.clipboard.writeText(text)
-      alert('Copied to clipboard!')
+      showToast('Copied to clipboard!')
     }
   }
 
   return (
-    <main className="min-h-screen bg-white pb-20 font-sans">
+    <main className="min-h-screen bg-white pb-20 font-sans relative">
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-zinc-900 text-white text-sm px-4 py-2 rounded-full shadow-lg"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <PrintableComplaint result={r} language={language} />
 
       <div className="no-print">
@@ -211,7 +242,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => { reset(); router.push('/') }}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors h-auto min-h-0"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors "
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {hi ? 'फिर से' : 'New Report'}
@@ -236,10 +267,11 @@ export default function DashboardPage() {
 
                 {/* Category */}
                 <div>
-                  <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                  <label htmlFor="crime-category" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
                     {hi ? 'अपराध श्रेणी' : 'Crime Category'}
                   </label>
                   <select
+                    id="crime-category"
                     value={r.fraudType}
                     onChange={(e) => handleUpdate('fraudType', e.target.value)}
                     className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
@@ -253,23 +285,38 @@ export default function DashboardPage() {
                   </select>
                 </div>
 
+                {/* Complainant Name */}
+                <div>
+                  <label htmlFor="complainant-name" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                    {hi ? 'शिकायतकर्ता' : 'Complainant'}
+                  </label>
+                  <input
+                    id="complainant-name"
+                    type="text" value={r.complainantName || ''}
+                    readOnly
+                    className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-500 bg-zinc-100 cursor-not-allowed outline-none transition-all"
+                  />
+                </div>
+
                 {/* Fraudster Name + Amount */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                    <label htmlFor="fraudster-name" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
                       {hi ? 'आरोपी का नाम' : 'Fraudster Name'}
                     </label>
                     <input
-                      type="text" value={r.victimName}
-                      onChange={(e) => handleUpdate('victimName', e.target.value)}
+                      id="fraudster-name"
+                      type="text" value={r.fraudsterIdentifier || ''}
+                      onChange={(e) => handleUpdate('fraudsterIdentifier', e.target.value)}
                       className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                    <label htmlFor="amount-lost" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
                       {hi ? 'राशि (₹)' : 'Amount Lost (₹)'}
                     </label>
                     <input
+                      id="amount-lost"
                       type="number" value={r.amount}
                       onChange={(e) => handleUpdate('amount', Number(e.target.value))}
                       className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
@@ -279,10 +326,11 @@ export default function DashboardPage() {
 
                 {/* Fraudster Contact */}
                 <div>
-                  <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                  <label htmlFor="fraudster-contact" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
                     {hi ? 'आरोपी का संपर्क' : 'Fraudster Contact'}
                   </label>
                   <input
+                    id="fraudster-contact"
                     type="text" value={r.frauderContact}
                     onChange={(e) => handleUpdate('frauderContact', e.target.value)}
                     className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
@@ -291,11 +339,12 @@ export default function DashboardPage() {
 
                 {/* Complaint Draft */}
                 <div>
-                  <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5 flex justify-between">
+                  <label htmlFor="complaint-draft" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5 flex justify-between">
                     <span>{hi ? 'शिकायत मसौदा' : 'Complaint Draft'}</span>
                     <span className="text-zinc-400 normal-case font-normal">{hi ? 'संपादन योग्य' : 'Editable'}</span>
                   </label>
                   <textarea
+                    id="complaint-draft"
                     value={hi ? r.complaintDraftHi : r.complaintDraft}
                     onChange={(e) => hi
                       ? handleUpdate('complaintDraftHi', e.target.value)
@@ -406,7 +455,7 @@ export default function DashboardPage() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               <SmartActions
                 bankName={r.bankName} incidentId={r.incidentId} amount={r.amount} hi={hi}
-                victimName={r.victimName} summary={hi ? r.summaryHi : r.summary}
+                fraudsterIdentifier={r.fraudsterIdentifier} summary={hi ? r.summaryHi : r.summary}
                 recommendedChannel={r.recommendedChannel}
                 recommendedChannelTarget={r.recommendedChannelTarget}
                 followUpPoints={allFollowUpPoints}
