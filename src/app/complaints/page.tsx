@@ -7,6 +7,7 @@ import { FileText, AlertCircle, ChevronRight, Clock } from 'lucide-react'
 import { useComplaints, SavedComplaint } from '@/hooks/useComplaints'
 import { useTriage } from '@/context/TriageContext'
 import { COMPLAINT_STATUS_LABELS } from '@/data/scenarios'
+import { inferChannelFromFraudType } from '@/data/escalationChannels'
 import Navbar from '@/components/Navbar'
 
 const URGENCY_COLORS: Record<string, string> = {
@@ -45,6 +46,9 @@ export default function ComplaintsPage() {
       timeline: c.timeline,
       freezeSteps: c.freezeSteps,
       applicableLaws: c.applicableLaws,
+      // Persisted with the complaint; older rows fall back via inference.
+      recommendedChannel: c.recommendedChannel ?? inferChannelFromFraudType(c.fraudType).channel,
+      recommendedChannelTarget: c.recommendedChannelTarget ?? inferChannelFromFraudType(c.fraudType).target,
     })
     router.push('/dashboard')
   }

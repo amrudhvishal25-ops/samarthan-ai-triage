@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, AlertCircle, FileText, Mic, ImagePlus, ShieldAlert, CheckCircle2, X } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import { SCENARIOS, TriageResult } from '@/data/scenarios'
+import { inferChannelFromFraudType } from '@/data/escalationChannels'
 import AudioRecorder from '@/components/AudioRecorder'
 import LoadingTriage from '@/components/LoadingTriage'
 import Navbar from '@/components/Navbar'
@@ -72,10 +73,16 @@ function IntakeContent() {
         const cleanAmount = rawAmount ? parseInt(rawAmount.replace(/,/g, ''), 10) : 0
         const idNum = Math.floor(10000000000000 + Math.random() * 90000000000000).toString()
 
+        const inferred = inferChannelFromFraudType(inferredCat as any)
         result = {
           incidentId: idNum,
           victimName: 'Not Identified',
           fraudType: inferredCat as any,
+          recommendedChannel: inferred.channel,
+          recommendedChannelTarget:
+            inferred.channel === 'bank'
+              ? (finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'the bank')
+              : inferred.target,
           frauderContact: 'Unknown',
           amount: cleanAmount || (inferredCat === 'Financial Fraud' ? 15000 : 0),
           bankName: finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'N/A',

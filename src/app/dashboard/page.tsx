@@ -60,6 +60,8 @@ export default function DashboardPage() {
       timeline: triageResult.timeline,
       freezeSteps: triageResult.freezeSteps,
       applicableLaws: triageResult.applicableLaws,
+      recommendedChannel: triageResult.recommendedChannel ?? 'helpline',
+      recommendedChannelTarget: triageResult.recommendedChannelTarget ?? '1930',
       language,
     })
       .then(() => getById(triageResult.incidentId))
@@ -137,6 +139,12 @@ export default function DashboardPage() {
   const handleBankNotified = async () => {
     if (!triageResult) return
     const next = await setStatusAtLeast(triageResult.incidentId, 'BANK_NOTIFIED')
+    if (next) setStatus(next)
+  }
+
+  const handlePlatformReported = async () => {
+    if (!triageResult) return
+    const next = await setStatusAtLeast(triageResult.incidentId, 'PLATFORM_REPORTED')
     if (next) setStatus(next)
   }
 
@@ -398,8 +406,12 @@ export default function DashboardPage() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               <SmartActions
                 bankName={r.bankName} incidentId={r.incidentId} amount={r.amount} hi={hi}
+                victimName={r.victimName} summary={hi ? r.summaryHi : r.summary}
+                recommendedChannel={r.recommendedChannel}
+                recommendedChannelTarget={r.recommendedChannelTarget}
                 followUpPoints={allFollowUpPoints}
                 onBankNotified={handleBankNotified}
+                onPlatformReported={handlePlatformReported}
                 onPoliceRouted={handlePoliceRouted}
               />
             </motion.div>

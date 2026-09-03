@@ -16,11 +16,20 @@ export type FraudType =
 
 export type UrgencyLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
 
+// Which escalation route the triage AI recommends for this incident.
+//   bank     → bank / UPI money fraud; escalate to the bank nodal officer
+//   platform → harassment / impersonation on a social platform; report to that platform
+//   agency   → identity theft (UIDAI), unregistered investment scheme (RBI Sachet),
+//              or marketplace non-delivery (National Consumer Helpline)
+//   helpline → fallback; call 1930
+export type RecommendedChannel = 'bank' | 'platform' | 'agency' | 'helpline'
+
 export type InputType = 'voice' | 'screenshot' | 'text'
 
 export const COMPLAINT_STATUSES = [
   'SUBMITTED',
   'BANK_NOTIFIED',
+  'PLATFORM_REPORTED',
   'FIR_FILED',
   'UNDER_INVESTIGATION',
   'RESOLVED',
@@ -31,6 +40,7 @@ export type ComplaintStatus = typeof COMPLAINT_STATUSES[number]
 export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, { en: string; hi: string; simulated: boolean }> = {
   SUBMITTED: { en: 'Complaint Registered', hi: 'शिकायत पंजीकृत', simulated: false },
   BANK_NOTIFIED: { en: 'Bank Nodal Officer Notified', hi: 'बैंक नोडल अधिकारी को सूचित', simulated: true },
+  PLATFORM_REPORTED: { en: 'Platform / Agency Report Filed', hi: 'प्लेटफ़ॉर्म / एजेंसी को रिपोर्ट दर्ज', simulated: true },
   FIR_FILED: { en: 'FIR Registered (NCRP)', hi: 'प्राथमिकी दर्ज (NCRP)', simulated: true },
   UNDER_INVESTIGATION: { en: 'Under Investigation', hi: 'जांच जारी', simulated: true },
   RESOLVED: { en: 'Disposed / Resolved', hi: 'निपटाया / समाधान हुआ', simulated: true },
@@ -76,6 +86,10 @@ export interface TriageResult {
   urgencyLevel: UrgencyLevel
   summary: string
   summaryHi: string
+  // Situation-aware escalation route decided by the triage AI. Optional so
+  // older persisted/mock records still typecheck; UI falls back to 'helpline'.
+  recommendedChannel?: RecommendedChannel
+  recommendedChannelTarget?: string
 }
 
 export interface Scenario {
@@ -133,6 +147,8 @@ export const SCENARIOS: Scenario[] = [
       incidentId: generateId(),
       victimName: 'Rajesh Kumar (Synthetic)',
       fraudType: 'UPI Fraud',
+      recommendedChannel: 'bank',
+      recommendedChannelTarget: 'State Bank of India',
       frauderContact: '+91-9876543210',
       amount: 15000,
       bankName: 'State Bank of India',
@@ -270,6 +286,8 @@ Date: 23/08/2024`,
       incidentId: generateId(),
       victimName: 'Priya Sharma (Synthetic)',
       fraudType: 'OTP Fraud',
+      recommendedChannel: 'bank',
+      recommendedChannelTarget: 'HDFC Bank',
       frauderContact: '022-61606161 (Spoofed)',
       amount: 42000,
       bankName: 'HDFC Bank',
@@ -394,6 +412,8 @@ Date: 22/08/2024`,
       incidentId: generateId(),
       victimName: 'Amit Verma (Synthetic)',
       fraudType: 'Investment Scam',
+      recommendedChannel: 'agency',
+      recommendedChannelTarget: 'RBI Sachet',
       frauderContact: 'WhatsApp Group: "Rakesh Jhunjhunwala Tips Official"',
       amount: 120000,
       bankName: 'HDFC Bank',

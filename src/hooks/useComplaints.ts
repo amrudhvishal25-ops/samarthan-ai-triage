@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import {
   FraudType, UrgencyLevel, FreezeStep, ApplicableLaw,
   ComplaintStatus, ComplaintStatusEvent, COMPLAINT_STATUSES,
+  RecommendedChannel,
 } from '@/data/scenarios'
 
 export interface EvidenceImage {
@@ -38,6 +39,8 @@ export interface SavedComplaint {
   timeline: string
   freezeSteps: FreezeStep[]
   applicableLaws: ApplicableLaw[]
+  recommendedChannel: RecommendedChannel
+  recommendedChannelTarget: string
   savedAt: string
   language: 'en' | 'hi'
   status: ComplaintStatus
@@ -61,6 +64,8 @@ function normalize(c: Partial<SavedComplaint>): SavedComplaint {
       actionPointsHi: u.actionPointsHi ?? [],
     })),
     status: c.status ?? 'SUBMITTED',
+    recommendedChannel: c.recommendedChannel ?? 'helpline',
+    recommendedChannelTarget: c.recommendedChannelTarget ?? '1930',
   } as SavedComplaint
 }
 
@@ -83,6 +88,8 @@ function fromRow(row: Record<string, any>): SavedComplaint {
     timeline: row.timeline,
     freezeSteps: row.freeze_steps,
     applicableLaws: row.applicable_laws,
+    recommendedChannel: row.recommended_channel,
+    recommendedChannelTarget: row.recommended_channel_target,
     savedAt: row.saved_at,
     language: row.language,
     status: row.status,
@@ -110,6 +117,8 @@ function toRow(c: SavedComplaint) {
     timeline: c.timeline,
     freeze_steps: c.freezeSteps,
     applicable_laws: c.applicableLaws,
+    recommended_channel: c.recommendedChannel,
+    recommended_channel_target: c.recommendedChannelTarget,
     saved_at: c.savedAt,
     language: c.language,
     status: c.status,
@@ -166,7 +175,7 @@ export function useComplaints() {
         const remote: SavedComplaint[] = rows.map(fromRow)
         writeLocal(remote)
         // Cache in memory
-        (globalThis as any).__complaintsCache = { data: remote, time: Date.now() }
+        ;(globalThis as any).__complaintsCache = { data: remote, time: Date.now() }
         return remote
       }
     } catch { /* fall through */ }

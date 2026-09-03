@@ -18,6 +18,8 @@ const c1 = {
   account_number: 'xxxx-xxxx-4019',
   upi_id: 'scammer123@ybl',
   timeline: '20 Aug 2026, 14:30 IST',
+  recommended_channel: 'bank',
+  recommended_channel_target: 'State Bank of India',
   freeze_steps: JSON.stringify([
     { title: 'Call 1930', desc: 'Report the transaction immediately.' },
     { title: 'Contact SBI', desc: 'Call 1800-425-3800 to block your debit card.' }
@@ -57,6 +59,8 @@ const c2 = {
   account_number: 'N/A',
   upi_id: 'N/A',
   timeline: '10 Aug 2026, noticed at 19:00 IST',
+  recommended_channel: 'platform',
+  recommended_channel_target: 'Instagram',
   freeze_steps: JSON.stringify([
     { title: 'Report Profile', desc: 'Use Instagram in-app reporting for impersonation.' },
     { title: 'Warn Contacts', desc: 'Post a status warning friends not to send money.' }
@@ -86,13 +90,15 @@ async function seed() {
         summary, summary_hi, complaint_draft, complaint_draft_hi,
         frauder_contact, bank_name, account_number, upi_id, timeline,
         freeze_steps, applicable_laws, saved_at, language,
-        status, status_history, evidence_images, updates
+        status, status_history, evidence_images, updates,
+        recommended_channel, recommended_channel_target
       ) VALUES (
         ${c.incident_id}, ${c.fraud_type}, ${c.victim_name}, ${c.amount}, ${c.urgency_level},
         ${c.summary}, ${c.summary_hi}, ${c.complaint_draft}, ${c.complaint_draft_hi},
         ${c.frauder_contact}, ${c.bank_name}, ${c.account_number}, ${c.upi_id}, ${c.timeline},
         ${c.freeze_steps}, ${c.applicable_laws}, ${c.saved_at}, ${c.language},
-        ${c.status}, ${c.status_history}, ${c.evidence_images}, ${c.updates}
+        ${c.status}, ${c.status_history}, ${c.evidence_images}, ${c.updates},
+        ${c.recommended_channel ?? 'helpline'}, ${c.recommended_channel_target ?? '1930'}
       )
       ON CONFLICT (incident_id) DO NOTHING
     `

@@ -23,7 +23,9 @@ create table if not exists complaints (
   status text not null default 'SUBMITTED',
   status_history jsonb not null default '[]'::jsonb,
   evidence_images jsonb not null default '[]'::jsonb,
-  updates jsonb not null default '[]'::jsonb
+  updates jsonb not null default '[]'::jsonb,
+  recommended_channel text not null default 'helpline',
+  recommended_channel_target text not null default '1930'
 );
 
 create index if not exists complaints_saved_at_idx on complaints (saved_at desc);
@@ -51,3 +53,7 @@ create policy "public update" on complaints
 
 -- If the table already existed before updates was added, run:
 -- alter table complaints add column if not exists updates jsonb not null default '[]'::jsonb;
+
+-- If the table already existed before recommended_channel was added, run:
+-- alter table complaints add column if not exists recommended_channel text not null default 'helpline';
+-- alter table complaints add column if not exists recommended_channel_target text not null default '1930';

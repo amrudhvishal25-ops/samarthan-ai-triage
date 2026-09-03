@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
         summary, summary_hi, complaint_draft, complaint_draft_hi,
         frauder_contact, bank_name, account_number, upi_id, timeline,
         freeze_steps, applicable_laws, saved_at, language,
-        status, status_history, evidence_images, updates
+        status, status_history, evidence_images, updates,
+        recommended_channel, recommended_channel_target
       ) VALUES (
         ${c.incident_id}, ${c.fraud_type}, ${c.victim_name}, ${c.amount}, ${c.urgency_level},
         ${c.summary}, ${c.summary_hi}, ${c.complaint_draft}, ${c.complaint_draft_hi},
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
         ${JSON.stringify(c.freeze_steps ?? [])}, ${JSON.stringify(c.applicable_laws ?? [])},
         ${c.saved_at}, ${c.language},
         ${c.status}, ${JSON.stringify(c.status_history ?? [])},
-        ${JSON.stringify(c.evidence_images ?? [])}, ${JSON.stringify(c.updates ?? [])}
+        ${JSON.stringify(c.evidence_images ?? [])}, ${JSON.stringify(c.updates ?? [])},
+        ${c.recommended_channel ?? 'helpline'}, ${c.recommended_channel_target ?? '1930'}
       )
       ON CONFLICT (incident_id) DO NOTHING
     `

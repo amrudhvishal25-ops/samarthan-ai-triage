@@ -26,9 +26,15 @@ create table if not exists complaints (
   status text not null default 'SUBMITTED',
   status_history jsonb not null default '[]'::jsonb,
   evidence_images jsonb not null default '[]'::jsonb,
-  updates jsonb not null default '[]'::jsonb
+  updates jsonb not null default '[]'::jsonb,
+  recommended_channel text not null default 'helpline',
+  recommended_channel_target text not null default '1930'
 )`
 
 await sql`create index if not exists complaints_saved_at_idx on complaints (saved_at desc)`
+
+// Additive migration for pre-existing tables.
+await sql`alter table complaints add column if not exists recommended_channel text not null default 'helpline'`
+await sql`alter table complaints add column if not exists recommended_channel_target text not null default '1930'`
 
 console.log('✅ Schema applied to Neon successfully')
