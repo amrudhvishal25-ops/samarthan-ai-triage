@@ -128,8 +128,8 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                       <label htmlFor="digilocker-name" className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
                         Your Full Name (As per Govt ID) <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative">
-                        <User className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+                      <div className="relative flex items-center">
+                        <User className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <input
                           id="digilocker-name"
                           type="text"
@@ -137,7 +137,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                           value={name}
                           onChange={(e) => { setName(e.target.value); setNameError(false) }}
                           placeholder="e.g. Parichay Prabhu"
-                          className={`w-full border rounded-xl pl-9.5 pr-3 py-2.5 text-sm text-zinc-900 bg-zinc-50 outline-none focus:ring-2 transition-all ${nameError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:ring-zinc-900'}`}
+                          className={`w-full border rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:ring-2 transition-all ${nameError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:border-zinc-900 focus:ring-zinc-900/10'}`}
                         />
                       </div>
                       {nameError && <p className="text-xs text-red-500 mt-1">Please enter your name to verify identity.</p>}
@@ -147,33 +147,33 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                       <label htmlFor="digilocker-aadhaar" className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
                         Aadhaar / DigiLocker ID
                       </label>
-                      <div className="relative">
-                        <CreditCard className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+                      <div className="relative flex items-center">
+                        <CreditCard className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <input
                           id="digilocker-aadhaar"
                           type="text"
                           value={aadhaar}
                           onChange={(e) => setAadhaar(e.target.value)}
                           placeholder="e.g. 5432 9876 1234 (optional)"
-                          className="w-full border border-zinc-200 rounded-xl pl-9.5 pr-3 py-2.5 text-sm text-zinc-900 bg-zinc-50 outline-none focus:ring-2 focus:ring-zinc-900 transition-all"
+                          className="w-full border border-zinc-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition-all"
                         />
                       </div>
                       <p className="text-[11px] text-zinc-400 mt-1">Leave blank to use default masked ID ****-****-8421</p>
                     </div>
 
-                    <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 space-y-1">
-                      <p className="text-xs font-semibold text-orange-800 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-orange-600" />
+                    <div className="bg-orange-50/80 border border-orange-100 rounded-xl p-3.5 space-y-1">
+                      <p className="text-xs font-semibold text-orange-900 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
                         Aadhaar KYC Verification
                       </p>
-                      <p className="text-[11px] text-zinc-600">
+                      <p className="text-[11.5px] text-orange-950/70 leading-relaxed">
                         Formal police complaint drafts & statements will be filed with this verified name.
                       </p>
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 font-semibold text-sm transition-all shadow-sm"
+                      className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white rounded-xl py-3 font-semibold text-sm transition-all shadow-sm shadow-orange-500/20"
                     >
                       <ShieldCheck className="w-4 h-4" />
                       Continue with DigiLocker
