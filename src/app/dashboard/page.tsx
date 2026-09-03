@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const hi = language === 'hi'
   const mounted = useRef(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const initialSavedFor = useRef<string | null>(null)
 
   useEffect(() => {
     setTimeout(() => { mounted.current = true }, 0)
@@ -53,51 +54,67 @@ export default function DashboardPage() {
     setTimeout(() => setToast(null), 3000)
   }
 
+  const buildSavePayload = (r: NonNullable<typeof triageResult>) => ({
+    incidentId: r.incidentId,
+    fraudType: r.fraudType,
+    fraudsterIdentifier: r.fraudsterIdentifier,
+    complainantName: r.complainantName,
+    amount: r.amount,
+    urgencyLevel: r.urgencyLevel,
+    summary: r.summary,
+    summaryHi: r.summaryHi,
+    complaintDraft: r.complaintDraft,
+    complaintDraftHi: r.complaintDraftHi,
+    frauderContact: r.frauderContact,
+    bankName: r.bankName,
+    accountNumber: r.accountNumber,
+    upiId: r.upiId,
+    timeline: r.timeline,
+    freezeSteps: r.freezeSteps,
+    applicableLaws: r.applicableLaws,
+    recommendedChannel: r.recommendedChannel ?? 'helpline' as const,
+    recommendedChannelTarget: r.recommendedChannelTarget ?? '1930',
+    language,
+  })
+
+  // Initial persist + load — runs once per incident, immediately (no debounce),
+  // so a complaint is saved even if the user leaves the page within 2 seconds.
   useEffect(() => {
     if (!triageResult) return
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    if (initialSavedFor.current === triageResult.incidentId) return
+    initialSavedFor.current = triageResult.incidentId
+    const incidentId = triageResult.incidentId
 
-    saveTimeoutRef.current = setTimeout(() => {
-      save({
-        incidentId: triageResult.incidentId,
-        fraudType: triageResult.fraudType,
-        fraudsterIdentifier: triageResult.fraudsterIdentifier,
-        complainantName: triageResult.complainantName,
-        amount: triageResult.amount,
-        urgencyLevel: triageResult.urgencyLevel,
-        summary: triageResult.summary,
-        summaryHi: triageResult.summaryHi,
-        complaintDraft: triageResult.complaintDraft,
-        complaintDraftHi: triageResult.complaintDraftHi,
-        frauderContact: triageResult.frauderContact,
-        bankName: triageResult.bankName,
-        accountNumber: triageResult.accountNumber,
-        upiId: triageResult.upiId,
-        timeline: triageResult.timeline,
-        freezeSteps: triageResult.freezeSteps,
-        applicableLaws: triageResult.applicableLaws,
-        recommendedChannel: triageResult.recommendedChannel ?? 'helpline',
-        recommendedChannelTarget: triageResult.recommendedChannelTarget ?? '1930',
-        language,
+    save(buildSavePayload(triageResult))
+      .then(() => getById(incidentId))
+      .then(async record => {
+        if (!record) return
+        setStatus(record.status)
+        if (record.evidenceImages.length === 0 && sharedImage) {
+          const dataUrl = await readAsDataUrl(sharedImage)
+          const updated = await addEvidenceImage(incidentId, { name: sharedImage.name, dataUrl })
+          if (updated) setEvidenceImages(updated)
+        } else {
+          setEvidenceImages(record.evidenceImages)
+        }
+        setUpdates(record.updates)
       })
-        .then(() => getById(triageResult.incidentId))
-        .then(async record => {
-          if (!record) return
-          setStatus(record.status)
-          if (record.evidenceImages.length === 0 && sharedImage) {
-            const dataUrl = await readAsDataUrl(sharedImage)
-            const updated = await addEvidenceImage(triageResult.incidentId, { name: sharedImage.name, dataUrl })
-            if (updated) setEvidenceImages(updated)
-          } else {
-            setEvidenceImages(record.evidenceImages)
-          }
-          setUpdates(record.updates)
-        })
-        .catch(err => console.error('Failed to save complaint:', err))
-    }, 2000)
+      .catch(err => console.error('Failed to save complaint:', err))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triageResult?.incidentId])
 
+  // Debounced re-save on subsequent edits (draft, category, amount, …).
+  useEffect(() => {
+    if (!triageResult) return
+    if (initialSavedFor.current !== triageResult.incidentId) return
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    const snapshot = triageResult
+    saveTimeoutRef.current = setTimeout(() => {
+      save(buildSavePayload(snapshot)).catch(err => console.error('Failed to re-save complaint:', err))
+    }, 2000)
     return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }
-  }, [triageResult, save, getById, addEvidenceImage, sharedImage, language])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triageResult, language])
 
   const handleAddEvidence = async (file: File) => {
     if (!triageResult) return

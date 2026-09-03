@@ -59,7 +59,7 @@ CRITICAL INSTRUCTIONS:
   "recommendedChannel": "bank | platform | agency | helpline — see rule 3b. The escalation route this victim should take FIRST.",
   "recommendedChannelTarget": "Who to escalate to: bank name, platform name (Instagram/WhatsApp/…), 'UIDAI', 'Income Tax', 'RBI Sachet', 'National Consumer Helpline', or '1930'.",
   "fraudType": "Classify STRICTLY by incident type: Financial Fraud (UPI/bank money theft, QR scams), Women/Children Related Crime (harassment of minors/women, cyberbullying, fake impersonation profiles), Extortion & Blackmail (adult sextortion, ransom threats), Identity Theft (Aadhaar/PAN misuse), E-Commerce Scams (ordered product never delivered), Investment Scam (money put into a trading/crypto/investment app for promised returns, cannot withdraw), Other Cyber Crime (ransomware, hacking of the victim's own accounts, data theft). DO NOT confuse cyberbullying with extortion—if victim is minor/woman and being harassed/threatened, it's Women/Children Related Crime. DO NOT classify a trading-app deposit scam as E-Commerce — that is Investment Scam.",
-  "frauderContact": "Secondary contact details: phone number, email, WhatsApp number, UPI ID, or separate platform handle (distinct from victimName). Use 'Not Provided' if no additional contact info exists.",
+  "frauderContact": "Secondary contact details: phone number, email, WhatsApp number, UPI ID, or separate platform handle (distinct from fraudsterIdentifier). Use 'Not Provided' if no additional contact info exists.",
   "amount": number,  // in INR, 0 if no financial loss is mentioned/visible
   "bankName": "string or 'Not Provided'",
   "accountNumber": "masked XXXX-XXXX-LAST4 if mentioned/visible, else 'Not Provided'",
@@ -286,7 +286,9 @@ export async function POST(req: NextRequest) {
       customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..."`
     }
 
-    // 2. High-speed structured legal complaint generation (with 8.5s safety race)
+    // 2. Structured legal complaint generation. Safety race well below the
+    //    route's maxDuration (60s) but above the observed p99 (~13s), so it
+    //    only trips on a genuine hang — not on a normal slow completion.
     const completionPromise = openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -298,8 +300,9 @@ export async function POST(req: NextRequest) {
       max_tokens: 2500,
     })
 
+    const SAFETY_TIMEOUT_MS = 45000
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Triage AI generation safety timeout (8.5s)')), 8500)
+      setTimeout(() => reject(new Error(`Triage AI generation safety timeout (${SAFETY_TIMEOUT_MS}ms)`)), SAFETY_TIMEOUT_MS)
     )
 
     const completion = await Promise.race([completionPromise, timeoutPromise])

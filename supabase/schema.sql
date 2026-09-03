@@ -1,5 +1,7 @@
--- Samarthan complaints table
--- Run this in Supabase Dashboard → SQL Editor
+-- Samarthan complaints table (canonical reference).
+-- The live database is Neon Postgres — apply changes with `node scripts/migrate.mjs`
+-- (reads DATABASE_URL from env), which runs the CREATE + additive ALTERs.
+-- This file also works pasted into the Supabase SQL Editor if that backend is used.
 
 create table if not exists complaints (
   incident_id text primary key,
