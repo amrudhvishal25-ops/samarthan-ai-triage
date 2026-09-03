@@ -5,6 +5,7 @@ import OpenAI from 'openai'
 import { Buffer } from 'node:buffer'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 const TRIAGE_SYSTEM_PROMPT = `You are an expert Indian cybercrime triage assistant. 
 A victim has provided an account of an incident (via text, voice note, or screenshot evidence). 
@@ -47,7 +48,7 @@ CRITICAL INSTRUCTIONS:
 
 4. NO HALLUCINATION: Use ONLY the details provided or visible in evidence. Do not invent data.
 
-5. FORMAL COMPLAINT DRAFT: Draft a complete, professional, first-person police complaint written from the perspective of the complainant (Pratham Kamath). State the facts directly.
+5. FORMAL COMPLAINT DRAFT: Draft a concise, professional, first-person police complaint (1-2 paragraphs, ~100-150 words) stating the exact facts directly. Keep freezeSteps to 2-3 essential immediate steps. Keep applicableLaws to 1-2 most directly applicable sections.
 
 6. For missing JSON fields below, use "Not Provided".
 
@@ -66,8 +67,8 @@ CRITICAL INSTRUCTIONS:
   "timeline": "date/time string if mentioned/visible, else 'Not Provided'",
   "summary": "2-sentence English summary of the facts including any specific platforms/details",
   "summaryHi": "2-sentence Hindi summary of the facts",
-  "complaintDraft": "Formal English police complaint written in first-person based strictly on provided facts/evidence.",
-  "complaintDraftHi": "Formal Hindi police complaint written in first-person based strictly on provided facts/evidence.",
+  "complaintDraft": "Concise formal English police complaint (1-2 paragraphs) stating facts, timestamps, fraudulent accounts, and requested action.",
+  "complaintDraftHi": "Concise Hindi translation of the complaint (1-2 paragraphs).",
   "freezeSteps": [
     {
       "step": 1,
@@ -285,8 +286,8 @@ export async function POST(req: NextRequest) {
       customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..."`
     }
 
-    // 2. High-speed structured legal complaint generation
-    const completion = await openai.chat.completions.create({
+    // 2. High-speed structured legal complaint generation (with 8.5s safety race)
+    const completionPromise = openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: customPrompt },
@@ -294,8 +295,14 @@ export async function POST(req: NextRequest) {
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: 1500,
+      max_tokens: 2500,
     })
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Triage AI generation safety timeout (8.5s)')), 8500)
+    )
+
+    const completion = await Promise.race([completionPromise, timeoutPromise])
 
     const raw = completion.choices[0]?.message?.content || '{}'
     const parsed = JSON.parse(raw)

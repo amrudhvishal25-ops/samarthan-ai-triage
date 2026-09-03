@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { neon } from '@neondatabase/serverless'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 function getDb() {
   const url = process.env.DATABASE_URL
