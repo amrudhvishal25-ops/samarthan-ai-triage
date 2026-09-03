@@ -31,10 +31,17 @@ export function useAuth() {
     }
   }, [])
 
-  const signIn = useCallback(() => {
+  const signIn = useCallback((customUser?: Partial<DigiLockerUser>) => {
     if (typeof window === 'undefined') return
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_USER))
+    const user: DigiLockerUser = {
+      name: customUser?.name?.trim() || 'Citizen User',
+      aadhaar: customUser?.aadhaar?.trim() || '****-****-8421',
+      dob: customUser?.dob || '15/03/1994',
+      verified: true,
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
     window.dispatchEvent(new Event('samarthan_auth_change'))
+    return user
   }, [])
 
   const signOut = useCallback(() => {

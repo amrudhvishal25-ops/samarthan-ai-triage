@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ShieldCheck, Loader2, CheckCircle2, Lock } from 'lucide-react'
+import { X, ShieldCheck, Loader2, CheckCircle2, Lock, User, CreditCard } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 interface DigiLockerModalProps {
@@ -16,13 +16,23 @@ type Step = 'intro' | 'redirecting' | 'otp' | 'success'
 export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLockerModalProps) {
   const { signIn } = useAuth()
   const [step, setStep] = useState<Step>('intro')
+  const [name, setName] = useState('')
+  const [aadhaar, setAadhaar] = useState('')
+  const [nameError, setNameError] = useState(false)
   const [otp, setOtp] = useState('')
   const [otpError, setOtpError] = useState(false)
 
   // Reset when modal closes
   useEffect(() => {
     if (!open) {
-      setTimeout(() => { setStep('intro'); setOtp(''); setOtpError(false) }, 300)
+      setTimeout(() => {
+        setStep('intro')
+        setName('')
+        setAadhaar('')
+        setNameError(false)
+        setOtp('')
+        setOtpError(false)
+      }, 300)
     }
   }, [open])
 
@@ -35,20 +45,36 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, onClose])
 
-  const handleRedirect = () => {
+  const getMaskedAadhaar = () => {
+    const clean = aadhaar.replace(/\D/g, '')
+    if (clean.length >= 4) {
+      return `****-****-${clean.slice(-4)}`
+    }
+    return '****-****-8421'
+  }
+
+  const handleStartAuth = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) {
+      setNameError(true)
+      return
+    }
+    setNameError(false)
     setStep('redirecting')
-    // Simulate the DigiLocker redirect + return
-    setTimeout(() => setStep('otp'), 2200)
+    setTimeout(() => setStep('otp'), 1800)
   }
 
   const handleOTPVerify = () => {
-    if (otp === '123456' || otp.length === 6) {
+    if (otp.length === 6) {
       setStep('success')
-      signIn()
+      const user = signIn({
+        name: name.trim(),
+        aadhaar: getMaskedAadhaar(),
+      })
       setTimeout(() => {
         onSuccess()
         onClose()
-      }, 1800)
+      }, 1600)
     } else {
       setOtpError(true)
       setTimeout(() => setOtpError(false), 1500)
@@ -84,7 +110,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
 
             <AnimatePresence mode="wait">
 
-              {/* INTRO STEP */}
+              {/* INTRO / MOCK SIGN IN STEP */}
               {step === 'intro' && (
                 <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
                   <div className="flex items-center gap-3 mb-5">
@@ -93,48 +119,78 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                     </div>
                     <div>
                       <h2 className="text-base font-bold text-zinc-900">Sign in with DigiLocker</h2>
-                      <p className="text-xs text-zinc-500">Government of India — MeitY</p>
+                      <p className="text-xs text-zinc-500">Government of India — MeitY Sandbox</p>
                     </div>
                   </div>
 
-                  <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 mb-5 space-y-2">
-                    <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Why DigiLocker?</p>
-                    <ul className="space-y-1.5">
-                      {[
-                        'Aadhaar-verified identity — no fake accounts',
-                        'All complaints legally tied to your profile',
-                        'Secure document vault for evidence',
-                      ].map((t, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-zinc-700">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-orange-500 flex-shrink-0 mt-0.5" />
-                          {t}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <form onSubmit={handleStartAuth} className="space-y-4 mb-4">
+                    <div>
+                      <label htmlFor="digilocker-name" className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
+                        Your Full Name (As per Govt ID) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+                        <input
+                          id="digilocker-name"
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => { setName(e.target.value); setNameError(false) }}
+                          placeholder="e.g. Parichay Prabhu"
+                          className={`w-full border rounded-xl pl-9.5 pr-3 py-2.5 text-sm text-zinc-900 bg-zinc-50 outline-none focus:ring-2 transition-all ${nameError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:ring-zinc-900'}`}
+                        />
+                      </div>
+                      {nameError && <p className="text-xs text-red-500 mt-1">Please enter your name to verify identity.</p>}
+                    </div>
 
-                  <div className="flex items-center gap-2 mb-4 text-xs text-zinc-500">
+                    <div>
+                      <label htmlFor="digilocker-aadhaar" className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
+                        Aadhaar / DigiLocker ID
+                      </label>
+                      <div className="relative">
+                        <CreditCard className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+                        <input
+                          id="digilocker-aadhaar"
+                          type="text"
+                          value={aadhaar}
+                          onChange={(e) => setAadhaar(e.target.value)}
+                          placeholder="e.g. 5432 9876 1234 (optional)"
+                          className="w-full border border-zinc-200 rounded-xl pl-9.5 pr-3 py-2.5 text-sm text-zinc-900 bg-zinc-50 outline-none focus:ring-2 focus:ring-zinc-900 transition-all"
+                        />
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-1">Leave blank to use default masked ID ****-****-8421</p>
+                    </div>
+
+                    <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 space-y-1">
+                      <p className="text-xs font-semibold text-orange-800 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-orange-600" />
+                        Aadhaar KYC Verification
+                      </p>
+                      <p className="text-[11px] text-zinc-600">
+                        Formal police complaint drafts & statements will be filed with this verified name.
+                      </p>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 font-semibold text-sm transition-all shadow-sm"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      Continue with DigiLocker
+                    </button>
+                  </form>
+
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-400">
                     <Lock className="w-3 h-3" />
-                    <span>Samarthan will only access your name and Aadhaar number.</span>
+                    <span>256-bit encrypted DigiLocker mock sandbox</span>
                   </div>
-
-                  <button
-                    onClick={handleRedirect}
-                    className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 font-semibold text-sm transition-all shadow-sm"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    Continue with DigiLocker
-                  </button>
-                  <p className="text-center text-xs text-zinc-400 mt-3">
-                    You will be redirected to digilocker.gov.in
-                  </p>
                 </motion.div>
               )}
 
               {/* REDIRECTING STEP */}
               {step === 'redirecting' && (
                 <motion.div key="redirecting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="p-8 flex flex-col items-center justify-center gap-4 min-h-[220px]">
+                  className="p-8 flex flex-col items-center justify-center gap-4 min-h-[240px]">
                   <div className="relative">
                     <div className="w-14 h-14 rounded-full bg-orange-50 flex items-center justify-center">
                       <ShieldCheck className="w-7 h-7 text-orange-500" />
@@ -143,7 +199,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-semibold text-zinc-900">Connecting to DigiLocker…</p>
-                    <p className="text-xs text-zinc-400 mt-1">Redirecting to digilocker.gov.in for verification</p>
+                    <p className="text-xs text-zinc-500 mt-1">Requesting OTP authentication for <strong className="text-zinc-800">{name}</strong></p>
                   </div>
                 </motion.div>
               )}
@@ -161,12 +217,18 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                     </div>
                   </div>
 
-                  <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 mb-4">
-                    <p className="text-xs text-zinc-500 mb-1">Linked Aadhaar</p>
-                    <p className="text-sm font-mono font-semibold text-zinc-900">XXXX-XXXX-8421</p>
+                  <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 mb-4 space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">Citizen:</span>
+                      <span className="font-semibold text-zinc-900">{name}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">Linked Aadhaar:</span>
+                      <span className="font-mono font-semibold text-zinc-900">{getMaskedAadhaar()}</span>
+                    </div>
                   </div>
 
-                  <label htmlFor="otp-input" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                  <label htmlFor="otp-input" className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
                     6-Digit OTP
                   </label>
                   <input
@@ -180,15 +242,15 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                     placeholder="______"
                     className={`w-full border rounded-xl p-3 text-center text-2xl font-mono tracking-[0.5em] text-zinc-900 bg-zinc-50 outline-none focus:ring-2 transition-all ${otpError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:ring-zinc-900'}`}
                   />
-                  {otpError && <p className="text-xs text-red-500 mt-1">Incorrect OTP. Try again.</p>}
-                  <p className="text-xs text-zinc-400 mt-2 mb-5">Hint: use any 6-digit number (demo mode)</p>
+                  {otpError && <p className="text-xs text-red-500 mt-1">Please enter 6 digits.</p>}
+                  <p className="text-xs text-zinc-400 mt-2 mb-5">Hint: enter any 6-digit code (e.g. 123456)</p>
 
                   <button
                     onClick={handleOTPVerify}
                     disabled={otp.length < 6}
                     className="w-full bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 text-white rounded-xl py-3 font-semibold text-sm transition-all"
                   >
-                    Verify & Sign In
+                    Verify & Complete Sign In
                   </button>
                 </motion.div>
               )}
@@ -196,15 +258,16 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
               {/* SUCCESS STEP */}
               {step === 'success' && (
                 <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="p-8 flex flex-col items-center justify-center gap-4 min-h-[220px]">
+                  className="p-8 flex flex-col items-center justify-center gap-4 min-h-[240px]">
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 15 }}>
                     <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
                       <CheckCircle2 className="w-9 h-9 text-green-600" />
                     </div>
                   </motion.div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-zinc-900">Verified Successfully</p>
-                    <p className="text-xs text-zinc-500 mt-1">Welcome, Pratham Kamath</p>
+                    <p className="text-base font-bold text-zinc-900">Verified via DigiLocker</p>
+                    <p className="text-sm font-semibold text-green-700 mt-0.5">Welcome, {name}</p>
+                    <p className="text-xs text-zinc-400 mt-1">ID: {getMaskedAadhaar()}</p>
                   </div>
                 </motion.div>
               )}
@@ -216,3 +279,4 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
     </AnimatePresence>
   )
 }
+

@@ -64,7 +64,8 @@ function IntakeContent() {
       const inferred = inferChannelFromFraudType(mappedCat as any)
       return {
         incidentId: idNum,
-        fraudsterIdentifier: 'Not Identified', complainantName: '',
+        fraudsterIdentifier: 'Not Identified',
+        complainantName: user?.name || '',
         fraudType: inferredCat as any,
         recommendedChannel: inferred.channel,
         recommendedChannelTarget:
@@ -79,8 +80,8 @@ function IntakeContent() {
         timeline: new Date().toLocaleString('en-IN'),
         summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${inferredCat}.`,
         summaryHi: `${inferredCat} के तहत साइबर घटना दर्ज की गई।`,
-        complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${user?.name || 'Pratham Kamath'}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${user?.name || 'Pratham Kamath'}`,
-        complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${user?.name || 'प्रथम कामत'}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${user?.name || 'प्रथम कामत'}`,
+        complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${user?.name || '[Complainant Name]'}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${user?.name || '[Complainant Name]'}`,
+        complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${user?.name || '[शिकायतकर्ता का नाम]'}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${user?.name || '[शिकायतकर्ता का नाम]'}`,
         freezeSteps: [
           {
             step: 1,
