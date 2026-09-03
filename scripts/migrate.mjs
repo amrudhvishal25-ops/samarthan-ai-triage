@@ -42,9 +42,12 @@ try {
   await sql`alter table complaints add column if not exists fraudster_identifier text not null default ''`
   await sql`alter table complaints add column if not exists complainant_name text not null default ''`
 
-  // Migrate data from old column name if it exists
+  // Migrate data from old column name if it exists, then relax its NOT NULL
+  // constraint so new INSERTs (which no longer write victim_name) succeed.
   try {
     await sql`UPDATE complaints SET fraudster_identifier = victim_name WHERE fraudster_identifier = '' AND victim_name IS NOT NULL AND victim_name != ''`
+    await sql`ALTER TABLE complaints ALTER COLUMN victim_name DROP NOT NULL`
+    await sql`ALTER TABLE complaints ALTER COLUMN victim_name SET DEFAULT ''`
   } catch { /* victim_name column may not exist in fresh installs */ }
 
   console.log('✅ Schema applied to Neon successfully')
