@@ -38,6 +38,7 @@ CRITICAL INSTRUCTIONS:
    CRITICAL: If incident involves ORDERING A PRODUCT that never arrived → E-Commerce. If money was "invested" / "deposited for returns" / put into a trading or crypto app → Investment Scam. If involves bank/UPI phishing without marketplace → Financial. If involves fake profile pretending to be victim (not predator) → Identity Theft. If predator harassing minor/woman → Women/Children (even if money demanded). If the victim's OWN accounts were hacked and passwords changed → Other Cyber Crime.
 
 3. CAPTURE ALL DETAILS: Ensure you extract all mentioned platforms (Instagram, WhatsApp, Telegram), banks, amounts, transaction IDs, UPI IDs, and contact info. Do not miss any provided details.
+   - MONEY-TRAIL FIELDS ARE MANDATORY when present: the BENEFICIARY account name the money went TO (e.g. "Apex Retail Traders"), and the transaction reference / UTR / IMPS / NEFT number (e.g. "IMPS/624519082341"). These go in frauderContact. A bank cannot freeze funds without them — never leave them only in the summary prose.
 
 3b. ESCALATION ROUTING — set "recommendedChannel" and "recommendedChannelTarget":
    - "bank": bank/UPI/net-banking money theft, OTP theft leading to a debit, fake customer-care refund scam where a BANK or UPI handle is involved. recommendedChannelTarget = the bank name (e.g. "HDFC Bank") or "the bank" if unnamed.
@@ -59,10 +60,10 @@ CRITICAL INSTRUCTIONS:
   "recommendedChannel": "bank | platform | agency | helpline — see rule 3b. The escalation route this victim should take FIRST.",
   "recommendedChannelTarget": "Who to escalate to: bank name, platform name (Instagram/WhatsApp/…), 'UIDAI', 'Income Tax', 'RBI Sachet', 'National Consumer Helpline', or '1930'.",
   "fraudType": "Classify STRICTLY by incident type: Financial Fraud (UPI/bank money theft, QR scams), Women/Children Related Crime (harassment of minors/women, cyberbullying, fake impersonation profiles), Extortion & Blackmail (adult sextortion, ransom threats), Identity Theft (Aadhaar/PAN misuse), E-Commerce Scams (ordered product never delivered), Investment Scam (money put into a trading/crypto/investment app for promised returns, cannot withdraw), Other Cyber Crime (ransomware, hacking of the victim's own accounts, data theft). DO NOT confuse cyberbullying with extortion—if victim is minor/woman and being harassed/threatened, it's Women/Children Related Crime. DO NOT classify a trading-app deposit scam as E-Commerce — that is Investment Scam.",
-  "frauderContact": "Secondary contact details: phone number, email, WhatsApp number, UPI ID, or separate platform handle (distinct from fraudsterIdentifier). Use 'Not Provided' if no additional contact info exists.",
+  "frauderContact": "ALL secondary trace details, semicolon-separated: the fraudster's phone/email/WhatsApp/handle, AND the beneficiary/destination account name & number the money went to, AND any transaction/UTR/IMPS/NEFT reference number. Example: 'Phone: 98321-45670; Beneficiary: Apex Retail Traders; Ref: IMPS/624519082341'. These are critical for a bank freeze. Use 'Not Provided' only if none exist.",
   "amount": number,  // in INR, 0 if no financial loss is mentioned/visible
-  "bankName": "string or 'Not Provided'",
-  "accountNumber": "masked XXXX-XXXX-LAST4 if mentioned/visible, else 'Not Provided'",
+  "bankName": "The VICTIM's bank name, or 'Not Provided'",
+  "accountNumber": "The victim's own account number, digits only with any masking exactly as the victim gave it (e.g. 'XXXX-XXXX-5102'). Do NOT prefix words like 'masked'. Use 'Not Provided' if absent.",
   "upiId": "string or 'Not Provided'",
   "timeline": "date/time string if mentioned/visible, else 'Not Provided'",
   "summary": "2-sentence English summary of the facts including any specific platforms/details",
