@@ -41,7 +41,9 @@ CRITICAL INSTRUCTIONS:
    - MONEY-TRAIL FIELDS ARE MANDATORY when present: the BENEFICIARY account name the money went TO (e.g. "Apex Retail Traders"), and the transaction reference / UTR / IMPS / NEFT number (e.g. "IMPS/624519082341"). These go in frauderContact. A bank cannot freeze funds without them — never leave them only in the summary prose.
 
 3b. ESCALATION ROUTING — set "recommendedChannel" and "recommendedChannelTarget":
-   - "bank": bank/UPI/net-banking money theft, OTP theft leading to a debit, fake customer-care refund scam where a BANK or UPI handle is involved. recommendedChannelTarget = the bank name (e.g. "HDFC Bank") or "the bank" if unnamed.
+   - The route follows the FRAUD TYPE first. Only pick a route below if it matches the fraudType you chose in rule 2:
+     Financial Fraud → "bank" | Investment Scam → "agency" (RBI Sachet) | E-Commerce Scams → "agency" (National Consumer Helpline) | Identity Theft → "agency" (UIDAI/Income Tax) | Women/Children Related Crime → "platform" | Extortion & Blackmail → "platform" if a social account is the vector, else "helpline" | Other Cyber Crime → "helpline".
+   - "bank": ONLY for Financial Fraud — bank/UPI/net-banking money theft, OTP theft leading to a debit, fake customer-care refund scam. recommendedChannelTarget = the VICTIM's bank name (e.g. "HDFC Bank") or "the bank" if unnamed. NOTE: in an Investment Scam the fraudster's receiving account may be at a named bank (e.g. "money sent to their ICICI account") — that does NOT make it "bank"; it stays "agency" / "RBI Sachet".
    - "platform": ANOTHER PERSON is harassing, bullying, stalking, sextorting the victim, or running an impersonation / fake profile of the victim, ON a social platform (Instagram, Facebook, WhatsApp, Telegram, YouTube, X/Twitter, Snapchat). recommendedChannelTarget = the platform name (e.g. "Instagram"). Do NOT use "platform" just because a social app is mentioned — it must be person-on-person harassment or impersonation.
    - "agency": identity theft via Aadhaar/PAN misuse (target = "UIDAI" for Aadhaar, "Income Tax" for PAN); an investment / trading / crypto / deposit scheme where money was put into an app or wallet for promised returns (target = "RBI Sachet"); a marketplace / e-commerce non-delivery of an ordered product (target = "National Consumer Helpline").
    - "helpline": anything else — including the victim's OWN email/social accounts being hacked and locked, ransomware, malware, data theft, generic fraud, or money lost with no bank/platform/agency identifiable. recommendedChannelTarget = "1930".
@@ -63,7 +65,7 @@ CRITICAL INSTRUCTIONS:
   "frauderContact": "ALL secondary trace details, semicolon-separated: the fraudster's phone/email/WhatsApp/handle, AND the beneficiary/destination account name & number the money went to, AND any transaction/UTR/IMPS/NEFT reference number. Example: 'Phone: 98321-45670; Beneficiary: Apex Retail Traders; Ref: IMPS/624519082341'. These are critical for a bank freeze. Use 'Not Provided' only if none exist.",
   "amount": number,  // in INR, 0 if no financial loss is mentioned/visible
   "bankName": "The VICTIM's bank name, or 'Not Provided'",
-  "accountNumber": "The victim's own account number, digits only with any masking exactly as the victim gave it (e.g. 'XXXX-XXXX-5102'). Do NOT prefix words like 'masked'. Use 'Not Provided' if absent.",
+  "accountNumber": "The VICTIM's OWN bank account number, exactly as they gave it including any masking (e.g. 'XXXX-XXXX-5102'). Do NOT prefix words like 'masked'. If the victim only gave the FRAUDSTER's / beneficiary's account number (not their own), that belongs in frauderContact, and this field is 'Not Provided'. Use 'Not Provided' if the victim's own account number is absent.",
   "upiId": "string or 'Not Provided'",
   "timeline": "date/time string if mentioned/visible, else 'Not Provided'",
   "summary": "2-sentence English summary of the facts including any specific platforms/details",
@@ -104,7 +106,7 @@ You MUST select applicableLaws ONLY from the exact sections below (Information T
 - Money fraud / phishing / fake identity to cheat → Section 66D (and 66C if credentials/OTP stolen).
 - Hacking, account takeover, passwords changed, unauthorized access → Section 66 AND Section 43.
 - Aadhaar/PAN/password/ID misuse → Section 66C.
-- Obscene / sexual content, sextortion, morphed images → Sections 67, 67A (and 67B if a minor is involved), and 66E for privacy violation.
+- Obscene / sexual content, sextortion, morphed or face-swapped images → cite Section 67A AND Section 66E (privacy) together; add Section 67 for general obscene publishing, and Section 67B only if a minor is involved. Also add Section 66D if the offender impersonated an official (fake "cyber crime officer").
 - Receiving/using a stolen account or device → Section 66B.
 ${Object.entries(IT_ACT_SECTIONS).map(([num, s]) => `- Section ${num}: ${s.title} | Hindi: ${s.titleHi}`).join('\n')}
 
