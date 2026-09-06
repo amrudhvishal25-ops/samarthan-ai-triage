@@ -327,32 +327,15 @@ export async function processWhatsAppTurn(
     if (visionEvidence) {
       if (session.stage === 'FILED' || session.incidentId) {
         session.pendingVisionEvidence = visionEvidence
-        session.pendingUpdateText = [visionEvidence.summary, trimmed].filter(Boolean).join(' - ')
-        session.stage = 'AWAITING_UPDATE_OR_NEW'
-        const isHi = session.language === 'hi'
+        const autoUpdateText = [
+          visionEvidence.summary,
+          trimmed && trimmed !== 'image' ? trimmed : '',
+          visionEvidence.utr ? `UTR: ${visionEvidence.utr}` : '',
+          visionEvidence.bankName ? `Bank: ${visionEvidence.bankName}` : '',
+          visionEvidence.amount ? `Amount: ₹${visionEvidence.amount}` : '',
+        ].filter(Boolean).join(' | ')
 
-        const visionPrompt = isHi
-          ? `📸 *AI Vision द्वारा स्क्रीनशॉट का विश्लेषण पूर्ण:*
-${visionEvidence.amount ? `• 💰 *पहचानी गई राशि:* ₹${visionEvidence.amount.toLocaleString('en-IN')}\n` : ''}${visionEvidence.utr ? `• 🔢 *पहचाना गया UTR:* ${visionEvidence.utr}\n` : ''}${visionEvidence.upiId ? `• 👤 *आरोपी UPI ID:* ${visionEvidence.upiId}\n` : ''}${visionEvidence.bankName ? `• 🏦 *बैंक/ऐप:* ${visionEvidence.bankName}\n` : ''}
-📝 *विवरण:* ${visionEvidence.summaryHi || visionEvidence.summary}
-
-*कृपया एक विकल्प चुनें:*
-1️⃣ इस स्क्रीनशॉट साक्ष्य को अपनी पुरानी शिकायत (*${session.incidentId}*) से जोड़ें
-2️⃣ इस लेनदेन के लिए पूरी तरह से एक *नई शिकायत* दर्ज करें
-
-👉 पुरानी शिकायत अपडेट करने के लिए *1* या नई शिकायत के लिए *2* भेजें।`
-          : `📸 *AI Vision Screenshot Analysis Complete:*
-${visionEvidence.amount ? `• 💰 *Detected Amount:* ₹${visionEvidence.amount.toLocaleString('en-IN')}\n` : ''}${visionEvidence.utr ? `• 🔢 *Detected UTR / Ref:* ${visionEvidence.utr}\n` : ''}${visionEvidence.upiId ? `• 👤 *Detected UPI ID:* ${visionEvidence.upiId}\n` : ''}${visionEvidence.bankName ? `• 🏦 *App / Bank:* ${visionEvidence.bankName}\n` : ''}
-📝 *Details:* ${visionEvidence.summary}
-
-*Please select an option:*
-1️⃣ Attach this transaction evidence to existing complaint (*${session.incidentId}*)
-2️⃣ Start a *NEW complaint* in its entirety with these details
-
-👉 Reply *1* to update existing case or *2* to file a new complaint.`
-
-        session.history.push({ role: 'assistant', content: visionPrompt, timestamp })
-        return { reply: visionPrompt, incidentId: session.incidentId }
+        return await updateExistingComplaint(session, session.incidentId!, autoUpdateText)
       } else {
         session.pendingVisionEvidence = visionEvidence
         session.language = detectLanguage(trimmed || visionEvidence.summary) === 'hi' ? 'hi' : 'en'
@@ -375,23 +358,6 @@ ${visionEvidence.amount ? `• 💰 *Detected Amount:* ₹${visionEvidence.amoun
         return result
       }
     }
-  }
-
-  // Direct Incident Prompt Handler:
-  // When a user pastes a substantive incident prompt directly, bypass all greeting menus,
-  // language selection, and update choices, and immediately file the complaint!
-  if (isDetailedIncidentPrompt(trimmed, voiceTranscript)) {
-    const fullIncidentText = (voiceTranscript || trimmed).trim()
-    console.log(`\n⚡ [WhatsApp Agent] DIRECT INCIDENT PROMPT DETECTED from +${session.phoneNumber}!`)
-    console.log(`[WhatsApp Agent] Skipping intermediate menus and filing complaint directly...`)
-
-    session.language = detectLanguage(fullIncidentText) === 'hi' ? 'hi' : 'en'
-    session.stage = 'AWAITING_INCIDENT'
-    session.accumulatedText = fullIncidentText
-    session.pendingUpdateText = undefined
-    session.pendingMediaUrl = undefined
-
-    return await createAndSaveNewComplaint(session, fullIncidentText, mediaUrl, voiceTranscript)
   }
 
   const isResetCommand = /^(reset|\/reset|restart|\/restart|clear)$/i.test(trimmed)
@@ -425,32 +391,75 @@ Contact me 24x7 to report cyber fraud, online scams, or financial theft.
     return sendLanguageGreeting()
   }
 
-  // If user greets when they ALREADY have an active complaint on file
-  if ((isInitialGreeting || isWebsiteDefaultMsg) && session.incidentId) {
+  // ACTIVE COMPLAINT FLOW:
+  // When citizen ALREADY has an active complaint on file, any message sent should automatically
+  // update their existing complaint (unless they ask for status, greeting, or explicit new complaint).
+  if (session.incidentId && (session.stage === 'FILED' || session.stage === 'AWAITING_UPDATE_OR_NEW')) {
     const isHi = session.language === 'hi'
-    session.stage = 'AWAITING_UPDATE_OR_NEW'
-    session.pendingUpdateText = ''
+    const noteText = (voiceTranscript || userInput).trim()
 
-    const greetingWithChoice = isHi
-      ? `👋 *नमस्ते! आपकी सक्रिय शिकायत हमारे पास दर्ज है:*
+    // 1. Greeting with active case
+    if (isInitialGreeting || isWebsiteDefaultMsg) {
+      session.stage = 'FILED'
+      const greetingActiveCase = isHi
+        ? `👋 *नमस्ते! आपकी सक्रिय शिकायत हमारे पास दर्ज है:*
 📌 *घटना आईडी:* ${session.incidentId}
 
-*आप क्या करना चाहते हैं?*
-1️⃣ मौजूदा शिकायत (*${session.incidentId}*) में नया विवरण जोड़ें/अपडेट करें
-2️⃣ पूरी तरह से एक *नई शिकायत* दर्ज करें
+🤖 *ऑटोमैटिक केस अपडेट सक्रिय है:*
+आप जो भी नया विवरण, UTR नंबर, बैंक का नाम, वॉयस नोट 🎤 या लेनदेन स्क्रीनशॉट 📸 भेजेंगे, AI उसे स्वतः पढ़कर आपकी शिकायत (*${session.incidentId}*) में जोड़ देगा।
 
-👉 पुरानी शिकायत जारी रखने के लिए *1* या नई शिकायत के लिए *2* भेजें।`
-      : `👋 *Welcome back! You have an active complaint on file:*
+👉 यदि आप पूरी तरह से एक *नई शिकायत* दर्ज करना चाहते हैं, तो *NEW* या *नई शिकायत* लिखकर भेजें।`
+        : `👋 *Welcome back! You have an active complaint on file:*
 📌 *Incident ID:* ${session.incidentId}
 
-*What would you like to do?*
-1️⃣ *Continue / Update* this existing complaint (*${session.incidentId}*) with new details
-2️⃣ *Start a NEW complaint* in its entirety
+🤖 *Automatic Case Sync Active:*
+Any additional message, UTR number, bank details, voice note 🎤, or payment screenshot 📸 you send will be automatically read by AI and updated directly into this complaint (*${session.incidentId}*).
 
-👉 Reply *1* to update your existing case or *2* to file a brand new complaint.`
+👉 If you want to start a brand *NEW complaint* instead, simply reply *NEW*.`
 
-    session.history.push({ role: 'assistant', content: greetingWithChoice, timestamp })
-    return { reply: greetingWithChoice, incidentId: session.incidentId }
+      session.history.push({ role: 'assistant', content: greetingActiveCase, timestamp })
+      return { reply: greetingActiveCase, incidentId: session.incidentId }
+    }
+
+    // 2. Explicit command to start a brand new complaint
+    const isExplicitNew = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test(noteText)
+    if (isExplicitNew) {
+      session.stage = 'AWAITING_INCIDENT'
+      session.accumulatedText = ''
+      session.incidentId = undefined
+      session.extractedData = undefined
+      session.pendingUpdateText = undefined
+      session.pendingMediaUrl = undefined
+
+      const promptMsg = isHi
+        ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*
+कृपया अपनी नई घटना का विवरण दें: एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
+        : `🆕 *Starting a NEW Complaint in its entirety.*
+Please describe your new incident: send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
+
+      session.history.push({ role: 'assistant', content: promptMsg, timestamp })
+      return { reply: promptMsg }
+    }
+
+    // 3. ANY OTHER MESSAGE (UTR, Bank Name, narrative, voice note) -> AUTOMATICALLY READ & UPDATE ACTIVE COMPLAINT!
+    return await updateExistingComplaint(session, session.incidentId, noteText)
+  }
+
+  // Direct Incident Prompt Handler (for users without an active complaint, or after starting fresh):
+  // When a user pastes a substantive incident prompt directly, bypass all greeting menus,
+  // language selection, and update choices, and immediately file the complaint!
+  if (isDetailedIncidentPrompt(trimmed, voiceTranscript)) {
+    const fullIncidentText = (voiceTranscript || trimmed).trim()
+    console.log(`\n⚡ [WhatsApp Agent] DIRECT INCIDENT PROMPT DETECTED from +${session.phoneNumber}!`)
+    console.log(`[WhatsApp Agent] Skipping intermediate menus and filing complaint directly...`)
+
+    session.language = detectLanguage(fullIncidentText) === 'hi' ? 'hi' : 'en'
+    session.stage = 'AWAITING_INCIDENT'
+    session.accumulatedText = fullIncidentText
+    session.pendingUpdateText = undefined
+    session.pendingMediaUrl = undefined
+
+    return await createAndSaveNewComplaint(session, fullIncidentText, mediaUrl, voiceTranscript)
   }
 
   // Initial greeting with no existing complaint
@@ -509,156 +518,6 @@ Send your voice note now, and I will listen, extract the details, and draft your
 
     session.language = detectLanguage(voiceTranscript || trimmed) === 'hi' ? 'hi' : 'en'
     session.stage = 'AWAITING_INCIDENT'
-  }
-
-  // STAGE: AWAITING_UPDATE_OR_NEW (User is choosing whether to update existing or start fresh)
-  if (session.stage === 'AWAITING_UPDATE_OR_NEW') {
-    const isHi = session.language === 'hi'
-    const isOption1 = /^(1|1\.|1️⃣|update|continue|purani|purana|old|same|haan|yes|add|अपडेट|पुरानी|पुराना|जारी|हाँ|हां)$/i.test(trimmed) || /^1[\s,.]/i.test(trimmed)
-    const isOption2 = /^(2|2\.|2️⃣|new|start new|fresh|naya|nayee|nai|नई|नया|न्यू|नई शिकायत)$/i.test(trimmed) || /^2[\s,.]/i.test(trimmed)
-
-    if (isOption1) {
-      // User chooses: 1 -> Update existing complaint
-      let updateText = (session.pendingUpdateText || '').trim()
-      const extra = trimmed.replace(/^(?:1|1\.|1️⃣|update|continue|purani|पुरानी|अपडेट)[\s,:-]*/i, '').trim()
-      if (extra) {
-        updateText += (updateText ? ' ' : '') + extra
-      }
-      if (voiceTranscript) {
-        updateText += (updateText ? ' ' : '') + voiceTranscript
-      }
-
-      session.pendingUpdateText = undefined
-      session.pendingMediaUrl = undefined
-      session.stage = 'FILED'
-
-      if (!updateText) {
-        const askDetails = isHi
-          ? `📝 कृपया वह नया विवरण (जैसे UTR नंबर, बैंक नाम, स्क्रीनशॉट) भेजें जिसे आप शिकायत *${session.incidentId}* में जोड़ना चाहते हैं:`
-          : `📝 Please send the new details (such as UTR number, bank name, fraudster contact) you would like to add to complaint *${session.incidentId}*:`
-        session.history.push({ role: 'assistant', content: askDetails, timestamp })
-        return { reply: askDetails, incidentId: session.incidentId }
-      }
-
-      return await updateExistingComplaint(session, session.incidentId!, updateText)
-    }
-
-    if (isOption2) {
-      // User chooses: 2 -> Start a NEW complaint in its entirety
-      let newIncidentText = (session.pendingUpdateText || '').trim()
-      const extra = trimmed.replace(/^(?:2|2\.|2️⃣|new|start new|fresh|naya|नई|नया)[\s,:-]*/i, '').trim()
-      if (extra) {
-        newIncidentText += (newIncidentText ? ' ' : '') + extra
-      }
-      if (voiceTranscript) {
-        newIncidentText += (newIncidentText ? ' ' : '') + voiceTranscript
-      }
-
-      const mediaToUse = session.pendingMediaUrl
-      session.pendingUpdateText = undefined
-      session.pendingMediaUrl = undefined
-
-      // If user had provided substantive text in their initial update message, file it directly
-      if (newIncidentText && (newIncidentText.length > 15 || quickExtract(newIncidentText).amount)) {
-        return await createAndSaveNewComplaint(session, newIncidentText, mediaToUse, voiceTranscript)
-      } else {
-        // Prompt for the new incident details
-        session.stage = 'AWAITING_INCIDENT'
-        session.accumulatedText = ''
-        session.incidentId = undefined
-        session.extractedData = undefined
-
-        const promptMsg = isHi
-          ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*
-कृपया अपनी नई घटना का विवरण दें: एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
-          : `🆕 *Starting a NEW Complaint in its entirety.*
-Please describe your new incident: send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
-
-        session.history.push({ role: 'assistant', content: promptMsg, timestamp })
-        return { reply: promptMsg }
-      }
-    }
-
-    // User sent additional text or details without typing 1 or 2 explicitly
-    const incomingText = voiceTranscript || trimmed
-    session.pendingUpdateText = (session.pendingUpdateText ? session.pendingUpdateText + ' ' : '') + incomingText
-
-    const promptAgain = isHi
-      ? `⚠️ *कृपया स्पष्ट करने के लिए 1 या 2 भेजें:*
-
-1️⃣ पुरानी शिकायत (*${session.incidentId}*) में यह नया विवरण अपडेट करें
-2️⃣ पूरी तरह से एक *नई शिकायत* दर्ज करें
-
-👉 पुरानी शिकायत अपडेट करने के लिए *1* या नई शिकायत शुरू करने के लिए *2* भेजें।`
-      : `⚠️ *Please reply with 1 or 2 to proceed:*
-
-1️⃣ *Update / Continue* existing complaint (*${session.incidentId}*) with this info
-2️⃣ *Start a NEW complaint* in its entirety
-
-👉 Reply *1* to update existing case or *2* to start a new complaint.`
-
-    session.history.push({ role: 'assistant', content: promptAgain, timestamp })
-    return { reply: promptAgain, incidentId: session.incidentId }
-  }
-
-  // STAGE: FILED (Complaint already filed. When citizen sends an update, give select option!)
-  if (session.stage === 'FILED') {
-    const isHi = session.language === 'hi'
-    const noteText = (voiceTranscript || userInput).trim()
-
-    // Explicit command to start new complaint directly
-    const isExplicitNew = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test(noteText)
-    if (isExplicitNew) {
-      session.stage = 'AWAITING_INCIDENT'
-      session.accumulatedText = ''
-      session.incidentId = undefined
-      session.extractedData = undefined
-      session.pendingUpdateText = undefined
-      session.pendingMediaUrl = undefined
-
-      const promptMsg = isHi
-        ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*
-कृपया अपनी नई घटना का विवरण दें: एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
-        : `🆕 *Starting a NEW Complaint in its entirety.*
-Please describe your new incident: send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
-
-      session.history.push({ role: 'assistant', content: promptMsg, timestamp })
-      return { reply: promptMsg }
-    }
-
-    // Citizen sends an update or new detail -> Present select option!
-    session.pendingUpdateText = noteText
-    session.pendingMediaUrl = mediaUrl
-    session.stage = 'AWAITING_UPDATE_OR_NEW'
-
-    const snippet = noteText.length > 90 ? noteText.slice(0, 87) + '...' : noteText
-
-    const choicePrompt = isHi
-      ? `🚨 *सक्रिय शिकायत दर्ज है:*
-📌 *घटना आईडी:* ${session.incidentId}
-
-📝 *हमें आपका नया विवरण प्राप्त हुआ:*
-"${snippet}"
-
-*कृपया एक विकल्प चुनें:*
-1️⃣ इस पुरानी शिकायत (*${session.incidentId}*) में यह विवरण जोड़ें/अपडेट करें
-2️⃣ पूरी तरह से एक *नई शिकायत* दर्ज करें
-
-👉 पुरानी शिकायत अपडेट करने के लिए *1* या नई शिकायत के लिए *2* भेजें।`
-      : `🚨 *Active Complaint Found:*
-📌 *Incident ID:* ${session.incidentId}
-
-📝 *Received your update:*
-"${snippet}"
-
-*Please select an option:*
-1️⃣ *Continue / Update* this existing complaint (*${session.incidentId}*) with this info
-2️⃣ *Start a NEW complaint* in its entirety
-
-👉 Reply *1* to update existing case or *2* to file a brand new complaint.`
-
-    session.history.push({ role: 'assistant', content: choicePrompt, timestamp })
-    return { reply: choicePrompt, incidentId: session.incidentId }
   }
 
   // STAGE: AWAITING_INCIDENT -> First incident intake
@@ -739,18 +598,25 @@ async function updateExistingComplaint(
   }
 
   const filledItems: string[] = []
+  if (extractedUpdate.amount) filledItems.push(isHi ? `पहचानी गई राशि: ₹${extractedUpdate.amount.toLocaleString('en-IN')}` : `Detected Amount: ₹${extractedUpdate.amount.toLocaleString('en-IN')}`)
   if (extractedUpdate.utr) filledItems.push(isHi ? `UTR नंबर: ${extractedUpdate.utr}` : `UTR Number: ${extractedUpdate.utr}`)
   if (extractedUpdate.bankName) filledItems.push(isHi ? `बैंक: ${extractedUpdate.bankName}` : `Bank Name: ${extractedUpdate.bankName}`)
   if (extractedUpdate.upiId) filledItems.push(isHi ? `UPI ID: ${extractedUpdate.upiId}` : `UPI Handle: ${extractedUpdate.upiId}`)
   if (extractedUpdate.fraudsterIdentifier) filledItems.push(isHi ? `आरोपी: ${extractedUpdate.fraudsterIdentifier}` : `Fraudster Detail: ${extractedUpdate.fraudsterIdentifier}`)
   if (extractedUpdate.accountNumber) filledItems.push(isHi ? `खाता संख्या: ${extractedUpdate.accountNumber}` : `Account Number: ${extractedUpdate.accountNumber}`)
 
+  // Guarantee session state remains in FILED stage for continuous follow-ups
+  session.stage = 'FILED'
+  session.pendingUpdateText = undefined
+  session.pendingVisionEvidence = undefined
+  session.pendingMediaUrl = undefined
+
   if (process.env.DATABASE_URL) {
     try {
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(process.env.DATABASE_URL)
 
-      const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, complaint_draft, complaint_draft_hi FROM complaints WHERE incident_id = ${incidentId} LIMIT 1`
+      const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, amount, complaint_draft, complaint_draft_hi FROM complaints WHERE incident_id = ${incidentId} LIMIT 1`
 
       if (existing[0]) {
         const row = existing[0]
@@ -777,6 +643,7 @@ async function updateExistingComplaint(
         const updatedBank = extractedUpdate.bankName || row.bank_name
         const updatedUpi = extractedUpdate.upiId || row.upi_id
         const updatedAcc = extractedUpdate.accountNumber || row.account_number
+        const updatedAmount = extractedUpdate.amount || row.amount
 
         const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
         const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp (${session.phoneNumber}): ${noteToSave}`
@@ -791,6 +658,7 @@ async function updateExistingComplaint(
             bank_name = ${updatedBank},
             upi_id = ${updatedUpi},
             account_number = ${updatedAcc},
+            amount = ${updatedAmount},
             updates = ${JSON.stringify(curUpdates)},
             complaint_draft = ${updatedDraft},
             complaint_draft_hi = ${updatedDraftHi}
