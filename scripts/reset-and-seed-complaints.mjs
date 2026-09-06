@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless'
 import fs from 'node:fs'
 import path from 'node:path'
 
+// Load .env.local
 let dbUrl = process.env.DATABASE_URL
 if (!dbUrl) {
   try {
@@ -20,14 +21,13 @@ if (!dbUrl) {
 }
 
 if (!dbUrl) {
-  console.error('❌ DATABASE_URL not set')
+  console.error('❌ DATABASE_URL not found')
   process.exit(1)
 }
 
 const sql = neon(dbUrl)
 
-// Exported standard seed data
-export const testComplaints = [
+const testComplaints = [
   {
     incident_id: 'INC-2026-1048',
     fraud_type: 'Financial Fraud',
@@ -254,8 +254,13 @@ export const testComplaints = [
   }
 ]
 
-async function seed() {
-  console.log('🌱 Seeding complaints into Neon DB...')
+async function resetAndSeed() {
+  console.log('🗑️  Deleting all existing complaints from Neon database...')
+  const deleteResult = await sql`DELETE FROM complaints;`
+  console.log('✅ All old complaints deleted successfully.')
+
+  console.log(`🌱 Seeding ${testComplaints.length} fresh, realistic complaints...`)
+
   for (const c of testComplaints) {
     await sql`
       INSERT INTO complaints (
@@ -275,14 +280,15 @@ async function seed() {
         ${c.status}, ${c.status_history}, ${c.evidence_images}, ${c.updates},
         ${c.recommended_channel}, ${c.recommended_channel_target}
       )
-      ON CONFLICT (incident_id) DO UPDATE SET
-        summary = EXCLUDED.summary,
-        status = EXCLUDED.status;
     `
+    console.log(`  ✓ Inserted ${c.incident_id} (${c.fraud_type} - ₹${c.amount}) [${c.status}]`)
   }
-  console.log(`✅ Seeded ${testComplaints.length} complaints into Neon`)
+
+  const check = await sql`SELECT count(*) FROM complaints;`
+  console.log(`\n🎉 Done! Current complaint count in Neon DB: ${check[0].count}`)
 }
 
-if (process.argv[1]?.endsWith('seed-history.mjs')) {
-  seed().catch(err => { console.error('❌ Seed failed:', err.message); process.exit(1) })
-}
+resetAndSeed().catch((err) => {
+  console.error('❌ Reset & Seed failed:', err)
+  process.exit(1)
+})
