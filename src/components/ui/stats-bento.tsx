@@ -43,7 +43,7 @@ export const StatsBento = () => {
 
         {/* Tertiary Stat B */}
         <div className="md:col-span-1 bg-white rounded-none p-6 border border-zinc-200 flex flex-col justify-center text-center shadow-xs">
-          <p className="text-2xl font-bold text-[#1A3A6B]">§66C/D</p>
+          <p className="text-2xl font-bold text-[#1A3A6B]">66C / 66D</p>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mt-1">
             IT Act & BNS
           </p>

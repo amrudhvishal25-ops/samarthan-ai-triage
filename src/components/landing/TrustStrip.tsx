@@ -94,7 +94,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
             <div className="flex justify-center mb-1">
               <Scale className="w-4 h-4 text-[#1A3A6B]" />
             </div>
-            <p className="text-xl md:text-2xl font-extrabold text-zinc-950 tracking-tight">§66C/D</p>
+            <p className="text-xl md:text-2xl font-extrabold text-zinc-950 tracking-tight">66C / 66D</p>
             <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500 mt-1">
               IT Act & BNS
             </p>
