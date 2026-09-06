@@ -123,26 +123,44 @@ export default function HeroSection({ language }: HeroSectionProps) {
   return (
     <section className="relative w-full pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden isolate">
       <RadialBackground />
-      <div className="relative z-10 max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-14 items-center">
 
         {/* Left: copy */}
         <div>
+          {/* Eyebrow Pill */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-zinc-200 shadow-xs mb-6 backdrop-blur-sm"
+          >
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+            </span>
+            <span className="text-xs font-semibold text-zinc-800 tracking-tight">
+              {hi ? '1930 NCRP राष्ट्रीय प्रोटोकॉल • 60-सेकंड AI ट्रायज' : '1930 NCRP Golden Hour Protocol • 60-Second AI Triage'}
+            </span>
+          </motion.div>
+
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-[2.75rem] leading-[1.05] md:text-6xl md:leading-[1.03] font-extrabold tracking-tight text-[#0A0A0A]"
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 leading-[1.08]"
           >
             {c.headline}
             <br />
-            <span className="text-blue-600">{c.headlineHighlight}</span>
+            <span className="text-[#1A3A6B]">
+              {c.headlineHighlight}
+            </span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-6 text-lg text-zinc-600 max-w-lg leading-relaxed"
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="mt-5 text-base sm:text-lg text-zinc-600 max-w-lg leading-relaxed"
           >
             {c.sub}
           </motion.p>
@@ -150,135 +168,195 @@ export default function HeroSection({ language }: HeroSectionProps) {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-8 flex flex-wrap items-center gap-3"
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="mt-8 flex flex-wrap items-center gap-3.5"
           >
             <button
               onClick={goToIntake}
-              className="inline-flex items-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-md px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-[#1A3A6B] hover:bg-[#142e56] text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-all shadow-[0_4px_14px_0_rgba(26,58,107,0.30)] hover:scale-[1.01] active:scale-[0.98]"
             >
               {c.primary}
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#how-it-works"
-              className="inline-flex items-center gap-2 border border-zinc-300 text-zinc-700 hover:bg-white rounded-md px-6 py-3.5 text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-2 border border-zinc-200 bg-white/90 hover:bg-zinc-50 text-zinc-700 rounded-lg px-6 py-3.5 text-sm font-medium transition-all shadow-2xs"
             >
               {c.secondary}
-              <ArrowDown className="w-4 h-4" />
+              <ArrowDown className="w-4 h-4 text-zinc-400" />
             </a>
+          </motion.div>
+
+          {/* Micro trust indicators */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="mt-8 pt-6 border-t border-zinc-200/70 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-500 font-medium"
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              {hi ? 'डिजीलॉकर प्रमाणित पहचान' : 'DigiLocker Verified'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              {hi ? 'ऑटो IT एक्ट व BNS धाराएं' : 'Auto IT Act & BNS'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              {hi ? 'गोल्डन ऑवर 1930 हैंडऑफ़' : '1930 NCRP Handoff'}
+            </span>
           </motion.div>
         </div>
 
-        {/* Right: live demo */}
+        {/* Right: 21st-Century Studio Window Terminal */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 0.96, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="relative"
         >
-          <div className="rounded-lg border border-zinc-200 bg-white shadow-[0_20px_60px_-20px_rgba(0,0,0,0.15)] p-6">
-            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-4">
-              {committed ? c.demoHintDone : c.demoHint}
-            </p>
-
-            <AudioRecorder
-              language={language}
-              onAudioReady={handleAudioReady}
-              onLiveTranscript={setTranscript}
-              theme="light"
-            />
-
-            {isTranscribing && (
-              <div className="mt-4 p-4 rounded-md bg-blue-50/60 border border-blue-100 flex items-center justify-center gap-2.5 text-xs font-semibold text-[#1A3A6B]">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                <span>{hi ? 'आपकी आवाज़ सुनी जा रही है और रिपोर्ट तैयार हो रही है...' : 'Transcribing what you said and preparing report...'}</span>
+          {/* Outer window frame container */}
+          <div className="rounded-xl border border-zinc-200/90 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
+            {/* Terminal Window Top Bar */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 bg-[#FAFAF9]/80">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+                <span className="ml-2 text-[11px] font-mono font-medium text-zinc-500">
+                  {hi ? 'लाइव वॉयस इनटेक स्टूडियो' : 'Live Voice Intake Studio'}
+                </span>
               </div>
-            )}
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-[10px] font-medium text-emerald-700 border border-emerald-200/60 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {hi ? 'सक्रिय' : 'Live'}
+              </span>
+            </div>
 
-            {!result && !isTranscribing && (
-              <div className="mt-3.5 pt-3 border-t border-zinc-100 flex items-center justify-center">
-                <a
-                  href="https://wa.me/916303807967?text=Hi%20Samarthan,%20I%20want%20to%20report%20a%20cybercrime%20incident."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
-                  <span>{c.orWhatsApp}</span>
-                </a>
-              </div>
-            )}
+            <div className="p-6">
+              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-4">
+                {committed ? c.demoHintDone : c.demoHint}
+              </p>
 
-            <AnimatePresence>
-              {result && !isTranscribing && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-4 overflow-hidden"
-                >
-                  <div className="rounded-md bg-[#FAFAF8] border border-zinc-200 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                        {c.resultTitle}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleResetRecord}
-                        className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        <span>{c.reRecord}</span>
-                      </button>
-                    </div>
+              <AudioRecorder
+                language={language}
+                onAudioReady={handleAudioReady}
+                onLiveTranscript={setTranscript}
+                theme="light"
+              />
 
-                    <div className="mb-3.5 p-3 rounded-md bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
-                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">{c.youSaid}</span>
-                      &ldquo;{committed}&rdquo;
-                    </div>
-
-                    <div className="space-y-2.5 text-sm">
-                      <Row label={c.fType} value={
-                        <span className="inline-flex items-center gap-1.5 font-semibold text-[#0A0A0A]">
-                          <result.Icon className="w-3.5 h-3.5 text-blue-600" />
-                          {result.type}
-                        </span>
-                      } />
-                      <Row label={c.fLaw} value={<span className="font-mono text-xs text-zinc-700">{result.law}</span>} />
-                      <Row label={c.fAction} value={<span className="text-zinc-700">{result.action}</span>} />
-                    </div>
-
-                    <button
-                      onClick={goToIntake}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-md px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
-                    >
-                      <span>{c.continueCta}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="mt-2.5 flex items-center justify-center">
-                      <a
-                        href={`https://wa.me/916303807967?text=${encodeURIComponent(
-                          committed || (hi ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।' : 'Hi Samarthan, I want to report a cybercrime incident.')
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors py-1"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
-                        <span>{c.orWhatsApp}</span>
-                      </a>
-                    </div>
-                  </div>
-                </motion.div>
+              {isTranscribing && (
+                <div className="mt-4 p-4 rounded-lg bg-blue-50/70 border border-blue-100 flex items-center justify-center gap-2.5 text-xs font-semibold text-[#1A3A6B]">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  <span>{hi ? 'आपकी आवाज़ सुनी जा रही है और रिपोर्ट तैयार हो रही है...' : 'Transcribing what you said and preparing report...'}</span>
+                </div>
               )}
-            </AnimatePresence>
-          </div>
 
-          {/* Simulated badge */}
-          <div className="absolute -top-3 -right-3 bg-white border border-zinc-200 rounded-md px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-zinc-500 shadow-sm">
-            {hi ? 'लाइव डेमो' : 'Live demo'}
+              {/* Sample simulation chips if user hasn't recorded */}
+              {!committed && !isTranscribing && (
+                <div className="mt-5 pt-4 border-t border-zinc-100">
+                  <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                    {hi ? 'या त्वरित सिमुलेशन चुनें:' : 'Or test with a 1-click simulation:'}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { en: '₹50,000 lost on UPI link', hi: 'UPI लिंक से ₹50,000 कटे' },
+                      { en: 'Loan app blackmail threats', hi: 'लोन ऐप से ब्लैकमेल धमकी' },
+                      { en: 'Fake profile on Instagram', hi: 'इंस्टाग्राम पर फर्जी प्रोफाइल' }
+                    ].map((sample, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setCommitted(hi ? sample.hi : sample.en)}
+                        className="text-xs bg-zinc-50 hover:bg-blue-50/70 border border-zinc-200/80 hover:border-blue-200 text-zinc-600 hover:text-[#1A3A6B] px-2.5 py-1 rounded-md transition-all font-medium"
+                      >
+                        &ldquo;{hi ? sample.hi : sample.en}&rdquo;
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!result && !isTranscribing && (
+                <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-center">
+                  <a
+                    href="https://wa.me/916303807967?text=Hi%20Samarthan,%20I%20want%20to%20report%20a%20cybercrime%20incident."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                    <span>{c.orWhatsApp}</span>
+                  </a>
+                </div>
+              )}
+
+              <AnimatePresence>
+                {result && !isTranscribing && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 overflow-hidden"
+                  >
+                    <div className="rounded-lg bg-[#FAFAF8] border border-zinc-200 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                          {c.resultTitle}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleResetRecord}
+                          className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>{c.reRecord}</span>
+                        </button>
+                      </div>
+
+                      <div className="mb-3.5 p-3 rounded-md bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
+                        <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">{c.youSaid}</span>
+                        &ldquo;{committed}&rdquo;
+                      </div>
+
+                      <div className="space-y-2.5 text-sm">
+                        <Row label={c.fType} value={
+                          <span className="inline-flex items-center gap-1.5 font-semibold text-[#0A0A0A]">
+                            <result.Icon className="w-3.5 h-3.5 text-blue-600" />
+                            {result.type}
+                          </span>
+                        } />
+                        <Row label={c.fLaw} value={<span className="font-mono text-xs text-zinc-700">{result.law}</span>} />
+                        <Row label={c.fAction} value={<span className="text-zinc-700">{result.action}</span>} />
+                      </div>
+
+                      <button
+                        onClick={goToIntake}
+                        className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-lg px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
+                      >
+                        <span>{c.continueCta}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+
+                      <div className="mt-2.5 flex items-center justify-center">
+                        <a
+                          href={`https://wa.me/916303807967?text=${encodeURIComponent(
+                            committed || (hi ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।' : 'Hi Samarthan, I want to report a cybercrime incident.')
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors py-1"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                          <span>{c.orWhatsApp}</span>
+                        </a>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </motion.div>
       </div>
