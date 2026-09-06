@@ -136,7 +136,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                   <button
                     type="button"
                     onClick={handleDirectLogin}
-                    className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.99] text-white rounded-md py-2.5 font-medium text-xs transition-all shadow-sm mb-3.5"
+                    className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-md py-2.5 font-medium text-xs transition-all shadow-sm mb-3.5"
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                     <span>1-Click Direct Login (Verified Citizen)</span>
@@ -273,7 +273,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                   <button
                     onClick={handleOTPVerify}
                     disabled={otp.length < 6}
-                    className="w-full bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 text-white rounded-md py-3 font-semibold text-sm transition-all"
+                    className="w-full bg-primary hover:bg-primary-hover disabled:opacity-40 text-white rounded-md py-3 font-semibold text-sm transition-all"
                   >
                     Verify & Complete Sign In
                   </button>

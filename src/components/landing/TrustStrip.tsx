@@ -11,16 +11,16 @@ export default function TrustStrip({ language }: TrustStripProps) {
   const isHi = language === 'hi'
 
   return (
-    <section className="w-full bg-[#FAFAF8] border-y border-zinc-200/80 py-16">
+    <section className="w-full bg-surface border-y border-zinc-200/80 py-16">
       <div className="max-w-6xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-6 md:grid-rows-2 gap-4">
-          {/* Primary Stat (Span 3 cols, 2 rows) - Deck Blue #1A3A6B */}
+          {/* Primary Stat (Span 3 cols, 2 rows) - primary blue */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="md:col-span-3 md:row-span-2 bg-[#1A3A6B] rounded-lg p-8 md:p-10 flex flex-col justify-between overflow-hidden relative shadow-sm text-white"
+            className="md:col-span-3 md:row-span-2 bg-primary rounded-lg p-8 md:p-10 flex flex-col justify-between overflow-hidden relative shadow-sm text-white"
           >
             {/* Subtle repeating hatched grid overlay */}
             <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,#ffffff_0px_1px,transparent_1px_12px)] opacity-10 pointer-events-none"></div>
@@ -76,7 +76,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
               {[20, 35, 50, 40, 70, 60, 90, 80, 100, 105, 115].map((h, i) => (
                 <div
                   key={i}
-                  className="w-1.5 bg-[#1A3A6B] rounded-sm"
+                  className="w-1.5 bg-primary rounded-sm"
                   style={{ height: `${h}%` }}
                 />
               ))}
@@ -92,7 +92,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
             className="md:col-span-1 bg-white rounded-lg p-6 border border-zinc-200 flex flex-col justify-center text-center shadow-xs"
           >
             <div className="flex justify-center mb-1">
-              <Scale className="w-4 h-4 text-[#1A3A6B]" />
+              <Scale className="w-4 h-4 text-primary" />
             </div>
             <p className="text-xl md:text-2xl font-extrabold text-zinc-950 tracking-tight">66C / 66D</p>
             <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500 mt-1">
@@ -109,7 +109,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
             className="md:col-span-2 bg-zinc-50/80 rounded-lg p-6 border border-zinc-200 flex items-center justify-between shadow-xs"
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-md bg-[#1A3A6B] text-white flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-md bg-primary text-white flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>

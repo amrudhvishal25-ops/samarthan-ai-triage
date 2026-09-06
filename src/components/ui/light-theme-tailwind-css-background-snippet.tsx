@@ -8,7 +8,7 @@ export const RadialBackground = ({ className }: { className?: string }) => {
         className="absolute inset-0 size-full"
         style={{
           background:
-            "radial-gradient(100% 70% at 50% -5%, rgba(26, 58, 107, 0.06) 0%, rgba(255, 255, 255, 0) 70%)",
+            "radial-gradient(100% 70% at 50% -5%, rgba(59, 111, 246, 0.06) 0%, rgba(255, 255, 255, 0) 70%)",
         }}
       />
       {/* Supabase-Grade Delicate Dot Matrix */}
@@ -22,7 +22,7 @@ export const RadialBackground = ({ className }: { className?: string }) => {
         }}
       />
       {/* Smooth bottom fade into page background */}
-      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#FAFAF8] to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white to-transparent" />
     </div>
   );
 };

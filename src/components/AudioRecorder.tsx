@@ -256,7 +256,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
             isDark ? 'focus:ring-offset-black border-zinc-700' : 'focus:ring-offset-white border-zinc-300',
             recording
               ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500/50 scale-105 border-red-600'
-              : (isDark ? 'bg-white hover:bg-gray-200 focus:ring-white/50 text-gray-900' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-300 text-white border-blue-700')
+              : (isDark ? 'bg-white hover:bg-gray-200 focus:ring-white/50 text-gray-900' : 'bg-primary hover:bg-primary-hover focus:ring-primary/40 text-white border-primary-active')
           )}
           aria-label={recording ? 'Stop recording' : 'Start recording'}
         >
@@ -279,7 +279,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
               key={i}
               className={clsx(
                 'w-[3px] rounded-full',
-                recording ? (isDark ? 'bg-white' : 'bg-blue-600') : (isDark ? 'bg-white/20' : 'bg-zinc-200')
+                recording ? (isDark ? 'bg-white' : 'bg-primary') : (isDark ? 'bg-white/20' : 'bg-zinc-200')
               )}
               style={{
                 height: `${Math.max(3, lvl * 40)}px`,

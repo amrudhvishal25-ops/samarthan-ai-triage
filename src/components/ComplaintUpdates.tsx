@@ -58,7 +58,7 @@ export default function ComplaintUpdates({ hi, updates = [], onAdd }: ComplaintU
         <button
           onClick={handleSubmit}
           disabled={submitting || !note.trim()}
-          className="flex-shrink-0 self-end flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md px-4 py-3 text-xs font-semibold transition-all"
+          className="flex-shrink-0 self-end flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md px-4 py-3 text-xs font-semibold transition-all"
         >
           {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (hi ? 'जोड़ें' : 'Add')}
         </button>

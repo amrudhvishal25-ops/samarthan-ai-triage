@@ -302,7 +302,7 @@ function IntakeContent() {
         <button
           onClick={() => handleAIAnalyze()}
           disabled={!textValue && !voiceTranscript && !audioBlob && !imageFile && !scenario}
-          className="w-full flex items-center justify-center gap-2 rounded-md font-semibold text-white py-3.5 text-sm bg-zinc-900 hover:bg-zinc-700 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 rounded-md font-semibold text-white py-3.5 text-sm bg-primary hover:bg-primary-hover transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {scenario ? (hi ? 'AI से तैयार करें' : 'Run AI Triage') : (hi ? 'AI से विश्लेषण करें' : 'Analyze with AI')}
           <ArrowRight className="w-4 h-4" />

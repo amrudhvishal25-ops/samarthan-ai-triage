@@ -128,9 +128,9 @@ export default function WhatsAppQRModal({
           className="relative w-full max-w-lg bg-white rounded-lg border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 bg-[#FAFAF8]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 bg-surface">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-[#1A3A6B] text-white flex items-center justify-center">
+              <div className="w-8 h-8 rounded-md bg-primary text-white flex items-center justify-center">
                 <QrCode className="w-4 h-4" />
               </div>
               <div>
@@ -175,7 +175,7 @@ export default function WhatsAppQRModal({
                     type="button"
                     onClick={() => handleAction('start')}
                     disabled={isActionLoading}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-md px-6 py-3 text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-md px-6 py-3 text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
                   >
                     {isActionLoading ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -245,7 +245,7 @@ export default function WhatsAppQRModal({
 
                 {/* Steps */}
                 <div className="space-y-2.5 bg-blue-50/60 p-4 rounded-lg border border-blue-100 text-xs text-zinc-700">
-                  <p className="font-semibold text-[#1A3A6B]">
+                  <p className="font-semibold text-primary">
                     {hi ? 'अपने फ़ोन से स्कैन कैसे करें:' : 'How to scan from your phone:'}
                   </p>
                   <ol className="list-decimal list-inside space-y-1 text-zinc-600">
@@ -314,7 +314,7 @@ export default function WhatsAppQRModal({
                 </div>
 
                 {/* Capabilities Banner */}
-                <div className="bg-[#FAFAF8] border border-zinc-200 rounded-lg p-4 text-left text-xs space-y-2">
+                <div className="bg-surface border border-zinc-200 rounded-lg p-4 text-left text-xs space-y-2">
                   <p className="font-semibold text-zinc-900 flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-blue-600" />
                     <span>{hi ? 'सक्रिय AI सुविधाएं:' : 'Active AI Capabilities:'}</span>
@@ -381,7 +381,7 @@ export default function WhatsAppQRModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3.5 bg-[#FAFAF8] border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500">
+          <div className="px-6 py-3.5 bg-surface border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500">
             <div className="flex items-center gap-2">
               <span
                 className={`w-2 h-2 rounded-full ${

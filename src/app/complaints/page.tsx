@@ -98,7 +98,7 @@ export default function ComplaintsPage() {
             </p>
             <button
               onClick={() => router.push('/')}
-              className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-700 text-white rounded-md px-4 py-2.5 transition-all"
+              className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold bg-primary hover:bg-primary-hover text-white rounded-md px-4 py-2.5 transition-all"
             >
               {hi ? 'शिकायत दर्ज करें' : 'File a Complaint'}
             </button>

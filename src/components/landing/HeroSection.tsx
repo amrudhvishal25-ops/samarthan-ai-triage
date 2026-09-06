@@ -151,7 +151,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
           >
             {c.headline}
             <br />
-            <span className="text-[#1A3A6B]">
+            <span className="text-primary">
               {c.headlineHighlight}
             </span>
           </motion.h1>
@@ -173,7 +173,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
           >
             <button
               onClick={goToIntake}
-              className="inline-flex items-center gap-2 bg-[#1A3A6B] hover:bg-[#142e56] text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-all shadow-[0_4px_14px_0_rgba(26,58,107,0.30)] hover:scale-[1.01] active:scale-[0.98]"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-all shadow-sm hover:scale-[1.01] active:scale-[0.98]"
             >
               {c.primary}
               <ArrowRight className="w-4 h-4" />
@@ -217,9 +217,9 @@ export default function HeroSection({ language }: HeroSectionProps) {
           className="relative"
         >
           {/* Outer window frame container */}
-          <div className="rounded-xl border border-zinc-200/90 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="rounded-lg border border-zinc-200/90 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
             {/* Terminal Window Top Bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 bg-[#FAFAF9]/80">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 bg-surface">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
@@ -247,7 +247,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
               />
 
               {isTranscribing && (
-                <div className="mt-4 p-4 rounded-lg bg-blue-50/70 border border-blue-100 flex items-center justify-center gap-2.5 text-xs font-semibold text-[#1A3A6B]">
+                <div className="mt-4 p-4 rounded-lg bg-blue-50/70 border border-blue-100 flex items-center justify-center gap-2.5 text-xs font-semibold text-primary">
                   <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                   <span>{hi ? 'आपकी आवाज़ सुनी जा रही है और रिपोर्ट तैयार हो रही है...' : 'Transcribing what you said and preparing report...'}</span>
                 </div>
@@ -269,7 +269,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                         key={idx}
                         type="button"
                         onClick={() => setCommitted(hi ? sample.hi : sample.en)}
-                        className="text-xs bg-zinc-50 hover:bg-blue-50/70 border border-zinc-200/80 hover:border-blue-200 text-zinc-600 hover:text-[#1A3A6B] px-2.5 py-1 rounded-md transition-all font-medium"
+                        className="text-xs bg-zinc-50 hover:bg-blue-50/70 border border-zinc-200/80 hover:border-blue-200 text-zinc-600 hover:text-primary px-2.5 py-1 rounded-md transition-all font-medium"
                       >
                         &ldquo;{hi ? sample.hi : sample.en}&rdquo;
                       </button>
@@ -300,7 +300,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                     exit={{ opacity: 0, height: 0 }}
                     className="mt-4 overflow-hidden"
                   >
-                    <div className="rounded-lg bg-[#FAFAF8] border border-zinc-200 p-4">
+                    <div className="rounded-lg bg-surface border border-zinc-200 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
                           {c.resultTitle}
@@ -322,7 +322,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
                       <div className="space-y-2.5 text-sm">
                         <Row label={c.fType} value={
-                          <span className="inline-flex items-center gap-1.5 font-semibold text-[#0A0A0A]">
+                          <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
                             <result.Icon className="w-3.5 h-3.5 text-blue-600" />
                             {result.type}
                           </span>
@@ -333,7 +333,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
                       <button
                         onClick={goToIntake}
-                        className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-lg px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
+                        className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
                       >
                         <span>{c.continueCta}</span>
                         <ArrowRight className="w-3.5 h-3.5" />

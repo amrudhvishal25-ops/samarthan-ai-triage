@@ -309,7 +309,7 @@ function DashboardContent() {
         <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className="w-14 h-14 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center mb-4 animate-pulse">
-            <ShieldAlert className="w-7 h-7 text-[#1A3A6B]" />
+            <ShieldAlert className="w-7 h-7 text-primary" />
           </div>
           <h2 className="text-base font-bold text-zinc-900">
             {hi ? 'आधिकारिक शिकायत लोड हो रही है...' : 'Retrieving Official Complaint Report...'}

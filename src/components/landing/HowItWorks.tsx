@@ -60,11 +60,11 @@ export default function HowItWorks({ language }: HowItWorksProps) {
   const c = language === 'hi' ? HI : EN
 
   return (
-    <section id="how-it-works" className="py-24 bg-[#FAFAF8] border-t border-zinc-200/80">
+    <section id="how-it-works" className="py-24 bg-surface border-t border-zinc-200/80">
       <div className="max-w-6xl mx-auto px-6">
         <div className="mb-16">
           <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-2.5">{c.eyebrow}</p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0A0A] tracking-tight">{c.title}</h2>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{c.title}</h2>
         </div>
 
         <div className="space-y-20">
@@ -79,7 +79,7 @@ export default function HowItWorks({ language }: HowItWorksProps) {
             >
               <div>
                 <span className="text-sm font-mono font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-md">{step.n}</span>
-                <h3 className="mt-3 text-2xl font-bold text-[#0A0A0A]">{step.title}</h3>
+                <h3 className="mt-3 text-2xl font-bold text-foreground">{step.title}</h3>
                 <p className="mt-4 text-zinc-600 leading-relaxed text-[15px]">{step.body}</p>
               </div>
               <div className="rounded-lg border border-zinc-200 bg-white shadow-xs overflow-hidden">

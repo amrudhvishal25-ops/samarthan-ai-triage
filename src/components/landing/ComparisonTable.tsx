@@ -145,7 +145,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="bg-white border-2 border-zinc-950 rounded-lg p-7 md:p-8 flex flex-col justify-between shadow-sm relative hover:border-zinc-900 transition-colors"
+            className="bg-white border-2 border-primary rounded-lg p-7 md:p-8 flex flex-col justify-between shadow-sm relative transition-colors"
           >
             <div>
               {/* Header */}
@@ -153,7 +153,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
                 <h3 className="text-2xl font-bold text-zinc-950 tracking-tight">
                   {isHi ? "समर्थन" : "Samarthan"}
                 </h3>
-                <span className="bg-zinc-950 text-white text-[11px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-md font-semibold">
+                <span className="bg-primary text-white text-[11px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded font-semibold">
                   {isHi ? "अनुशंसित" : "Recommended"}
                 </span>
               </div>
@@ -170,7 +170,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
               <ul className="space-y-4">
                 {samarthanPoints.map((point, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <div className="w-5 h-5 bg-zinc-950 text-white flex items-center justify-center shrink-0 rounded-sm mt-0.5">
+                    <div className="w-5 h-5 bg-primary text-white flex items-center justify-center shrink-0 rounded-sm mt-0.5">
                       <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                     </div>
                     <span className="text-sm font-semibold text-zinc-900 leading-snug">
@@ -185,7 +185,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             <div className="pt-8">
               <button
                 onClick={handleScrollToReport}
-                className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3.5 px-6 rounded-md text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group shadow-xs"
+                className="w-full bg-primary hover:bg-primary-hover text-white font-semibold py-3.5 px-6 rounded-md text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group"
               >
                 <span>{isHi ? "मुफ़्त शिकायत दर्ज करें" : "Start for Free"}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

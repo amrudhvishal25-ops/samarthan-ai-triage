@@ -99,7 +99,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
   ]
 
   return (
-    <section id="file-report" className="py-24 bg-[#FAFAF8] border-t border-zinc-200">
+    <section id="file-report" className="py-24 bg-surface border-t border-zinc-200">
       <div className="max-w-4xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -110,7 +110,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
           <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">
             {hi ? 'शुरू करें' : 'Get started'}
           </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0A0A] tracking-tight">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
             {hi ? 'कैसे रिपोर्ट करना चाहते हैं?' : 'How do you want to report?'}
           </h2>
         </motion.div>
@@ -123,7 +123,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
               onClick={() => setChannel(t.id)}
               className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 channel === t.id
-                  ? 'bg-[#1A3A6B] text-white shadow-sm'
+                  ? 'bg-primary text-white shadow-sm'
                   : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300'
               }`}
             >
@@ -137,7 +137,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
         {channel === 'call' && (
           <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
             <p className="text-sm text-zinc-500 mb-2">{hi ? 'राष्ट्रीय साइबर अपराध हेल्पलाइन' : 'National Cybercrime Helpline'}</p>
-            <a href="tel:1930" className="text-5xl font-extrabold text-[#0A0A0A] tracking-tight">1930</a>
+            <a href="tel:1930" className="text-5xl font-extrabold text-foreground tracking-tight">1930</a>
             <p className="mt-3 text-sm text-zinc-500 max-w-md mx-auto">
               {hi
                 ? 'अपनी भाषा में बात करें। एक बार में एक स्पष्ट सवाल। तुरंत बैंक खाता फ्रीज़ के लिए यही सबसे तेज़ रास्ता है।'
@@ -203,7 +203,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAutoAnalyze() }
                 }}
               />
-              <div className="px-4 py-3 bg-[#FAFAF8] border-t border-zinc-200/80 flex items-center justify-between">
+              <div className="px-4 py-3 bg-surface border-t border-zinc-200/80 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -231,7 +231,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                   type="button"
                   onClick={handleAutoAnalyze}
                   disabled={!inputText.trim()}
-                  className="flex items-center justify-center p-2 rounded-md bg-[#1A3A6B] text-white hover:bg-[#152d54] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="flex items-center justify-center p-2 rounded-md bg-primary text-white hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   <ArrowUp className="w-5 h-5" />
                 </button>
@@ -253,7 +253,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                   className="flex flex-col items-start p-5 rounded-lg bg-white border border-zinc-200/90 hover:border-blue-500/50 hover:shadow-xs transition-all text-left"
                 >
                   <div className={`p-2.5 rounded-md mb-3 ${cat.iconBg}`}>{cat.icon}</div>
-                  <h3 className="text-sm font-bold text-[#0A0A0A] mb-1">{hi ? cat.titleHi : cat.title}</h3>
+                  <h3 className="text-sm font-bold text-foreground mb-1">{hi ? cat.titleHi : cat.title}</h3>
                   <p className="text-xs text-zinc-500">{hi ? cat.descHi : cat.desc}</p>
                 </motion.button>
               ))}

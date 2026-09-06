@@ -1,37 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Modern Minimal Remix theme tokens (21st.dev @otiktok932) */
-  --background: #fafafa;
+  /* ── Supabase-white · Modern Minimal palette ──────────────── */
+  --background: #ffffff;
+  --surface: #fafafa;          /* subtle raised / section bg   */
   --foreground: #09090b;
   --card: #ffffff;
   --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
   --muted: #f4f4f5;
   --muted-foreground: #71717a;
-  --border: #e4e4e7;
+  --border: #e4e4e7;           /* zinc-200 · 1px hairlines     */
+  --border-strong: #d4d4d8;    /* zinc-300 · emphasised edges  */
   --input: #e4e4e7;
-  --primary: #09090b;
+
+  /* Single accent — cornflower blue (reference palette) */
+  --primary: #3b6ff6;
+  --primary-hover: #2f5fe0;
+  --primary-active: #2a54c9;
   --primary-foreground: #ffffff;
+  --primary-tint: #eef3ff;     /* 8% wash for active pills / rows */
+
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --accent: #eff6ff;
-  --accent-foreground: #1d4ed8;
-  --ring: #2563eb;
-  --radius: 0.625rem;
 
-  /* Modern Minimal Remix palette accents */
-  --civic-blue: #1A3A6B;
-  --civic-blue-hover: #142e56;
-  --brand-blue: #2563eb;
-  --saffron: #FF6B00;
+  --destructive: #e4574c;
+  --destructive-hover: #d1453b;
+  --destructive-foreground: #ffffff;
+  --destructive-tint: #fdeceb;
+
+  --success: #16a34a;
+  --warning: #d97706;
+
+  --ring: #3b6ff6;
+
+  /* Two-tier radius */
+  --radius-control: 0.375rem;   /* 6px — buttons, inputs, chips */
+  --radius-card: 0.5rem;        /* 8px — cards, panels, modals  */
+  --radius: 0.375rem;           /* default alias               */
 }
 
 html {
@@ -41,11 +50,10 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', 'Noto Sans', sans-serif;
+  font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 
 /* Print styles for complaint */
 @media print {
@@ -74,11 +82,13 @@ body {
 ::-webkit-scrollbar-thumb { background: #a1a1aa; border-radius: 4px; }
 
 @layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  .font-mono-data {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-feature-settings: 'tnum';
   }
 }

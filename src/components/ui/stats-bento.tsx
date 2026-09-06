@@ -6,7 +6,7 @@ export const StatsBento = () => {
     <section className="bg-background flex flex-col justify-center py-12">
       <div className="grid grid-cols-1 md:grid-cols-6 md:grid-rows-2 gap-4 max-w-6xl mx-auto px-6 w-full">
         {/* Primary Stat */}
-        <div className="md:col-span-3 md:row-span-2 bg-[#1A3A6B] rounded-lg p-10 flex flex-col justify-between overflow-hidden relative shadow-sm">
+        <div className="md:col-span-3 md:row-span-2 bg-primary rounded-lg p-10 flex flex-col justify-between overflow-hidden relative shadow-sm">
           <div className="absolute bottom-0 left-0 right-0 top-0 bg-[repeating-linear-gradient(45deg,#808080_0px_1px,transparent_1px_10px)] opacity-20 pointer-events-none"></div>
           <div>
             <span className="inline-block px-3 py-1 bg-white/10 rounded-md text-[10px] font-mono font-semibold text-white/80 uppercase tracking-widest mb-6">
@@ -34,7 +34,7 @@ export const StatsBento = () => {
             {[15, 30, 45, 35, 65, 55, 85, 75, 95, 100, 110].map((h, i) => (
               <div
                 key={i}
-                className="w-1.5 bg-[#1A3A6B] rounded-full"
+                className="w-1.5 bg-primary rounded-full"
                 style={{ height: `${h}%` }}
               />
             ))}
@@ -43,7 +43,7 @@ export const StatsBento = () => {
 
         {/* Tertiary Stat B */}
         <div className="md:col-span-1 bg-white rounded-lg p-6 border border-zinc-200 flex flex-col justify-center text-center shadow-xs">
-          <p className="text-2xl font-bold text-[#1A3A6B]">66C / 66D</p>
+          <p className="text-2xl font-bold text-primary">66C / 66D</p>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mt-1">
             IT Act & BNS
           </p>
@@ -51,7 +51,7 @@ export const StatsBento = () => {
 
         {/* Tertiary Stat C */}
         <div className="md:col-span-2 bg-zinc-50 rounded-lg p-6 border border-zinc-200 flex items-center gap-4 shadow-xs">
-          <div className="size-11 text-lg rounded-md bg-[#1A3A6B] text-white flex items-center justify-center shrink-0 font-bold">
+          <div className="size-11 text-lg rounded-md bg-primary text-white flex items-center justify-center shrink-0 font-bold">
             🛡️
           </div>
           <div>

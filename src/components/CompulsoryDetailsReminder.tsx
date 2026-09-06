@@ -181,7 +181,7 @@ export default function CompulsoryDetailsReminder({
           <button
             type="button"
             onClick={onScrollToUpdates}
-            className="self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-all shadow-sm flex-shrink-0"
+            className="self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-all shadow-sm flex-shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>{hi ? 'अपडेट्स में लिखकर ऑटो-फिल करें' : 'Auto-fill via Updates'}</span>
