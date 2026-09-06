@@ -125,12 +125,12 @@ export default function WhatsAppQRModal({
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ duration: 0.2 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-lg bg-white rounded-none border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-lg bg-white rounded-lg border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 bg-[#FAFAF8]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-none bg-[#1A3A6B] text-white flex items-center justify-center">
+              <div className="w-8 h-8 rounded-md bg-[#1A3A6B] text-white flex items-center justify-center">
                 <QrCode className="w-4 h-4" />
               </div>
               <div>
@@ -144,7 +144,7 @@ export default function WhatsAppQRModal({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-none transition-colors"
+              className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-md transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -156,7 +156,7 @@ export default function WhatsAppQRModal({
             {/* Status 1: Bot service not running / Disconnected */}
             {!state.isRunning && (
               <div className="text-center py-4 space-y-4">
-                <div className="w-14 h-14 mx-auto rounded-none bg-blue-50 text-blue-700 flex items-center justify-center">
+                <div className="w-14 h-14 mx-auto rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                   <Smartphone className="w-7 h-7" />
                 </div>
                 <div>
@@ -175,7 +175,7 @@ export default function WhatsAppQRModal({
                     type="button"
                     onClick={() => handleAction('start')}
                     disabled={isActionLoading}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-none px-6 py-3 text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-md px-6 py-3 text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
                   >
                     {isActionLoading ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -192,7 +192,7 @@ export default function WhatsAppQRModal({
                   </p>
                   <div
                     onClick={handleCopyCommand}
-                    className="cursor-pointer group flex items-center justify-between bg-zinc-900 text-zinc-200 text-xs font-mono px-3.5 py-2.5 rounded-none border border-zinc-800 hover:border-zinc-700 transition-colors"
+                    className="cursor-pointer group flex items-center justify-between bg-zinc-900 text-zinc-200 text-xs font-mono px-3.5 py-2.5 rounded-md border border-zinc-800 hover:border-zinc-700 transition-colors"
                   >
                     <span>npm run whatsapp-bot</span>
                     <span className="text-[11px] text-zinc-400 group-hover:text-white">
@@ -222,20 +222,20 @@ export default function WhatsAppQRModal({
             {state.isRunning && state.status === 'SCAN_QR' && state.qrDataUrl && (
               <div className="space-y-5">
                 <div className="text-center">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-none text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span className="w-2 h-2 rounded-none bg-emerald-500 animate-ping" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                     {hi ? 'लाइव QR कोड तैयार है' : 'Live QR Ready to Scan'}
                   </span>
                 </div>
 
                 {/* QR Display Card */}
-                <div className="flex flex-col items-center justify-center p-4 bg-zinc-50 rounded-none border border-zinc-200">
-                  <div className="p-2 bg-white rounded-none border border-zinc-200 shadow-sm">
+                <div className="flex flex-col items-center justify-center p-4 bg-zinc-50 rounded-lg border border-zinc-200">
+                  <div className="p-2 bg-white rounded-md border border-zinc-200 shadow-sm">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={state.qrDataUrl}
                       alt="Scan WhatsApp QR"
-                      className="w-56 h-56 md:w-64 md:h-64 object-contain rounded-none"
+                      className="w-56 h-56 md:w-64 md:h-64 object-contain rounded-md"
                     />
                   </div>
                   <p className="text-[11px] text-zinc-400 mt-2.5">
@@ -244,7 +244,7 @@ export default function WhatsAppQRModal({
                 </div>
 
                 {/* Steps */}
-                <div className="space-y-2.5 bg-blue-50/60 p-4 rounded-none border border-blue-100 text-xs text-zinc-700">
+                <div className="space-y-2.5 bg-blue-50/60 p-4 rounded-lg border border-blue-100 text-xs text-zinc-700">
                   <p className="font-semibold text-[#1A3A6B]">
                     {hi ? 'अपने फ़ोन से स्कैन कैसे करें:' : 'How to scan from your phone:'}
                   </p>
@@ -273,7 +273,7 @@ export default function WhatsAppQRModal({
                     type="button"
                     onClick={() => handleAction('restart')}
                     disabled={isActionLoading}
-                    className="inline-flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-900 font-medium py-1 px-2.5 rounded-none border border-zinc-200 hover:bg-zinc-100 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-900 font-medium py-1 px-2.5 rounded-md border border-zinc-200 hover:bg-zinc-100 transition-colors"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isActionLoading ? 'animate-spin' : ''}`} />
                     <span>{hi ? 'नया QR कोड जनरेट करें' : 'Regenerate QR'}</span>
@@ -283,7 +283,7 @@ export default function WhatsAppQRModal({
                     type="button"
                     onClick={() => handleAction('stop')}
                     disabled={isActionLoading}
-                    className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-medium py-1 px-2.5 rounded-none border border-red-200 hover:bg-red-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-medium py-1 px-2.5 rounded-md border border-red-200 hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>{hi ? 'सर्विस रोकें' : 'Stop Service'}</span>
@@ -295,7 +295,7 @@ export default function WhatsAppQRModal({
             {/* Status 4: Connected! */}
             {state.isRunning && state.status === 'CONNECTED' && (
               <div className="text-center py-4 space-y-5">
-                <div className="w-16 h-16 mx-auto rounded-none bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                <div className="w-16 h-16 mx-auto rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
                   <CheckCircle2 className="w-9 h-9" />
                 </div>
 
@@ -314,7 +314,7 @@ export default function WhatsAppQRModal({
                 </div>
 
                 {/* Capabilities Banner */}
-                <div className="bg-[#FAFAF8] border border-zinc-200 rounded-none p-4 text-left text-xs space-y-2">
+                <div className="bg-[#FAFAF8] border border-zinc-200 rounded-lg p-4 text-left text-xs space-y-2">
                   <p className="font-semibold text-zinc-900 flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-blue-600" />
                     <span>{hi ? 'सक्रिय AI सुविधाएं:' : 'Active AI Capabilities:'}</span>
@@ -341,7 +341,7 @@ export default function WhatsAppQRModal({
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-none px-5 py-2.5 text-sm font-semibold transition-colors shadow-sm"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-md px-5 py-2.5 text-sm font-semibold transition-colors shadow-sm"
                   >
                     <MessageSquare className="w-4 h-4" />
                     <span>{hi ? 'एजेंट को व्हाट्सएप पर मैसेज करें' : 'Message Agent on WhatsApp'}</span>
@@ -352,7 +352,7 @@ export default function WhatsAppQRModal({
                     type="button"
                     onClick={() => handleAction('restart')}
                     disabled={isActionLoading}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-none px-4 py-2.5 text-sm font-medium transition-colors"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-md px-4 py-2.5 text-sm font-medium transition-colors"
                   >
                     <LogOut className="w-4 h-4 text-zinc-500" />
                     <span>{hi ? 'खाता बदलें / अनलिंक' : 'Unlink Account'}</span>
@@ -363,7 +363,7 @@ export default function WhatsAppQRModal({
 
             {/* Error state */}
             {state.status === 'ERROR' && (
-              <div className="p-4 rounded-none bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
+              <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold">{hi ? 'कनेक्शन त्रुटि' : 'Bridge Error'}</p>

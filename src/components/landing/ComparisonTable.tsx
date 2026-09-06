@@ -106,7 +106,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.3 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-zinc-300 rounded-none shadow-xs text-xs font-semibold text-zinc-800 tracking-tight"
+            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-zinc-200 rounded-md shadow-xs text-xs font-semibold text-zinc-800 tracking-tight"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-zinc-900" />
             <span>{isHi ? "समर्थन क्यों?" : "Why Samarthan"}</span>
@@ -145,7 +145,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="bg-white border-2 border-zinc-950 rounded-none p-7 md:p-8 flex flex-col justify-between shadow-sm relative hover:border-zinc-900 transition-colors"
+            className="bg-white border-2 border-zinc-950 rounded-lg p-7 md:p-8 flex flex-col justify-between shadow-sm relative hover:border-zinc-900 transition-colors"
           >
             <div>
               {/* Header */}
@@ -153,7 +153,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
                 <h3 className="text-2xl font-bold text-zinc-950 tracking-tight">
                   {isHi ? "समर्थन" : "Samarthan"}
                 </h3>
-                <span className="bg-zinc-950 text-white text-[11px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-none font-semibold">
+                <span className="bg-zinc-950 text-white text-[11px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-md font-semibold">
                   {isHi ? "अनुशंसित" : "Recommended"}
                 </span>
               </div>
@@ -170,7 +170,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
               <ul className="space-y-4">
                 {samarthanPoints.map((point, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <div className="w-5 h-5 bg-zinc-950 text-white flex items-center justify-center shrink-0 rounded-none mt-0.5">
+                    <div className="w-5 h-5 bg-zinc-950 text-white flex items-center justify-center shrink-0 rounded-sm mt-0.5">
                       <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                     </div>
                     <span className="text-sm font-semibold text-zinc-900 leading-snug">
@@ -185,7 +185,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             <div className="pt-8">
               <button
                 onClick={handleScrollToReport}
-                className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3.5 px-6 rounded-none text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group shadow-xs"
+                className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3.5 px-6 rounded-md text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group shadow-xs"
               >
                 <span>{isHi ? "मुफ़्त शिकायत दर्ज करें" : "Start for Free"}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -199,7 +199,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.25 }}
-            className="bg-zinc-50/70 border border-zinc-300 rounded-none p-7 md:p-8 flex flex-col justify-between"
+            className="bg-zinc-50/70 border border-zinc-200 rounded-lg p-7 md:p-8 flex flex-col justify-between"
           >
             <div>
               {/* Header */}
@@ -221,7 +221,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
               <ul className="space-y-4">
                 {othersPoints.map((point, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <div className="w-5 h-5 bg-zinc-200/90 text-zinc-400 flex items-center justify-center shrink-0 rounded-none mt-0.5">
+                    <div className="w-5 h-5 bg-zinc-200/90 text-zinc-400 flex items-center justify-center shrink-0 rounded-sm mt-0.5">
                       <X className="w-3.5 h-3.5 stroke-[2]" />
                     </div>
                     <span className="text-sm text-zinc-500 leading-snug">
@@ -236,7 +236,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             <div className="pt-8">
               <button
                 onClick={handleScrollToHowItWorks}
-                className="w-full bg-zinc-200/70 hover:bg-zinc-200 text-zinc-700 font-semibold py-3.5 px-6 rounded-none text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group"
+                className="w-full bg-zinc-200/70 hover:bg-zinc-200 text-zinc-700 font-semibold py-3.5 px-6 rounded-md text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group"
               >
                 <span>{isHi ? "देखें पीड़ित समर्थन क्यों चुनते हैं" : "See Why Victims Switch"}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

@@ -21,7 +21,7 @@
   --accent: #f4f4f5;
   --accent-foreground: #18181b;
   --ring: #18181b;
-  --radius: 0px;
+  --radius: 0.5rem;
 
   /* Legacy tokens kept for backward compat */
   --civic-blue: #1A3A6B;
@@ -65,7 +65,7 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--muted); }
-::-webkit-scrollbar-thumb { background: #a1a1aa; border-radius: 0px; }
+::-webkit-scrollbar-thumb { background: #a1a1aa; border-radius: 4px; }
 
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {

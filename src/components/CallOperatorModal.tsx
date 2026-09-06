@@ -59,18 +59,18 @@ export default function CallOperatorModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative bg-white rounded-none border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
+            className="relative bg-white rounded-lg border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
             role="dialog"
             aria-modal="true"
           >
-            <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-none hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
+            <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
               <X className="w-4 h-4" />
             </button>
 
             {step === 'connecting' && (
               <div className="p-8 flex flex-col items-center justify-center gap-4 min-h-[260px]">
                 <div className="relative">
-                  <div className="w-14 h-14 rounded-none bg-red-50 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-lg bg-red-50 flex items-center justify-center">
                     <PhoneCall className="w-7 h-7 text-red-500 animate-pulse" />
                   </div>
                 </div>
@@ -82,7 +82,7 @@ export default function CallOperatorModal({
                     {hi ? 'ऑपरेटर को आपकी शिकायत का डेटा भेजा जा रहा है' : 'Sending your complaint data to the call operator'}
                   </p>
                 </div>
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-none px-1.5 py-0.5">
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-sm px-1.5 py-0.5">
                   {hi ? 'डेमो' : 'Simulated'}
                 </span>
               </div>
@@ -91,7 +91,7 @@ export default function CallOperatorModal({
             {step === 'connected' && (
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-none bg-green-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
                     <Headset className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -106,7 +106,7 @@ export default function CallOperatorModal({
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">
                   {hi ? 'ऑपरेटर को भेजा गया डेटा' : 'Data shared with the operator'}
                 </p>
-                <div className="bg-zinc-50 border border-zinc-200 rounded-none p-4 space-y-2 text-xs text-zinc-700 mb-4 max-h-[260px] overflow-y-auto">
+                <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-4 space-y-2 text-xs text-zinc-700 mb-4 max-h-[260px] overflow-y-auto">
                   <p><span className="text-zinc-400">{hi ? 'घटना ID' : 'Incident ID'}:</span> <span className="font-mono font-semibold">{incidentId}</span></p>
                   <p><span className="text-zinc-400">{hi ? 'श्रेणी' : 'Category'}:</span> {fraudType}</p>
                   {amount > 0 && <p><span className="text-zinc-400">{hi ? 'राशि' : 'Amount'}:</span> ₹{amount.toLocaleString('en-IN')}</p>}
@@ -116,7 +116,7 @@ export default function CallOperatorModal({
                     <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-0.5">
                       {hi ? 'प्रारंभिक सारांश:' : 'Initial Complaint Summary:'}
                     </p>
-                    <p className="text-zinc-700 leading-relaxed bg-white border border-zinc-200/80 rounded-none p-2.5">
+                    <p className="text-zinc-700 leading-relaxed bg-white border border-zinc-200/80 rounded-md p-2.5">
                       {summary}
                     </p>
                   </div>
@@ -125,11 +125,11 @@ export default function CallOperatorModal({
                   {updates.length > 0 && (
                     <div className="pt-2 space-y-1.5">
                       <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-none bg-blue-600 animate-ping"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
                         {hi ? 'नई जानकारी / पूरक विवरण:' : 'Fresh Information & Updates:'}
                       </p>
                       {updates.map((u, i) => (
-                        <div key={u.id || i} className="bg-blue-50/70 border border-blue-200/60 rounded-none p-2.5 space-y-1">
+                        <div key={u.id || i} className="bg-blue-50/70 border border-blue-200/60 rounded-md p-2.5 space-y-1">
                           <p className="text-xs text-blue-950 font-medium leading-snug">
                             {u.note}
                           </p>
@@ -165,7 +165,7 @@ export default function CallOperatorModal({
 
                 <a
                   href={`tel:${hotline}`}
-                  className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-none py-3 font-semibold text-sm transition-all"
+                  className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-md py-3 font-semibold text-sm transition-all"
                 >
                   <PhoneCall className="w-4 h-4" />
                   {hi ? `${hotline} पर वास्तविक कॉल करें` : `Actually dial ${hotline}`}

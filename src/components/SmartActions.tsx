@@ -103,7 +103,7 @@ export default function SmartActions({
     : (hi ? 'रिपोर्ट का मसौदा तैयार — क्लिपबोर्ड पर कॉपी (डेमो)' : 'Report drafted & copied to clipboard (demo)')
 
   return (
-    <div className="bg-white rounded-none border border-zinc-200 p-6 shadow-sm">
+    <div className="bg-white rounded-lg border border-zinc-200 p-6 shadow-sm">
       <h3 className="text-sm font-bold text-zinc-900 mb-1 uppercase tracking-wide">
         {hi ? 'स्मार्ट कार्रवाई' : 'Smart Escalation'}
       </h3>
@@ -114,15 +114,15 @@ export default function SmartActions({
         <button
           onClick={primaryDone ? undefined : primaryAction}
           disabled={primaryDone}
-          className={`flex flex-col items-start gap-3 p-4 rounded-none border transition-all text-left ${primaryDone ? 'border-green-300 bg-green-50' : 'border-zinc-200 hover:border-blue-300 hover:bg-blue-50/50'}`}
+          className={`flex flex-col items-start gap-3 p-4 rounded-lg border transition-all text-left ${primaryDone ? 'border-green-300 bg-green-50' : 'border-zinc-200 hover:border-blue-300 hover:bg-blue-50/50'}`}
         >
-          <div className={`w-10 h-10 rounded-none flex items-center justify-center ${primaryDone ? 'bg-green-100' : kind === 'platform' ? 'bg-pink-100' : kind === 'agency' ? 'bg-indigo-100' : 'bg-blue-100'}`}>
+          <div className={`w-10 h-10 rounded-md flex items-center justify-center ${primaryDone ? 'bg-green-100' : kind === 'platform' ? 'bg-pink-100' : kind === 'agency' ? 'bg-indigo-100' : 'bg-blue-100'}`}>
             {primaryIcon}
           </div>
           <div>
             <h4 className="font-semibold text-zinc-900 text-sm mb-1 flex items-center gap-1.5">
               {hi ? ch.titleHi : ch.title}
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-none px-1.5 py-0.5">
+              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-sm px-1.5 py-0.5">
                 {hi ? 'डेमो' : 'Simulated'}
               </span>
             </h4>
@@ -142,15 +142,15 @@ export default function SmartActions({
         <button
           onClick={policeStation ? undefined : handleRoutePolice}
           disabled={locating || !!policeStation}
-          className={`flex flex-col items-start gap-3 p-4 rounded-none border transition-all text-left ${policeStation ? 'border-green-300 bg-green-50' : 'border-zinc-200 hover:border-saffron hover:bg-orange-50/50'}`}
+          className={`flex flex-col items-start gap-3 p-4 rounded-lg border transition-all text-left ${policeStation ? 'border-green-300 bg-green-50' : 'border-zinc-200 hover:border-saffron hover:bg-orange-50/50'}`}
         >
-          <div className={`w-10 h-10 rounded-none flex items-center justify-center ${policeStation ? 'bg-green-100' : 'bg-orange-100'}`}>
+          <div className={`w-10 h-10 rounded-md flex items-center justify-center ${policeStation ? 'bg-green-100' : 'bg-orange-100'}`}>
             {locating ? <Loader2 className="w-5 h-5 text-saffron animate-spin" /> : policeStation ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Navigation className="w-5 h-5 text-saffron" />}
           </div>
           <div>
             <h4 className="font-semibold text-zinc-900 text-sm mb-1 flex items-center gap-1.5">
               {hi ? 'पुलिस स्टेशन भेजें' : 'Route to Police'}
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-none px-1.5 py-0.5">
+              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-sm px-1.5 py-0.5">
                 {hi ? 'डेमो' : 'Simulated'}
               </span>
             </h4>
@@ -172,19 +172,19 @@ export default function SmartActions({
             {hi ? 'असली संपर्क' : 'Real contacts'}
           </span>
           {ch.hotline && (
-            <a href={`tel:${ch.hotline}`} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-none hover:bg-red-700 transition-colors">
+            <a href={`tel:${ch.hotline}`} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors">
               <Phone className="w-3.5 h-3.5" />
               {hi ? ch.hotlineLabelHi : ch.hotlineLabel}
             </a>
           )}
           {ch.hotline2 && (
-            <a href={`tel:${ch.hotline2}`} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-none hover:bg-red-700 transition-colors">
+            <a href={`tel:${ch.hotline2}`} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors">
               <Phone className="w-3.5 h-3.5" />
               {hi ? ch.hotline2LabelHi : ch.hotline2Label}
             </a>
           )}
           {ch.portalUrl && (
-            <a href={ch.portalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 border border-zinc-300 text-zinc-700 text-xs font-semibold px-3 py-1.5 rounded-none hover:bg-zinc-50 transition-colors">
+            <a href={ch.portalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 border border-zinc-300 text-zinc-700 text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-zinc-50 transition-colors">
               <ExternalLink className="w-3.5 h-3.5" />
               {hi ? ch.portalLabelHi : ch.portalLabel}
             </a>

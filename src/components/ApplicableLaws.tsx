@@ -10,13 +10,13 @@ export default function ApplicableLaws({ laws, hi }: ApplicableLawsProps) {
   if (laws.length === 0) return null
 
   return (
-    <div className="bg-white rounded-none border border-zinc-200 p-6 shadow-sm">
+    <div className="bg-white rounded-lg border border-zinc-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-1">
         <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wide flex items-center gap-2">
           <Scale className="w-4 h-4 text-indigo-500" />
           {hi ? 'लागू कानून' : 'Applicable Laws'}
         </h3>
-        <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-none px-1.5 py-0.5">
+        <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-sm px-1.5 py-0.5">
           {hi ? 'AI सुझाव' : 'AI Suggested'}
         </span>
       </div>
@@ -28,8 +28,8 @@ export default function ApplicableLaws({ laws, hi }: ApplicableLawsProps) {
 
       <div className="space-y-3">
         {laws.map((law, idx) => (
-          <div key={idx} className="border border-zinc-200 rounded-none p-3.5 bg-zinc-50">
-            <span className="inline-block text-xs font-bold font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-none px-2 py-0.5 mb-1.5">
+          <div key={idx} className="border border-zinc-200 rounded-lg p-3.5 bg-zinc-50">
+            <span className="inline-block text-xs font-bold font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md px-2 py-0.5 mb-1.5">
               {law.section}
             </span>
             <p className="text-sm font-semibold text-zinc-900 leading-snug">
@@ -42,7 +42,7 @@ export default function ApplicableLaws({ laws, hi }: ApplicableLawsProps) {
         ))}
       </div>
 
-      <p className="text-[10px] text-gray-400 mt-4 pt-3 border-t border-dashed border-gray-200">
+      <p className="text-[10px] text-zinc-400 mt-4 pt-3 border-t border-dashed border-zinc-200">
         {hi
           ? '⚠ यह कानूनी सलाह नहीं है। केवल संदर्भ के लिए — Information Technology Act, 2000 पर आधारित।'
           : '⚠ Not legal advice. For reference only — based on the Information Technology Act, 2000.'}

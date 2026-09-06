@@ -46,7 +46,7 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
 
           {/* Logo */}
           <button onClick={() => router.push('/')} className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-none bg-zinc-900 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors">
+            <div className="w-7 h-7 rounded-md bg-zinc-900 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors">
               <BotMessageSquareIcon size={16} />
             </div>
             <span className="font-semibold text-zinc-900 text-sm tracking-tight">Samarthan</span>
@@ -58,7 +58,7 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
             {/* My Complaints */}
             <button
               onClick={() => router.push('/complaints')}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 border border-zinc-200 rounded-none px-3 py-1.5 transition-colors "
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 border border-zinc-200 rounded-md px-3 py-1.5 transition-colors "
             >
               <FileText className="w-3.5 h-3.5" />
               {hi ? 'मेरी शिकायतें' : 'My Complaints'}
@@ -67,7 +67,7 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
             {/* Language toggle */}
             <button
               onClick={onLanguageToggle}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-none px-3 py-1.5 transition-colors "
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors "
             >
               <Globe className="w-3.5 h-3.5" />
               {language === 'en' ? 'हिन्दी' : 'English'}
@@ -78,9 +78,9 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(v => !v)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 rounded-none px-3 py-1.5 transition-colors "
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 rounded-md px-3 py-1.5 transition-colors "
                 >
-                  <div className="w-4 h-4 rounded-none bg-orange-500 flex items-center justify-center">
+                  <div className="w-4 h-4 rounded-sm bg-orange-500 flex items-center justify-center">
                     <User className="w-2.5 h-2.5 text-white" />
                   </div>
                   {user.name.split(' ')[0]}
@@ -88,12 +88,12 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-zinc-200 rounded-none shadow-lg overflow-hidden z-50">
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-zinc-200 rounded-lg shadow-lg overflow-hidden z-50">
                     <div className="px-4 py-3 border-b border-zinc-100">
                       <p className="text-xs font-semibold text-zinc-900">{user.name}</p>
                       <p className="text-xs text-zinc-400 mt-0.5">Aadhaar: {user.aadhaar}</p>
                       <div className="flex items-center gap-1 mt-1">
-                        <div className="w-1.5 h-1.5 rounded-none bg-green-500" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                         <p className="text-xs text-green-600 font-medium">DigiLocker Verified</p>
                       </div>
                     </div>
@@ -121,7 +121,7 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
                     signIn({ name: 'Parichay Prabhu', aadhaar: '****-****-8421' })
                     setUser(getUser())
                   }}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-none px-2.5 py-1.5 transition-colors shadow-xs"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md px-2.5 py-1.5 transition-colors shadow-xs"
                   title="Direct 1-Click Login (Verified Citizen)"
                 >
                   <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
@@ -130,7 +130,7 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
 
                 <button
                   onClick={() => setModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-700 rounded-none px-3 py-1.5 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-700 rounded-md px-3 py-1.5 transition-colors"
                 >
                   {hi ? 'डिजीलॉकर से साइन इन करें' : 'Sign in with DigiLocker'}
                 </button>

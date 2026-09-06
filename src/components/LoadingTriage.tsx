@@ -145,7 +145,7 @@ export default function LoadingTriage({ language }: LoadingTriageProps) {
             {/* Skeleton shimmer cards */}
             <div className="w-full max-w-sm space-y-3">
               {[80, 60, 90].map((w, i) => (
-                <div key={i} className="skeleton h-4 rounded-none" style={{ width: `${w}%` }} />
+                <div key={i} className="skeleton h-4 rounded-md" style={{ width: `${w}%` }} />
               ))}
             </div>
           </motion.div>

@@ -130,13 +130,13 @@ export default function CompulsoryDetailsReminder({
 
   if (missingCount === 0) {
     return (
-      <div className="rounded-none bg-emerald-50/80 border border-emerald-200 p-4 sm:p-5 flex items-start gap-3.5 shadow-sm">
-        <div className="w-9 h-9 rounded-none bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+      <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 p-4 sm:p-5 flex items-start gap-3.5 shadow-sm">
+        <div className="w-9 h-9 rounded-md bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-none">
+            <span className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
               {hi ? '100% पूर्ण' : '100% Complete'}
             </span>
             <span className="text-xs text-emerald-700 font-medium">
@@ -154,19 +154,19 @@ export default function CompulsoryDetailsReminder({
   }
 
   return (
-    <div className="rounded-none bg-amber-50/90 border border-amber-300 p-5 sm:p-6 shadow-sm">
+    <div className="rounded-lg bg-amber-50/90 border border-amber-300 p-5 sm:p-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200/70">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-none bg-amber-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+          <div className="w-10 h-10 rounded-md bg-amber-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-extrabold uppercase tracking-wide bg-amber-200/90 text-amber-900 px-2.5 py-0.5 rounded-none">
-                {hi ? `${missingCount} अनिवार्य विवरण बाकी` : `${missingCount} Compulsory Details Needed`}
+              <span className="text-xs font-mono font-extrabold uppercase tracking-wide bg-amber-200/90 text-amber-900 px-2.5 py-0.5 rounded-sm">
+                {hi ? 'महत्वपूर्ण अनुस्मारक' : 'Compulsory Checklist'}
               </span>
-              <span className="text-xs font-semibold text-amber-800">
-                {percent}% {hi ? 'पूर्ण' : 'Complete'}
+              <span className="text-xs font-bold text-amber-900">
+                {filledCount} / {fields.length} {hi ? 'विवरण भरे गए' : 'Details Completed'}
               </span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-zinc-900 mt-1">
@@ -181,7 +181,7 @@ export default function CompulsoryDetailsReminder({
           <button
             type="button"
             onClick={onScrollToUpdates}
-            className="self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-none bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-all shadow-sm flex-shrink-0"
+            className="self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-all shadow-sm flex-shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>{hi ? 'अपडेट्स में लिखकर ऑटो-फिल करें' : 'Auto-fill via Updates'}</span>
@@ -191,7 +191,7 @@ export default function CompulsoryDetailsReminder({
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-amber-200/60 h-2 rounded-none mt-4 overflow-hidden">
+      <div className="w-full bg-amber-200/60 h-2 rounded-full mt-4 overflow-hidden">
         <div
           className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full transition-all duration-500"
           style={{ width: `${percent}%` }}
@@ -203,7 +203,7 @@ export default function CompulsoryDetailsReminder({
         {fields.map((f) => (
           <div
             key={f.key}
-            className={`p-3 rounded-none border transition-all text-xs flex items-start gap-2.5 ${
+            className={`p-3 rounded-md border transition-all text-xs flex items-start gap-2.5 ${
               f.isFilled
                 ? 'bg-emerald-50/50 border-emerald-200/80 text-emerald-900'
                 : 'bg-white border-amber-300 text-zinc-800 shadow-xs'
@@ -212,7 +212,7 @@ export default function CompulsoryDetailsReminder({
             {f.isFilled ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
             ) : (
-              <span className="w-3.5 h-3.5 rounded-none border-2 border-amber-500 flex-shrink-0 mt-0.5" />
+              <span className="w-3.5 h-3.5 rounded-sm border-2 border-amber-500 flex-shrink-0 mt-0.5" />
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-1">
@@ -220,7 +220,7 @@ export default function CompulsoryDetailsReminder({
                   {hi ? f.labelHi : f.label}
                 </span>
                 <span
-                  className={`text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-none ${
+                  className={`text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm ${
                     f.isFilled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
                   }`}
                 >

@@ -40,7 +40,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
           </p>
           <button
             onClick={startReport}
-            className="mt-8 inline-flex items-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-none px-8 py-3.5 text-sm font-semibold transition-colors shadow-sm"
+            className="mt-8 inline-flex items-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-md px-8 py-3.5 text-sm font-semibold transition-colors shadow-sm"
           >
             {hi ? 'रिपोर्ट शुरू करें' : 'Start a report'}
             <ArrowRight className="w-4 h-4" />

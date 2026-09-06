@@ -107,12 +107,12 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative bg-white rounded-none border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
+            className="relative bg-white rounded-lg border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
             role="dialog"
             aria-modal="true"
           >
             {step !== 'success' && (
-              <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-none hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
+              <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
                 <X className="w-4 h-4" />
               </button>
             )}
@@ -123,7 +123,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
               {step === 'intro' && (
                 <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-none bg-orange-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
                       <ShieldCheck className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -136,7 +136,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                   <button
                     type="button"
                     onClick={handleDirectLogin}
-                    className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.99] text-white rounded-none py-2.5 font-medium text-xs transition-all shadow-sm mb-3.5"
+                    className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.99] text-white rounded-md py-2.5 font-medium text-xs transition-all shadow-sm mb-3.5"
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                     <span>1-Click Direct Login (Verified Citizen)</span>
@@ -162,7 +162,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                           value={name}
                           onChange={(e) => { setName(e.target.value); setNameError(false) }}
                           placeholder="e.g. Parichay Prabhu"
-                          className={`w-full border rounded-none pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:ring-2 transition-all ${nameError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:border-zinc-900 focus:ring-zinc-900/10'}`}
+                          className={`w-full border rounded-md pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:ring-2 transition-all ${nameError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:border-zinc-900 focus:ring-zinc-900/10'}`}
                         />
                       </div>
                       {nameError && <p className="text-xs text-red-500 mt-1">Please enter your name to verify identity.</p>}
@@ -180,13 +180,13 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                           value={aadhaar}
                           onChange={(e) => setAadhaar(e.target.value)}
                           placeholder="e.g. 5432 9876 1234 (optional)"
-                          className="w-full border border-zinc-200 rounded-none pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition-all"
+                          className="w-full border border-zinc-200 rounded-md pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition-all"
                         />
                       </div>
                       <p className="text-[11px] text-zinc-400 mt-1">Leave blank to use default masked ID ****-****-8421</p>
                     </div>
 
-                    <div className="bg-orange-50/80 border border-orange-100 rounded-none p-3.5 space-y-1">
+                    <div className="bg-orange-50/80 border border-orange-100 rounded-md p-3.5 space-y-1">
                       <p className="text-xs font-semibold text-orange-900 flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
                         Aadhaar KYC Verification
@@ -198,7 +198,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
 
                     <button
                       type="submit"
-                      className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white rounded-none py-3 font-semibold text-sm transition-all shadow-sm"
+                      className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white rounded-md py-3 font-semibold text-sm transition-all shadow-sm"
                     >
                       <ShieldCheck className="w-4 h-4" />
                       Continue with DigiLocker
@@ -217,7 +217,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                 <motion.div key="redirecting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="p-8 flex flex-col items-center justify-center gap-4 min-h-[240px]">
                   <div className="relative">
-                    <div className="w-14 h-14 rounded-none bg-orange-50 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-lg bg-orange-50 flex items-center justify-center">
                       <ShieldCheck className="w-7 h-7 text-orange-500" />
                     </div>
                     <Loader2 className="w-14 h-14 text-orange-400 animate-spin absolute inset-0" />
@@ -233,7 +233,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
               {step === 'otp' && (
                 <motion.div key="otp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
                   <div className="flex items-center gap-3 mb-5">
-                    <div className="w-10 h-10 rounded-none bg-orange-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
                       <ShieldCheck className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -242,7 +242,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                     </div>
                   </div>
 
-                  <div className="bg-zinc-50 border border-zinc-200 rounded-none p-3.5 mb-4 space-y-1.5">
+                  <div className="bg-zinc-50 border border-zinc-200 rounded-md p-3.5 mb-4 space-y-1.5">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-zinc-500">Citizen:</span>
                       <span className="font-semibold text-zinc-900">{name}</span>
@@ -265,7 +265,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                     placeholder="______"
-                    className={`w-full border rounded-none p-3 text-center text-2xl font-mono tracking-[0.5em] text-zinc-900 bg-zinc-50 outline-none focus:ring-2 transition-all ${otpError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:ring-zinc-900'}`}
+                    className={`w-full border rounded-md p-3 text-center text-2xl font-mono tracking-[0.5em] text-zinc-900 bg-zinc-50 outline-none focus:ring-2 transition-all ${otpError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:ring-zinc-900'}`}
                   />
                   {otpError && <p className="text-xs text-red-500 mt-1">Please enter 6 digits.</p>}
                   <p className="text-xs text-zinc-400 mt-2 mb-5">Hint: enter any 6-digit code (e.g. 123456)</p>
@@ -273,7 +273,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                   <button
                     onClick={handleOTPVerify}
                     disabled={otp.length < 6}
-                    className="w-full bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 text-white rounded-none py-3 font-semibold text-sm transition-all"
+                    className="w-full bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 text-white rounded-md py-3 font-semibold text-sm transition-all"
                   >
                     Verify & Complete Sign In
                   </button>
@@ -285,7 +285,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                 <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="p-8 flex flex-col items-center justify-center gap-4 min-h-[240px]">
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 15 }}>
-                    <div className="w-16 h-16 rounded-none bg-green-100 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-lg bg-green-100 flex items-center justify-center">
                       <CheckCircle2 className="w-9 h-9 text-green-600" />
                     </div>
                   </motion.div>

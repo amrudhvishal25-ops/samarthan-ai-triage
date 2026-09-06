@@ -78,11 +78,11 @@ export default function HowItWorks({ language }: HowItWorksProps) {
               className={`grid md:grid-cols-2 gap-10 items-center ${i % 2 === 1 ? 'md:[&>*:first-child]:order-2' : ''}`}
             >
               <div>
-                <span className="text-sm font-mono font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-none">{step.n}</span>
+                <span className="text-sm font-mono font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-md">{step.n}</span>
                 <h3 className="mt-3 text-2xl font-bold text-[#0A0A0A]">{step.title}</h3>
                 <p className="mt-4 text-zinc-600 leading-relaxed text-[15px]">{step.body}</p>
               </div>
-              <div className="rounded-none border border-zinc-300/80 bg-white shadow-xs overflow-hidden">
+              <div className="rounded-lg border border-zinc-200 bg-white shadow-xs overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={step.shot} alt={step.title} className="w-full h-auto max-h-[420px] object-cover object-top" />
               </div>
