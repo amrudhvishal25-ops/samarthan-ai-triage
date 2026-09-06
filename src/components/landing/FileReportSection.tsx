@@ -6,9 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useTriage } from '@/context/TriageContext'
 import {
   DollarSign, User, ShieldAlert, Fingerprint, ShoppingCart, Briefcase,
-  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, ExternalLink, QrCode,
+  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, ExternalLink,
 } from 'lucide-react'
-import WhatsAppQRModal from '@/components/WhatsAppQRModal'
 
 interface FileReportSectionProps {
   language: 'en' | 'hi'
@@ -23,7 +22,6 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
 
   const [inputText, setInputText] = useState('')
   const [channel, setChannel] = useState<Channel>('web')
-  const [isQROpen, setIsQROpen] = useState(false)
   const [liveState, setLiveState] = useState<{ isRunning: boolean; status: string; userPhone: string | null }>({
     isRunning: false,
     status: 'DISCONNECTED',
@@ -83,19 +81,15 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
     router.push(`/intake?category=${encodeURIComponent(title)}`)
   }
 
-  const cleanPhone = liveState.userPhone ? liveState.userPhone.replace(/\D/g, '') : ''
+  const cleanPhone = (liveState.userPhone || '+916303807967').replace(/\D/g, '')
 
   const handleVisitAgent = () => {
-    if (cleanPhone) {
-      const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-        hi
-          ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।'
-          : 'Hi Samarthan, I want to report a cybercrime incident.'
-      )}`
-      window.open(url, '_blank', 'noopener,noreferrer')
-    } else {
-      setIsQROpen(true)
-    }
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+      hi
+        ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।'
+        : 'Hi Samarthan, I want to report a cybercrime incident.'
+    )}`
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   const tabs: { id: Channel; label: string; labelHi: string; icon: React.ReactNode }[] = [
@@ -172,37 +166,27 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                 : 'Chat directly with our 24x7 WhatsApp AI triage agent. Send a voice note, message, or screenshot to receive instant legal advice, freeze steps, and your live complaint tracking link.'}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={handleVisitAgent}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-xl px-7 py-3.5 text-sm font-bold transition-all shadow-md hover:shadow-lg"
+            <div className="flex items-center justify-center">
+              <a
+                href={`https://wa.me/916303807967?text=${encodeURIComponent(
+                  hi
+                    ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।'
+                    : 'Hi Samarthan, I want to report a cybercrime incident.'
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-xl px-8 py-4 text-base font-bold transition-all shadow-md hover:shadow-lg"
               >
-                <MessageCircle className="w-4 h-4 fill-white" />
+                <MessageCircle className="w-5 h-5 fill-white" />
                 <span>{hi ? 'व्हाट्सएप एजेंट से बात करें' : 'Visit the Agent on WhatsApp'}</span>
-                <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsQROpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl px-5 py-3.5 text-sm font-semibold transition-colors shadow-sm"
-              >
-                <QrCode className="w-4 h-4" />
-                <span>{hi ? 'व्हाट्सएप लिंक करें (QR)' : 'Link WhatsApp (Scan QR)'}</span>
-              </button>
+                <ExternalLink className="w-4 h-4 opacity-80" />
+              </a>
             </div>
 
-            {liveState.userPhone ? (
-              <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{hi ? `लाइव एजेंट सक्रिय: ${liveState.userPhone}` : `Agent Live & Active: ${liveState.userPhone}`}</span>
-              </div>
-            ) : (
-              <p className="mt-4 text-xs text-zinc-400">
-                {hi ? 'व्यवसाय या व्यक्तिगत व्हाट्सएप से लिंक करें • 24x7 सक्रिय' : 'Works with any WhatsApp or WhatsApp Business account • 24x7 Active'}
-              </p>
-            )}
+            <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{hi ? 'लाइव एजेंट 24x7 सक्रिय (+91 63038 07967)' : 'Agent Live & Active: +91 63038 07967 (24x7)'}</span>
+            </div>
           </div>
         )}
 
@@ -277,12 +261,6 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
           </>
         )}
       </div>
-
-      <WhatsAppQRModal
-        isOpen={isQROpen}
-        onClose={() => setIsQROpen(false)}
-        language={language}
-      />
     </section>
   )
 }

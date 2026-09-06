@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, ArrowDown, ShieldCheck, Scale, Wallet, Building2, Loader2, RotateCcw } from 'lucide-react'
+import { ArrowRight, ArrowDown, ShieldCheck, Scale, Wallet, Building2, Loader2, RotateCcw, MessageCircle } from 'lucide-react'
 import AudioRecorder from '@/components/AudioRecorder'
 import { useTriage } from '@/context/TriageContext'
 
@@ -20,23 +20,25 @@ const EN = {
   demoHint: 'Try us out: tap the mic and say your report',
   demoHintDone: 'Report captured: review details or see full report',
   continueCta: 'See your report',
+  orWhatsApp: 'Or check it out on WhatsApp →',
   reRecord: 'Say it again',
   youSaid: 'What you said:',
   resultTitle: 'What Samarthan heard',
   fType: 'Fraud type',
   fLaw: 'Likely IT Act section',
-  fAction: 'Your next step',
+  fAction: 'Your immediate move',
 }
 
 const HI = {
   headline: 'बताएं क्या हुआ।',
-  headlineHighlight: 'बाकी हम संभालते हैं।',
-  sub: 'अपने शब्दों में बोलें, हिंदी या अंग्रेज़ी। समर्थन इसे दर्ज साइबर अपराध शिकायत में बदलता है, कानून बताता है, और यह भी कि किसे कॉल करना है। 60 सेकंड से कम में।',
+  headlineHighlight: 'बाकी हम संभालेंगे।',
+  sub: 'हिंदी या अंग्रेजी में अपने शब्दों में बोलें। समर्थन इसे 60 सेकंड के अंदर दर्ज शिकायत में बदलता है, कानून उद्धृत करता है और बताता है कि किसे कॉल करना है।',
   primary: 'रिपोर्ट शुरू करें',
   secondary: 'यह कैसे काम करता है',
   demoHint: 'अभी आज़माएं: माइक दबाएं और अपनी शिकायत बोलें',
   demoHintDone: 'शिकायत दर्ज: विवरण जांचें या पूरी रिपोर्ट देखें',
   continueCta: 'अपनी रिपोर्ट देखें',
+  orWhatsApp: 'या सीधे व्हाट्सएप पर देखें →',
   reRecord: 'फिर से बोलें',
   youSaid: 'आपने कहा:',
   resultTitle: 'समर्थन ने क्या सुना',
@@ -192,6 +194,20 @@ export default function HeroSection({ language }: HeroSectionProps) {
               </div>
             )}
 
+            {!result && !isTranscribing && (
+              <div className="mt-3.5 pt-3 border-t border-zinc-100 flex items-center justify-center">
+                <a
+                  href="https://wa.me/916303807967?text=Hi%20Samarthan,%20I%20want%20to%20report%20a%20cybercrime%20incident."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                  <span>{c.orWhatsApp}</span>
+                </a>
+              </div>
+            )}
+
             <AnimatePresence>
               {result && !isTranscribing && (
                 <motion.div
@@ -238,6 +254,20 @@ export default function HeroSection({ language }: HeroSectionProps) {
                       <span>{c.continueCta}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+
+                    <div className="mt-2.5 flex items-center justify-center">
+                      <a
+                        href={`https://wa.me/916303807967?text=${encodeURIComponent(
+                          committed || (hi ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।' : 'Hi Samarthan, I want to report a cybercrime incident.')
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors py-1"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                        <span>{c.orWhatsApp}</span>
+                      </a>
+                    </div>
                   </div>
                 </motion.div>
               )}
