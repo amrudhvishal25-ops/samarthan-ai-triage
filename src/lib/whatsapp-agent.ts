@@ -153,23 +153,166 @@ Send your voice note now, and I will listen, extract the details, and draft your
     session.stage = 'AWAITING_INCIDENT'
   }
 
-  // STAGE 3 (Post-Filed): If already filed and not a reset, record note
+async function extractUpdateDetailsWithAI(note: string) {
+  const utrMatch = note.match(/\b([0-9]{12})\b/) || note.match(/(?:utr|ref|txn)[\s:#-]*([0-9A-Za-z]{8,18})/i)
+  const bankMatch = note.match(/\b(hdfc|sbi|state bank(?: of india)?|icici|axis|pnb|punjab national bank|kotak|bob|bank of baroda|canara|union bank|indusind|yes bank|idfc|paytm payments bank|airtel payments bank)\b/i)
+  const upiMatch = note.match(/[\w.-]+@[\w.-]+/)
+  const phoneMatch = note.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
+  const accountMatch = note.match(/(?:a\/c|acc|account)[\s:#-]*([0-9]{9,18})/i)
+
+  const fallback = {
+    utr: utrMatch ? utrMatch[1] : null,
+    bankName: bankMatch ? bankMatch[0] : null,
+    upiId: upiMatch ? upiMatch[0] : null,
+    fraudsterIdentifier: phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null,
+    accountNumber: accountMatch ? accountMatch[1] : null,
+    amount: null,
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
+    return fallback
+  }
+
+  try {
+    const openai = new OpenAI({ apiKey })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an Indian cybercrime triage assistant. Extract any updated incident details from the victim's update message. Return JSON with fields: utr (string|null), bankName (string|null), upiId (string|null), fraudsterIdentifier (string|null), accountNumber (string|null), amount (number|null).`,
+        },
+        { role: 'user', content: note },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+    })
+    const parsed = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    return {
+      utr: parsed.utr || fallback.utr,
+      bankName: parsed.bankName || fallback.bankName,
+      upiId: parsed.upiId || fallback.upiId,
+      fraudsterIdentifier: parsed.fraudsterIdentifier || fallback.fraudsterIdentifier,
+      accountNumber: parsed.accountNumber || fallback.accountNumber,
+      amount: typeof parsed.amount === 'number' ? parsed.amount : null,
+    }
+  } catch {
+    return fallback
+  }
+}
+
+  // STAGE 3 (Post-Filed): If already filed and not a reset, model reads, understands, and updates the complaint!
   if (session.stage === 'FILED') {
     const isHi = session.language === 'hi'
-    const reply = isHi
-      ? `✅ *अतिरिक्त जानकारी नोट कर ली गई।*
-आपकी अतिरिक्त जानकारी घटना आईडी *${session.incidentId}* से जोड़ दी गई है।
-📄 स्टेटस देखें: https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${session.incidentId}
+    const noteText = voiceTranscript || userInput
+
+    // 1. Read and understand the details
+    const extractedUpdate = await extractUpdateDetailsWithAI(noteText)
+
+    const filledItems: string[] = []
+    if (extractedUpdate.utr) filledItems.push(isHi ? `UTR नंबर: ${extractedUpdate.utr}` : `UTR Number: ${extractedUpdate.utr}`)
+    if (extractedUpdate.bankName) filledItems.push(isHi ? `बैंक: ${extractedUpdate.bankName}` : `Bank Name: ${extractedUpdate.bankName}`)
+    if (extractedUpdate.upiId) filledItems.push(isHi ? `UPI ID: ${extractedUpdate.upiId}` : `UPI Handle: ${extractedUpdate.upiId}`)
+    if (extractedUpdate.fraudsterIdentifier) filledItems.push(isHi ? `आरोपी: ${extractedUpdate.fraudsterIdentifier}` : `Fraudster Detail: ${extractedUpdate.fraudsterIdentifier}`)
+    if (extractedUpdate.accountNumber) filledItems.push(isHi ? `खाता संख्या: ${extractedUpdate.accountNumber}` : `Account Number: ${extractedUpdate.accountNumber}`)
+
+    // 2. Update complaint in Neon DB
+    if (process.env.DATABASE_URL && session.incidentId) {
+      try {
+        const { neon } = await import('@neondatabase/serverless')
+        const sql = neon(process.env.DATABASE_URL)
+
+        const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, complaint_draft, complaint_draft_hi FROM complaints WHERE incident_id = ${session.incidentId} LIMIT 1`
+
+        if (existing[0]) {
+          const row = existing[0]
+          const curUpdates = Array.isArray(row.updates) ? row.updates : []
+          curUpdates.push({
+            id: `up-${Date.now()}`,
+            note: noteText,
+            addedAt: new Date().toISOString(),
+            actionPoints: extractedUpdate.utr ? [`Provide UTR ${extractedUpdate.utr} to bank immediately`] : [],
+            actionPointsHi: extractedUpdate.utr ? [`बैंक को तत्काल UTR ${extractedUpdate.utr} बताएं`] : [],
+          })
+
+          const updatedContact = extractedUpdate.utr
+            ? (row.frauder_contact && !row.frauder_contact.toLowerCase().includes('not provided')
+                ? `${row.frauder_contact}; UTR: ${extractedUpdate.utr}`
+                : `UTR: ${extractedUpdate.utr}`)
+            : row.frauder_contact
+
+          const updatedBank = extractedUpdate.bankName || row.bank_name
+          const updatedUpi = extractedUpdate.upiId || row.upi_id
+          const updatedAcc = extractedUpdate.accountNumber || row.account_number
+
+          const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+          const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp: ${noteText}`
+          const updatedDraftHi = (row.complaint_draft_hi || '') + `\n\n[पूरक बयान — ${timeStr}]\nव्हाट्सएप द्वारा नया विवरण: ${noteText}`
+
+          await sql`
+            UPDATE complaints SET
+              frauder_contact = ${updatedContact},
+              bank_name = ${updatedBank},
+              upi_id = ${updatedUpi},
+              account_number = ${updatedAcc},
+              updates = ${JSON.stringify(curUpdates)},
+              complaint_draft = ${updatedDraft},
+              complaint_draft_hi = ${updatedDraftHi}
+            WHERE incident_id = ${session.incidentId}
+          `
+        }
+      } catch (dbErr) {
+        console.error('[WhatsApp Agent] DB update error:', dbErr)
+      }
+    }
+
+    // 3. Craft response showing what was read and understood
+    const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${session.incidentId}`
+    let reply = ''
+
+    if (filledItems.length > 0) {
+      reply = isHi
+        ? `✅ *शिकायत में विवरण स्वतः जोड़ दिया गया!*
+📌 *घटना आईडी:* ${session.incidentId}
+
+🤖 *AI ने पढ़ा और अपडेट किया:*
+${filledItems.map(f => `• ${f}`).join('\n')}
+
+⚖️ आपकी आधिकारिक पुलिस FIR शिकायत व बैंक फ्रीज निर्देश अपडेट कर दिए गए हैं।
+
+📄 *अपडेटेड शिकायत देखें:*
+${trackingLink}`
+        : `✅ *Complaint Automatically Updated!*
+📌 *Incident ID:* ${session.incidentId}
+
+🤖 *AI Understood & Filled:*
+${filledItems.map(f => `• ${f}`).join('\n')}
+
+⚖️ Your official FIR draft and bank freeze instructions have been updated with these details.
+
+📄 *View Updated Complaint:*
+${trackingLink}`
+    } else {
+      reply = isHi
+        ? `✅ *अतिरिक्त जानकारी नोट कर ली गई।*
+आपकी जानकारी घटना आईडी *${session.incidentId}* से जोड़ दी गई है।
+
+📄 *स्टेटस देखें:*
+${trackingLink}
 
 (नई शिकायत शुरू करने के लिए *NEW* या *RESET* लिखें)`
-      : `✅ *Additional Note Recorded.*
-Your update has been appended to Incident ID *${session.incidentId}*.
-📄 Track Status: https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${session.incidentId}
+        : `✅ *Update Recorded.*
+Your note has been attached to Incident ID *${session.incidentId}*.
 
-(To file a new report, reply *NEW* or *RESET*)`
+📄 *Track Case:*
+${trackingLink}
+
+(To start a new report, reply *NEW* or *RESET*)`
+    }
 
     session.history.push({ role: 'assistant', content: reply, timestamp })
-    return { reply }
+    return { reply, incidentId: session.incidentId }
   }
 
   // STAGE 2: AWAITING_INCIDENT -> Listen, extract, and draft complaint

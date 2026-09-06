@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert } from 'lucide-react'
+import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert, Sparkles } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import UrgencyBadge from '@/components/UrgencyBadge'
 import FreezeStepper from '@/components/FreezeStepper'
@@ -15,6 +15,7 @@ import Navbar from '@/components/Navbar'
 import CallOperatorModal from '@/components/CallOperatorModal'
 import ApplicableLaws from '@/components/ApplicableLaws'
 import ComplaintUpdates from '@/components/ComplaintUpdates'
+import CompulsoryDetailsReminder from '@/components/CompulsoryDetailsReminder'
 import { useComplaints, EvidenceImage, ComplaintUpdate } from '@/hooks/useComplaints'
 import { ComplaintStatus } from '@/data/scenarios'
 
@@ -192,10 +193,16 @@ function DashboardContent() {
     if (updated) setEvidenceImages(updated)
   }
 
+  const [autoFillBanner, setAutoFillBanner] = useState<string | null>(null)
+
   const handleAddUpdate = async (note: string) => {
     if (!triageResult) return
     let actionPoints: string[] = []
     let actionPointsHi: string[] = []
+    let extracted: any = null
+    let updatedDraft: string | null = null
+    let updatedDraftHi: string | null = null
+
     try {
       const resp = await fetch('/api/followup', {
         method: 'POST',
@@ -205,27 +212,70 @@ function DashboardContent() {
           fraudType: triageResult.fraudType,
           summary: triageResult.summary,
           frauderContact: triageResult.frauderContact,
+          bankName: triageResult.bankName,
+          accountNumber: triageResult.accountNumber,
+          upiId: triageResult.upiId,
+          amount: triageResult.amount,
+          complaintDraft: triageResult.complaintDraft,
+          complaintDraftHi: triageResult.complaintDraftHi,
         }),
       })
       if (resp.ok) {
         const data = await resp.json()
         actionPoints = data.actionPoints ?? []
         actionPointsHi = data.actionPointsHi ?? []
+        extracted = data.extracted
+        updatedDraft = data.updatedDraft
+        updatedDraftHi = data.updatedDraftHi
       }
     } catch (err) {
       console.warn('Failed to generate follow-up action points:', err)
     }
+
     const updated = await addUpdate(triageResult.incidentId, note, actionPoints, actionPointsHi)
     if (updated) {
       setUpdates(updated)
       const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })
-      const newDraft = (triageResult.complaintDraft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nI further report the following fresh evidence/update: ${note}`
-      const newDraftHi = (triageResult.complaintDraftHi || '') + `\n\n[पूरक बयान — ${timeStr}]\nमैं आगे निम्नलिखित नया साक्ष्य/अपडेट रिपोर्ट करता हूँ: ${note}`
-      setTriageResult({
+      const fallbackDraft = (triageResult.complaintDraft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nI further report the following fresh evidence/update: ${note}`
+      const fallbackDraftHi = (triageResult.complaintDraftHi || '') + `\n\n[पूरक बयान — ${timeStr}]\nमैं आगे निम्नलिखित नया साक्ष्य/अपडेट रिपोर्ट करता हूँ: ${note}`
+
+      // Auto-update complaint sections with newly extracted fields
+      const newTriage = {
         ...triageResult,
-        complaintDraft: newDraft,
-        complaintDraftHi: newDraftHi,
-      })
+        ...(extracted?.bankName ? { bankName: extracted.bankName } : {}),
+        ...(extracted?.accountNumber ? { accountNumber: extracted.accountNumber } : {}),
+        ...(extracted?.upiId ? { upiId: extracted.upiId } : {}),
+        ...(extracted?.fraudsterIdentifier ? { fraudsterIdentifier: extracted.fraudsterIdentifier } : {}),
+        ...(extracted?.amount ? { amount: extracted.amount } : {}),
+        ...(extracted?.complainantName ? { complainantName: extracted.complainantName } : {}),
+        ...(extracted?.utr ? {
+          frauderContact: triageResult.frauderContact && !triageResult.frauderContact.toLowerCase().includes('not provided')
+            ? `${triageResult.frauderContact}; UTR: ${extracted.utr}`
+            : `UTR: ${extracted.utr}`
+        } : {}),
+        complaintDraft: updatedDraft || fallbackDraft,
+        complaintDraftHi: updatedDraftHi || fallbackDraftHi,
+      }
+
+      setTriageResult(newTriage)
+      await save(buildSavePayload(newTriage))
+
+      // Generate visual notification of what AI auto-filled
+      const filledSummary: string[] = []
+      if (extracted?.utr) filledSummary.push(`UTR (${extracted.utr})`)
+      if (extracted?.bankName) filledSummary.push(`Bank (${extracted.bankName})`)
+      if (extracted?.upiId) filledSummary.push(`UPI (${extracted.upiId})`)
+      if (extracted?.accountNumber) filledSummary.push(`Account (${extracted.accountNumber})`)
+      if (extracted?.amount) filledSummary.push(`Amount (₹${extracted.amount.toLocaleString('en-IN')})`)
+
+      if (filledSummary.length > 0) {
+        setAutoFillBanner(
+          hi
+            ? `✨ AI ने आपकी शिकायत में स्वचालित रूप से विवरण भर दिया: ${filledSummary.join(', ')}`
+            : `✨ AI Auto-Filled Details from your update: ${filledSummary.join(', ')}`
+        )
+        setTimeout(() => setAutoFillBanner(null), 10000)
+      }
     }
   }
 
@@ -348,6 +398,48 @@ function DashboardContent() {
           </button>
         </motion.div>
 
+        {/* Compulsory Details Reminder */}
+        {r && (
+          <div className="mb-6" id="compulsory-details-reminder">
+            <CompulsoryDetailsReminder
+              triageResult={r}
+              language={language}
+              onScrollToUpdates={() => {
+                const el = document.getElementById('updates-section')
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth' })
+                  const textarea = document.getElementById('update-note')
+                  if (textarea) textarea.focus()
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* AI Auto-Fill Alert Banner */}
+        <AnimatePresence>
+          {autoFillBanner && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-700 text-white shadow-md flex items-center justify-between gap-3 border border-emerald-400/40"
+            >
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-5 h-5 text-amber-300 animate-pulse flex-shrink-0" />
+                <p className="text-xs sm:text-sm font-semibold leading-relaxed">{autoFillBanner}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAutoFillBanner(null)}
+                className="text-xs text-white/80 hover:text-white px-2.5 py-1 rounded-md bg-black/20 hover:bg-black/30 transition-colors flex-shrink-0"
+              >
+                ✕
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* ── LEFT COLUMN ── */}
@@ -467,7 +559,7 @@ function DashboardContent() {
             </motion.div>
 
             {/* Complaint Updates */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+            <motion.div id="updates-section" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
               <ComplaintUpdates hi={hi} updates={updates} onAdd={handleAddUpdate} />
             </motion.div>
 
