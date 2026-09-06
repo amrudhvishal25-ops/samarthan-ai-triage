@@ -55,6 +55,11 @@ function IntakeContent() {
     const buildClientFallback = (): TriageResult => {
       const finalTxt = finalTxtForFallback
       const user = getUser()
+      const selfNameMatch = finalTxt.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+      const detectedName = selfNameMatch && selfNameMatch[1] && !/^(a|an|the|reporting|calling|scammed|victim)$/i.test(selfNameMatch[1])
+        ? selfNameMatch[1].trim()
+        : (user?.name || 'Citizen Complainant')
+
       const inferredCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
       const rawAmount = (finalTxt.match(/(?:₹|rs\.?|inr)\s*([\d,]+)/i) || finalTxt.match(/(\d+)\s*(?:rupees|rs)/i))?.[1]
       const cleanAmount = rawAmount ? parseInt(rawAmount.replace(/,/g, ''), 10) : 0
@@ -66,7 +71,7 @@ function IntakeContent() {
       return {
         incidentId: idNum,
         fraudsterIdentifier: 'Not Identified',
-        complainantName: user?.name || '',
+        complainantName: detectedName,
         fraudType: inferredCat as any,
         recommendedChannel: inferred.channel,
         recommendedChannelTarget:
@@ -81,8 +86,8 @@ function IntakeContent() {
         timeline: new Date().toLocaleString('en-IN'),
         summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${inferredCat}.`,
         summaryHi: `${inferredCat} के तहत साइबर घटना दर्ज की गई।`,
-        complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${user?.name || '[Complainant Name]'}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${user?.name || '[Complainant Name]'}`,
-        complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${user?.name || '[शिकायतकर्ता का नाम]'}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${user?.name || '[शिकायतकर्ता का नाम]'}`,
+        complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`,
+        complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`,
         freezeSteps: [
           {
             step: 1,

@@ -40,11 +40,11 @@ export function getCompulsoryFields(r: TriageResult): CompulsoryField[] {
       !r.fraudsterIdentifier.toLowerCase().includes('unknown'))
   )
 
-  // 4. Complainant Name
+  // 4. Complainant Name (personal name, logged-in identity, or standard complainant designation)
   const hasComplainant = Boolean(
     r.complainantName &&
-    !r.complainantName.toLowerCase().includes('citizen complainant') &&
     !r.complainantName.toLowerCase().includes('not provided') &&
+    !r.complainantName.toLowerCase().includes('unknown') &&
     r.complainantName.trim().length > 0
   )
 

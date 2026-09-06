@@ -266,6 +266,7 @@ function DashboardContent() {
       if (extracted?.bankName) filledSummary.push(`Bank (${extracted.bankName})`)
       if (extracted?.upiId) filledSummary.push(`UPI (${extracted.upiId})`)
       if (extracted?.accountNumber) filledSummary.push(`Account (${extracted.accountNumber})`)
+      if (extracted?.complainantName) filledSummary.push(`Complainant (${extracted.complainantName})`)
       if (extracted?.amount) filledSummary.push(`Amount (₹${extracted.amount.toLocaleString('en-IN')})`)
 
       if (filledSummary.length > 0) {
@@ -479,13 +480,15 @@ function DashboardContent() {
                 {/* Complainant Name */}
                 <div>
                   <label htmlFor="complainant-name" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
-                    {hi ? 'शिकायतकर्ता' : 'Complainant'}
+                    {hi ? 'शिकायतकर्ता का नाम' : 'Complainant Name'}
                   </label>
                   <input
                     id="complainant-name"
-                    type="text" value={r.complainantName || ''}
-                    readOnly
-                    className="w-full border border-zinc-200 rounded-md p-3 text-sm text-zinc-500 bg-zinc-100 cursor-not-allowed outline-none transition-all"
+                    type="text"
+                    value={r.complainantName || ''}
+                    onChange={(e) => handleUpdate('complainantName', e.target.value)}
+                    placeholder={hi ? 'उदा. राजेश कुमार' : 'e.g. Citizen Complainant'}
+                    className="w-full border border-zinc-200 rounded-md p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   />
                 </div>
 

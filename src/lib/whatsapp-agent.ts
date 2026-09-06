@@ -533,6 +533,7 @@ async function extractUpdateDetailsWithAI(note: string) {
   const upiMatch = note.match(/[\w.-]+@[\w.-]+/)
   const phoneMatch = note.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
   const accountMatch = note.match(/(?:a\/c|acc|account)[\s:#-]*([0-9]{9,18})/i)
+  const nameMatch = note.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
 
   const fallback = {
     utr: utrMatch ? utrMatch[1] : null,
@@ -541,6 +542,7 @@ async function extractUpdateDetailsWithAI(note: string) {
     fraudsterIdentifier: phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null,
     accountNumber: accountMatch ? accountMatch[1] : null,
     amount: null,
+    complainantName: nameMatch ? nameMatch[1].trim() : null,
   }
 
   const apiKey = process.env.OPENAI_API_KEY
@@ -555,7 +557,7 @@ async function extractUpdateDetailsWithAI(note: string) {
       messages: [
         {
           role: 'system',
-          content: `You are an Indian cybercrime triage assistant. Extract any updated incident details from the victim's update message. Return JSON with fields: utr (string|null), bankName (string|null), upiId (string|null), fraudsterIdentifier (string|null), accountNumber (string|null), amount (number|null).`,
+          content: `You are an Indian cybercrime triage assistant. Extract any updated incident details from the victim's update message. Return JSON with fields: utr (string|null), bankName (string|null), upiId (string|null), fraudsterIdentifier (string|null), accountNumber (string|null), amount (number|null), complainantName (string|null).`,
         },
         { role: 'user', content: note },
       ],
@@ -570,6 +572,7 @@ async function extractUpdateDetailsWithAI(note: string) {
       fraudsterIdentifier: parsed.fraudsterIdentifier || fallback.fraudsterIdentifier,
       accountNumber: parsed.accountNumber || fallback.accountNumber,
       amount: typeof parsed.amount === 'number' ? parsed.amount : null,
+      complainantName: parsed.complainantName || fallback.complainantName,
     }
   } catch {
     return fallback
@@ -604,6 +607,7 @@ async function updateExistingComplaint(
   if (extractedUpdate.upiId) filledItems.push(isHi ? `UPI ID: ${extractedUpdate.upiId}` : `UPI Handle: ${extractedUpdate.upiId}`)
   if (extractedUpdate.fraudsterIdentifier) filledItems.push(isHi ? `आरोपी: ${extractedUpdate.fraudsterIdentifier}` : `Fraudster Detail: ${extractedUpdate.fraudsterIdentifier}`)
   if (extractedUpdate.accountNumber) filledItems.push(isHi ? `खाता संख्या: ${extractedUpdate.accountNumber}` : `Account Number: ${extractedUpdate.accountNumber}`)
+  if (extractedUpdate.complainantName) filledItems.push(isHi ? `शिकायतकर्ता: ${extractedUpdate.complainantName}` : `Complainant: ${extractedUpdate.complainantName}`)
 
   // Guarantee session state remains in FILED stage for continuous follow-ups
   session.stage = 'FILED'
@@ -616,7 +620,7 @@ async function updateExistingComplaint(
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(process.env.DATABASE_URL)
 
-      const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, amount, complaint_draft, complaint_draft_hi FROM complaints WHERE incident_id = ${incidentId} LIMIT 1`
+      const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, amount, complaint_draft, complaint_draft_hi, complainant_name FROM complaints WHERE incident_id = ${incidentId} LIMIT 1`
 
       if (existing[0]) {
         const row = existing[0]
@@ -644,6 +648,7 @@ async function updateExistingComplaint(
         const updatedUpi = extractedUpdate.upiId || row.upi_id
         const updatedAcc = extractedUpdate.accountNumber || row.account_number
         const updatedAmount = extractedUpdate.amount || row.amount
+        const updatedComplainant = extractedUpdate.complainantName || row.complainant_name || 'Citizen Complainant'
 
         const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
         const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp (${session.phoneNumber}): ${noteToSave}`
@@ -659,6 +664,7 @@ async function updateExistingComplaint(
             upi_id = ${updatedUpi},
             account_number = ${updatedAcc},
             amount = ${updatedAmount},
+            complainant_name = ${updatedComplainant},
             updates = ${JSON.stringify(curUpdates)},
             complaint_draft = ${updatedDraft},
             complaint_draft_hi = ${updatedDraftHi}
@@ -755,6 +761,12 @@ async function createAndSaveNewComplaint(
       const fraudType = (parsed.fraudType || 'Financial Fraud') as any
       const channelInfo = inferChannelFromFraudType(fraudType)
 
+      const nameMatch = incidentText.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+      const rawComplainant = (parsed.complainantName && typeof parsed.complainantName === 'string' && parsed.complainantName.trim()) || (nameMatch ? nameMatch[1].trim() : '')
+      const finalComplainant = rawComplainant && !['not identified', 'not provided', 'unknown', 'n/a', 'none'].includes(rawComplainant.toLowerCase())
+        ? rawComplainant
+        : 'Citizen Complainant'
+
       const freezeSteps = Array.isArray(parsed.freezeSteps) && parsed.freezeSteps.length > 0 && typeof parsed.freezeSteps[0] === 'object'
         ? parsed.freezeSteps
         : defaultFreezeSteps
@@ -767,7 +779,7 @@ async function createAndSaveNewComplaint(
         incidentId,
         fraudType,
         fraudsterIdentifier: parsed.fraudsterIdentifier || extracted.upi || extracted.phone || 'Not Identified',
-        complainantName: parsed.complainantName || '',
+        complainantName: finalComplainant,
         amount: Number(parsed.amount) || extracted.amount || 0,
         urgencyLevel: 'CRITICAL',
         summary: parsed.summary || 'Cyber fraud reported via WhatsApp triage bot.',
@@ -913,20 +925,22 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
   const incidentId = generateId()
   const amount = ext.amount || 45000
   const fraudster = ext.upi || ext.phone || 'Fraudulent Entity'
+  const nameMatch = text.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+  const complainantName = nameMatch ? nameMatch[1].trim() : 'Citizen Complainant'
 
   return {
     incidentId,
     fraudType: 'Financial Fraud',
     fraudsterIdentifier: fraudster,
-    complainantName: 'Citizen Complainant',
+    complainantName,
     amount,
     urgencyLevel: 'CRITICAL',
     summary: `Unauthorized financial debit of ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.`,
     summaryHi: `व्हाट्सएप बॉट के माध्यम से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी दर्ज की गई।`,
     complaintDraft: `To The Station House Officer / Cyber Crime Cell,
-I am filing a formal complaint regarding an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from my account. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.`,
+I, ${complainantName}, am filing a formal complaint regarding an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from my account. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.`,
     complaintDraftHi: `थाना प्रभारी / साइबर अपराध शाखा,
-मैं अपने खाते से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत दर्ज कर रहा हूँ। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।`,
+मैं, ${complainantName}, अपने खाते से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत दर्ज कर रहा हूँ। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।`,
     frauderContact: ext.utr ? `Ref UTR: ${ext.utr}; Contact: ${ext.phone || 'Not Provided'}` : (ext.phone || 'Not Provided'),
     bankName: 'Bank Nodal Desk',
     accountNumber: 'Not Provided',
