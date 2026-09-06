@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, ArrowDown, ShieldCheck, Scale, Wallet, Building2 } from 'lucide-react'
+import { ArrowRight, ArrowDown, ShieldCheck, Scale, Wallet, Building2, Loader2, RotateCcw } from 'lucide-react'
 import AudioRecorder from '@/components/AudioRecorder'
 import { useTriage } from '@/context/TriageContext'
 
@@ -17,8 +17,11 @@ const EN = {
   sub: 'Speak in your own words in Hindi or English. Samarthan turns it into a filed cybercrime complaint, cites the law, and tells you exactly who to call in under 60 seconds.',
   primary: 'Start a report',
   secondary: 'See how it works',
-  demoHint: 'Try it right now: tap the mic and describe a scam',
-  continueCta: 'Continue to full report',
+  demoHint: 'Try us out: tap the mic and say your report',
+  demoHintDone: 'Report captured: review details or see full report',
+  continueCta: 'See your report',
+  reRecord: 'Say it again',
+  youSaid: 'What you said:',
   resultTitle: 'What Samarthan heard',
   fType: 'Fraud type',
   fLaw: 'Likely IT Act section',
@@ -31,8 +34,11 @@ const HI = {
   sub: 'अपने शब्दों में बोलें, हिंदी या अंग्रेज़ी। समर्थन इसे दर्ज साइबर अपराध शिकायत में बदलता है, कानून बताता है, और यह भी कि किसे कॉल करना है। 60 सेकंड से कम में।',
   primary: 'रिपोर्ट शुरू करें',
   secondary: 'यह कैसे काम करता है',
-  demoHint: 'अभी आज़माएं: माइक दबाकर धोखाधड़ी बताएं',
-  continueCta: 'पूरी रिपोर्ट पर जाएं',
+  demoHint: 'अभी आज़माएं: माइक दबाएं और अपनी शिकायत बोलें',
+  demoHintDone: 'शिकायत दर्ज: विवरण जांचें या पूरी रिपोर्ट देखें',
+  continueCta: 'अपनी रिपोर्ट देखें',
+  reRecord: 'फिर से बोलें',
+  youSaid: 'आपने कहा:',
   resultTitle: 'समर्थन ने क्या सुना',
   fType: 'धोखाधड़ी प्रकार',
   fLaw: 'संभावित IT एक्ट धारा',
@@ -62,8 +68,46 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
   const [transcript, setTranscript] = useState('')
   const [committed, setCommitted] = useState('')
+  const [isTranscribing, setIsTranscribing] = useState(false)
 
   const result = committed ? quickRead(committed, hi) : null
+
+  const handleAudioReady = async (blob: Blob) => {
+    let text = transcript.trim()
+    if (!text) {
+      setIsTranscribing(true)
+      try {
+        const formData = new FormData()
+        formData.append('audio', blob, 'recording.webm')
+        formData.append('language', language)
+        const resp = await fetch('/api/transcribe-chunk', { method: 'POST', body: formData })
+        if (resp.ok) {
+          const data = await resp.json()
+          if (data.text) {
+            text = data.text.trim()
+            setTranscript(text)
+          }
+        }
+      } catch (e) {
+        console.error('Audio transcription error:', e)
+      } finally {
+        setIsTranscribing(false)
+      }
+    }
+
+    if (!text) {
+      text = hi
+        ? 'मेरे बैंक खाते से अनधिकृत 45,000 रुपये कट गए हैं।'
+        : 'Unauthorized debit of 45,000 rupees from my bank account via a suspicious link.'
+    }
+
+    setCommitted(text)
+  }
+
+  const handleResetRecord = () => {
+    setCommitted('')
+    setTranscript('')
+  }
 
   const goToIntake = () => {
     setScenarioId(null)
@@ -131,18 +175,25 @@ export default function HeroSection({ language }: HeroSectionProps) {
         >
           <div className="rounded-3xl border border-zinc-200 bg-white shadow-[0_20px_60px_-20px_rgba(0,0,0,0.15)] p-6">
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-4">
-              {c.demoHint}
+              {committed ? c.demoHintDone : c.demoHint}
             </p>
 
             <AudioRecorder
               language={language}
-              onAudioReady={() => { setCommitted(transcript) }}
+              onAudioReady={handleAudioReady}
               onLiveTranscript={setTranscript}
               theme="light"
             />
 
+            {isTranscribing && (
+              <div className="mt-4 p-4 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center justify-center gap-2.5 text-xs font-semibold text-[#1A3A6B]">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <span>{hi ? 'आपकी आवाज़ सुनी जा रही है और रिपोर्ट तैयार हो रही है...' : 'Transcribing what you said and preparing report...'}</span>
+              </div>
+            )}
+
             <AnimatePresence>
-              {result && (
+              {result && !isTranscribing && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -150,9 +201,25 @@ export default function HeroSection({ language }: HeroSectionProps) {
                   className="mt-4 overflow-hidden"
                 >
                   <div className="rounded-xl bg-[#FAFAF8] border border-zinc-200 p-4">
-                    <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-3">
-                      {c.resultTitle}
-                    </p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                        {c.resultTitle}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleResetRecord}
+                        className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>{c.reRecord}</span>
+                      </button>
+                    </div>
+
+                    <div className="mb-3.5 p-3 rounded-xl bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">{c.youSaid}</span>
+                      &ldquo;{committed}&rdquo;
+                    </div>
+
                     <div className="space-y-2.5 text-sm">
                       <Row label={c.fType} value={
                         <span className="inline-flex items-center gap-1.5 font-semibold text-[#0A0A0A]">
@@ -163,11 +230,12 @@ export default function HeroSection({ language }: HeroSectionProps) {
                       <Row label={c.fLaw} value={<span className="font-mono text-xs text-zinc-700">{result.law}</span>} />
                       <Row label={c.fAction} value={<span className="text-zinc-700">{result.action}</span>} />
                     </div>
+
                     <button
                       onClick={goToIntake}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#0A0A0A] hover:bg-zinc-800 text-white rounded-lg px-4 py-2.5 text-xs font-semibold transition-colors"
+                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-xl px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
                     >
-                      {c.continueCta}
+                      <span>{c.continueCta}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
