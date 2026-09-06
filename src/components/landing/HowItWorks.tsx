@@ -14,13 +14,13 @@ const EN = {
       n: '01',
       title: 'Speak, type, or upload',
       body: 'Describe what happened in your own words using a voice note, a few lines of text, or a screenshot of the scam message. No forms, no 15-field questionnaire.',
-      shot: '/landing/shot-intake.png',
+      shot: '/landing/shot-intake.jpg',
     },
     {
       n: '02',
       title: 'AI triages the incident',
       body: 'It classifies the fraud, pulls out the fraudster’s number, the beneficiary account, the money trail and the UTR, then cites the exact IT Act sections and drafts a formal complaint in Hindi and English.',
-      shot: '/landing/shot-dashboard.png',
+      shot: '/landing/shot-dashboard.jpg',
     },
     {
       n: '03',
@@ -39,13 +39,13 @@ const HI = {
       n: '01',
       title: 'बोलें, लिखें, या अपलोड करें',
       body: 'अपने शब्दों में बताएं क्या हुआ: वॉइस नोट, कुछ पंक्तियाँ टेक्स्ट, या धोखाधड़ी संदेश का स्क्रीनशॉट। कोई फॉर्म नहीं, कोई 15-फील्ड प्रश्नावली नहीं।',
-      shot: '/landing/shot-intake.png',
+      shot: '/landing/shot-intake.jpg',
     },
     {
       n: '02',
       title: 'AI घटना का ट्रायज करता है',
       body: 'यह धोखाधड़ी वर्गीकृत करता है, धोखेबाज़ का नंबर, लाभार्थी खाता, मनी ट्रेल और UTR निकालता है, फिर सटीक IT एक्ट धाराएं बताता है और हिंदी-अंग्रेज़ी दोनों में औपचारिक शिकायत ड्राफ्ट करता है।',
-      shot: '/landing/shot-dashboard.png',
+      shot: '/landing/shot-dashboard.jpg',
     },
     {
       n: '03',
