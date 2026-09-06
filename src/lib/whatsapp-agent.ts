@@ -2,7 +2,7 @@ import OpenAI from 'openai'
 import { generateId, TriageResult, FreezeStep, ApplicableLaw, IT_ACT_SECTIONS } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
 
-export type WhatsAppStage = 'SELECT_LANGUAGE' | 'AWAITING_INCIDENT' | 'FILED'
+export type WhatsAppStage = 'SELECT_LANGUAGE' | 'AWAITING_INCIDENT' | 'FILED' | 'AWAITING_UPDATE_OR_NEW'
 
 export interface WhatsAppSession {
   phoneNumber: string
@@ -14,6 +14,8 @@ export interface WhatsAppSession {
   missingFields: string[]
   incidentId?: string
   lastActive: number
+  pendingUpdateText?: string
+  pendingMediaUrl?: string
 }
 
 // In-memory session store (keyed by phone number) with 2-hour TTL
@@ -69,16 +71,43 @@ export async function processWhatsAppTurn(
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   session.history.push({ role: 'user', content: voiceTranscript ? `[Voice Note] ${voiceTranscript}` : userInput, timestamp })
 
-  const isResetCommand = /^(reset|\/reset|restart|\/restart|clear|new|start|\/start)$/i.test(trimmed)
+  // Auto-restore previous incident from Neon DB if server restarted and memory was cleared
+  if (!session.incidentId && process.env.DATABASE_URL) {
+    try {
+      const { neon } = await import('@neondatabase/serverless')
+      const sql = neon(process.env.DATABASE_URL)
+      const phonePattern = `%${session.phoneNumber}%`
+      const rows = await sql`
+        SELECT incident_id, language, summary, summary_hi
+        FROM complaints
+        WHERE status_history::text ILIKE ${phonePattern}
+           OR updates::text ILIKE ${phonePattern}
+        ORDER BY saved_at DESC LIMIT 1
+      `
+      if (rows[0]?.incident_id) {
+        session.incidentId = rows[0].incident_id
+        session.stage = 'FILED'
+        if (rows[0].language === 'hi' || rows[0].language === 'en') {
+          session.language = rows[0].language
+        }
+      }
+    } catch (e) {
+      console.error('[WhatsApp Agent] DB lookup error:', e)
+    }
+  }
+
+  const isResetCommand = /^(reset|\/reset|restart|\/restart|clear)$/i.test(trimmed)
   const isInitialGreeting = /^(hi|hello|hey|namaste|help|madad|pranam|hlo|hii|hi samarthan[a-z0-9\s,.]*)$/i.test(trimmed)
   const isWebsiteDefaultMsg = trimmed.toLowerCase().includes('i want to report a cybercrime incident')
 
-  const sendGreeting = () => {
+  const sendLanguageGreeting = () => {
     session.stage = 'SELECT_LANGUAGE'
     session.history = []
     session.accumulatedText = ''
     session.incidentId = undefined
     session.extractedData = undefined
+    session.pendingUpdateText = undefined
+    session.pendingMediaUrl = undefined
 
     const welcomeMsg = `👋 *Hi, I'm the Cyber Crime Helpline AI Assistant.*
 Contact me 24x7 to report cyber fraud, online scams, or financial theft.
@@ -93,9 +122,42 @@ Contact me 24x7 to report cyber fraud, online scams, or financial theft.
     return { reply: welcomeMsg }
   }
 
-  // Handle explicit reset or greeting in any stage
-  if (isResetCommand || isInitialGreeting || isWebsiteDefaultMsg) {
-    return sendGreeting()
+  // Hard reset
+  if (isResetCommand) {
+    return sendLanguageGreeting()
+  }
+
+  // If user greets when they ALREADY have an active complaint on file
+  if ((isInitialGreeting || isWebsiteDefaultMsg) && session.incidentId) {
+    const isHi = session.language === 'hi'
+    session.stage = 'AWAITING_UPDATE_OR_NEW'
+    session.pendingUpdateText = ''
+
+    const greetingWithChoice = isHi
+      ? `👋 *नमस्ते! आपकी सक्रिय शिकायत हमारे पास दर्ज है:*
+📌 *घटना आईडी:* ${session.incidentId}
+
+*आप क्या करना चाहते हैं?*
+1️⃣ मौजूदा शिकायत (*${session.incidentId}*) में नया विवरण जोड़ें/अपडेट करें
+2️⃣ पूरी तरह से एक *नई शिकायत* दर्ज करें
+
+👉 पुरानी शिकायत जारी रखने के लिए *1* या नई शिकायत के लिए *2* भेजें।`
+      : `👋 *Welcome back! You have an active complaint on file:*
+📌 *Incident ID:* ${session.incidentId}
+
+*What would you like to do?*
+1️⃣ *Continue / Update* this existing complaint (*${session.incidentId}*) with new details
+2️⃣ *Start a NEW complaint* in its entirety
+
+👉 Reply *1* to update your existing case or *2* to file a brand new complaint.`
+
+    session.history.push({ role: 'assistant', content: greetingWithChoice, timestamp })
+    return { reply: greetingWithChoice, incidentId: session.incidentId }
+  }
+
+  // Initial greeting with no existing complaint
+  if (isInitialGreeting || isWebsiteDefaultMsg) {
+    return sendLanguageGreeting()
   }
 
   // STAGE 1: SELECT_LANGUAGE
@@ -139,20 +201,175 @@ Send your voice note now, and I will listen, extract the details, and draft your
       return { reply }
     }
 
-    // Check if user directly provided incident or sent a voice note without picking 1/2
+    // Direct incident text or voice without picking 1/2
     const ext = quickExtract(trimmed)
     const hasIncidentDetails = Boolean(voiceTranscript || ext.amount || ext.upi || ext.phone || trimmed.length > 40)
 
     if (!hasIncidentDetails) {
-      // First time interaction or greeting
-      return sendGreeting()
+      return sendLanguageGreeting()
     }
 
-    // Auto-detect language from their substantive text/voice note and proceed
     session.language = detectLanguage(voiceTranscript || trimmed) === 'hi' ? 'hi' : 'en'
     session.stage = 'AWAITING_INCIDENT'
   }
 
+  // STAGE: AWAITING_UPDATE_OR_NEW (User is choosing whether to update existing or start fresh)
+  if (session.stage === 'AWAITING_UPDATE_OR_NEW') {
+    const isHi = session.language === 'hi'
+    const isOption1 = /^(1|1\.|1️⃣|update|continue|purani|purana|old|same|haan|yes|add|अपडेट|पुरानी|पुराना|जारी|हाँ|हां)$/i.test(trimmed) || /^1[\s,.]/i.test(trimmed)
+    const isOption2 = /^(2|2\.|2️⃣|new|start new|fresh|naya|nayee|nai|नई|नया|न्यू|नई शिकायत)$/i.test(trimmed) || /^2[\s,.]/i.test(trimmed)
+
+    if (isOption1) {
+      // User chooses: 1 -> Update existing complaint
+      let updateText = (session.pendingUpdateText || '').trim()
+      const extra = trimmed.replace(/^(?:1|1\.|1️⃣|update|continue|purani|पुरानी|अपडेट)[\s,:-]*/i, '').trim()
+      if (extra) {
+        updateText += (updateText ? ' ' : '') + extra
+      }
+      if (voiceTranscript) {
+        updateText += (updateText ? ' ' : '') + voiceTranscript
+      }
+
+      session.pendingUpdateText = undefined
+      session.pendingMediaUrl = undefined
+      session.stage = 'FILED'
+
+      if (!updateText) {
+        const askDetails = isHi
+          ? `📝 कृपया वह नया विवरण (जैसे UTR नंबर, बैंक नाम, स्क्रीनशॉट) भेजें जिसे आप शिकायत *${session.incidentId}* में जोड़ना चाहते हैं:`
+          : `📝 Please send the new details (such as UTR number, bank name, fraudster contact) you would like to add to complaint *${session.incidentId}*:`
+        session.history.push({ role: 'assistant', content: askDetails, timestamp })
+        return { reply: askDetails, incidentId: session.incidentId }
+      }
+
+      return await updateExistingComplaint(session, session.incidentId!, updateText)
+    }
+
+    if (isOption2) {
+      // User chooses: 2 -> Start a NEW complaint in its entirety
+      let newIncidentText = (session.pendingUpdateText || '').trim()
+      const extra = trimmed.replace(/^(?:2|2\.|2️⃣|new|start new|fresh|naya|नई|नया)[\s,:-]*/i, '').trim()
+      if (extra) {
+        newIncidentText += (newIncidentText ? ' ' : '') + extra
+      }
+      if (voiceTranscript) {
+        newIncidentText += (newIncidentText ? ' ' : '') + voiceTranscript
+      }
+
+      const mediaToUse = session.pendingMediaUrl
+      session.pendingUpdateText = undefined
+      session.pendingMediaUrl = undefined
+
+      // If user had provided substantive text in their initial update message, file it directly
+      if (newIncidentText && (newIncidentText.length > 15 || quickExtract(newIncidentText).amount)) {
+        return await createAndSaveNewComplaint(session, newIncidentText, mediaToUse, voiceTranscript)
+      } else {
+        // Prompt for the new incident details
+        session.stage = 'AWAITING_INCIDENT'
+        session.accumulatedText = ''
+        session.incidentId = undefined
+        session.extractedData = undefined
+
+        const promptMsg = isHi
+          ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*
+कृपया अपनी नई घटना का विवरण दें: एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
+          : `🆕 *Starting a NEW Complaint in its entirety.*
+Please describe your new incident: send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
+
+        session.history.push({ role: 'assistant', content: promptMsg, timestamp })
+        return { reply: promptMsg }
+      }
+    }
+
+    // User sent additional text or details without typing 1 or 2 explicitly
+    const incomingText = voiceTranscript || trimmed
+    session.pendingUpdateText = (session.pendingUpdateText ? session.pendingUpdateText + ' ' : '') + incomingText
+
+    const promptAgain = isHi
+      ? `⚠️ *कृपया स्पष्ट करने के लिए 1 या 2 भेजें:*
+
+1️⃣ पुरानी शिकायत (*${session.incidentId}*) में यह नया विवरण अपडेट करें
+2️⃣ पूरी तरह से एक *नई शिकायत* दर्ज करें
+
+👉 पुरानी शिकायत अपडेट करने के लिए *1* या नई शिकायत शुरू करने के लिए *2* भेजें।`
+      : `⚠️ *Please reply with 1 or 2 to proceed:*
+
+1️⃣ *Update / Continue* existing complaint (*${session.incidentId}*) with this info
+2️⃣ *Start a NEW complaint* in its entirety
+
+👉 Reply *1* to update existing case or *2* to start a new complaint.`
+
+    session.history.push({ role: 'assistant', content: promptAgain, timestamp })
+    return { reply: promptAgain, incidentId: session.incidentId }
+  }
+
+  // STAGE: FILED (Complaint already filed. When citizen sends an update, give select option!)
+  if (session.stage === 'FILED') {
+    const isHi = session.language === 'hi'
+    const noteText = (voiceTranscript || userInput).trim()
+
+    // Explicit command to start new complaint directly
+    const isExplicitNew = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test(noteText)
+    if (isExplicitNew) {
+      session.stage = 'AWAITING_INCIDENT'
+      session.accumulatedText = ''
+      session.incidentId = undefined
+      session.extractedData = undefined
+      session.pendingUpdateText = undefined
+      session.pendingMediaUrl = undefined
+
+      const promptMsg = isHi
+        ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*
+कृपया अपनी नई घटना का विवरण दें: एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
+        : `🆕 *Starting a NEW Complaint in its entirety.*
+Please describe your new incident: send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
+
+      session.history.push({ role: 'assistant', content: promptMsg, timestamp })
+      return { reply: promptMsg }
+    }
+
+    // Citizen sends an update or new detail -> Present select option!
+    session.pendingUpdateText = noteText
+    session.pendingMediaUrl = mediaUrl
+    session.stage = 'AWAITING_UPDATE_OR_NEW'
+
+    const snippet = noteText.length > 90 ? noteText.slice(0, 87) + '...' : noteText
+
+    const choicePrompt = isHi
+      ? `🚨 *सक्रिय शिकायत दर्ज है:*
+📌 *घटना आईडी:* ${session.incidentId}
+
+📝 *हमें आपका नया विवरण प्राप्त हुआ:*
+"${snippet}"
+
+*कृपया एक विकल्प चुनें:*
+1️⃣ इस पुरानी शिकायत (*${session.incidentId}*) में यह विवरण जोड़ें/अपडेट करें
+2️⃣ पूरी तरह से एक *नई शिकायत* दर्ज करें
+
+👉 पुरानी शिकायत अपडेट करने के लिए *1* या नई शिकायत के लिए *2* भेजें।`
+      : `🚨 *Active Complaint Found:*
+📌 *Incident ID:* ${session.incidentId}
+
+📝 *Received your update:*
+"${snippet}"
+
+*Please select an option:*
+1️⃣ *Continue / Update* this existing complaint (*${session.incidentId}*) with this info
+2️⃣ *Start a NEW complaint* in its entirety
+
+👉 Reply *1* to update existing case or *2* to file a brand new complaint.`
+
+    session.history.push({ role: 'assistant', content: choicePrompt, timestamp })
+    return { reply: choicePrompt, incidentId: session.incidentId }
+  }
+
+  // STAGE: AWAITING_INCIDENT -> First incident intake
+  const initialText = (voiceTranscript || userInput).trim()
+  session.accumulatedText += (session.accumulatedText ? ' ' : '') + initialText
+  return await createAndSaveNewComplaint(session, session.accumulatedText, mediaUrl, voiceTranscript)
+}
+
+// Helper: Extract structured update fields using GPT-4o-mini
 async function extractUpdateDetailsWithAI(note: string) {
   const utrMatch = note.match(/\b([0-9]{12})\b/) || note.match(/(?:utr|ref|txn)[\s:#-]*([0-9A-Za-z]{8,18})/i)
   const bankMatch = note.match(/\b(hdfc|sbi|state bank(?: of india)?|icici|axis|pnb|punjab national bank|kotak|bob|bank of baroda|canara|union bank|indusind|yes bank|idfc|paytm payments bank|airtel payments bank)\b/i)
@@ -202,79 +419,79 @@ async function extractUpdateDetailsWithAI(note: string) {
   }
 }
 
-  // STAGE 3 (Post-Filed): If already filed and not a reset, model reads, understands, and updates the complaint!
-  if (session.stage === 'FILED') {
-    const isHi = session.language === 'hi'
-    const noteText = voiceTranscript || userInput
+// Helper: Update an existing complaint in Neon DB
+async function updateExistingComplaint(
+  session: WhatsAppSession,
+  incidentId: string,
+  noteText: string
+): Promise<{ reply: string; incidentId: string }> {
+  const isHi = session.language === 'hi'
+  const extractedUpdate = await extractUpdateDetailsWithAI(noteText)
 
-    // 1. Read and understand the details
-    const extractedUpdate = await extractUpdateDetailsWithAI(noteText)
+  const filledItems: string[] = []
+  if (extractedUpdate.utr) filledItems.push(isHi ? `UTR नंबर: ${extractedUpdate.utr}` : `UTR Number: ${extractedUpdate.utr}`)
+  if (extractedUpdate.bankName) filledItems.push(isHi ? `बैंक: ${extractedUpdate.bankName}` : `Bank Name: ${extractedUpdate.bankName}`)
+  if (extractedUpdate.upiId) filledItems.push(isHi ? `UPI ID: ${extractedUpdate.upiId}` : `UPI Handle: ${extractedUpdate.upiId}`)
+  if (extractedUpdate.fraudsterIdentifier) filledItems.push(isHi ? `आरोपी: ${extractedUpdate.fraudsterIdentifier}` : `Fraudster Detail: ${extractedUpdate.fraudsterIdentifier}`)
+  if (extractedUpdate.accountNumber) filledItems.push(isHi ? `खाता संख्या: ${extractedUpdate.accountNumber}` : `Account Number: ${extractedUpdate.accountNumber}`)
 
-    const filledItems: string[] = []
-    if (extractedUpdate.utr) filledItems.push(isHi ? `UTR नंबर: ${extractedUpdate.utr}` : `UTR Number: ${extractedUpdate.utr}`)
-    if (extractedUpdate.bankName) filledItems.push(isHi ? `बैंक: ${extractedUpdate.bankName}` : `Bank Name: ${extractedUpdate.bankName}`)
-    if (extractedUpdate.upiId) filledItems.push(isHi ? `UPI ID: ${extractedUpdate.upiId}` : `UPI Handle: ${extractedUpdate.upiId}`)
-    if (extractedUpdate.fraudsterIdentifier) filledItems.push(isHi ? `आरोपी: ${extractedUpdate.fraudsterIdentifier}` : `Fraudster Detail: ${extractedUpdate.fraudsterIdentifier}`)
-    if (extractedUpdate.accountNumber) filledItems.push(isHi ? `खाता संख्या: ${extractedUpdate.accountNumber}` : `Account Number: ${extractedUpdate.accountNumber}`)
+  if (process.env.DATABASE_URL) {
+    try {
+      const { neon } = await import('@neondatabase/serverless')
+      const sql = neon(process.env.DATABASE_URL)
 
-    // 2. Update complaint in Neon DB
-    if (process.env.DATABASE_URL && session.incidentId) {
-      try {
-        const { neon } = await import('@neondatabase/serverless')
-        const sql = neon(process.env.DATABASE_URL)
+      const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, complaint_draft, complaint_draft_hi FROM complaints WHERE incident_id = ${incidentId} LIMIT 1`
 
-        const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, complaint_draft, complaint_draft_hi FROM complaints WHERE incident_id = ${session.incidentId} LIMIT 1`
+      if (existing[0]) {
+        const row = existing[0]
+        const curUpdates = Array.isArray(row.updates) ? row.updates : []
+        curUpdates.push({
+          id: `up-${Date.now()}`,
+          note: noteText,
+          addedAt: new Date().toISOString(),
+          citizenPhone: session.phoneNumber,
+          actionPoints: extractedUpdate.utr ? [`Provide UTR ${extractedUpdate.utr} to bank immediately`] : [],
+          actionPointsHi: extractedUpdate.utr ? [`बैंक को तत्काल UTR ${extractedUpdate.utr} बताएं`] : [],
+        })
 
-        if (existing[0]) {
-          const row = existing[0]
-          const curUpdates = Array.isArray(row.updates) ? row.updates : []
-          curUpdates.push({
-            id: `up-${Date.now()}`,
-            note: noteText,
-            addedAt: new Date().toISOString(),
-            actionPoints: extractedUpdate.utr ? [`Provide UTR ${extractedUpdate.utr} to bank immediately`] : [],
-            actionPointsHi: extractedUpdate.utr ? [`बैंक को तत्काल UTR ${extractedUpdate.utr} बताएं`] : [],
-          })
+        const updatedContact = extractedUpdate.utr
+          ? (row.frauder_contact && !row.frauder_contact.toLowerCase().includes('not provided')
+              ? `${row.frauder_contact}; UTR: ${extractedUpdate.utr}`
+              : `UTR: ${extractedUpdate.utr}`)
+          : row.frauder_contact
 
-          const updatedContact = extractedUpdate.utr
-            ? (row.frauder_contact && !row.frauder_contact.toLowerCase().includes('not provided')
-                ? `${row.frauder_contact}; UTR: ${extractedUpdate.utr}`
-                : `UTR: ${extractedUpdate.utr}`)
-            : row.frauder_contact
+        const updatedBank = extractedUpdate.bankName || row.bank_name
+        const updatedUpi = extractedUpdate.upiId || row.upi_id
+        const updatedAcc = extractedUpdate.accountNumber || row.account_number
 
-          const updatedBank = extractedUpdate.bankName || row.bank_name
-          const updatedUpi = extractedUpdate.upiId || row.upi_id
-          const updatedAcc = extractedUpdate.accountNumber || row.account_number
+        const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+        const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp (${session.phoneNumber}): ${noteText}`
+        const updatedDraftHi = (row.complaint_draft_hi || '') + `\n\n[पूरक बयान — ${timeStr}]\nव्हाट्सएप द्वारा नया विवरण (${session.phoneNumber}): ${noteText}`
 
-          const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-          const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp: ${noteText}`
-          const updatedDraftHi = (row.complaint_draft_hi || '') + `\n\n[पूरक बयान — ${timeStr}]\nव्हाट्सएप द्वारा नया विवरण: ${noteText}`
-
-          await sql`
-            UPDATE complaints SET
-              frauder_contact = ${updatedContact},
-              bank_name = ${updatedBank},
-              upi_id = ${updatedUpi},
-              account_number = ${updatedAcc},
-              updates = ${JSON.stringify(curUpdates)},
-              complaint_draft = ${updatedDraft},
-              complaint_draft_hi = ${updatedDraftHi}
-            WHERE incident_id = ${session.incidentId}
-          `
-        }
-      } catch (dbErr) {
-        console.error('[WhatsApp Agent] DB update error:', dbErr)
+        await sql`
+          UPDATE complaints SET
+            frauder_contact = ${updatedContact},
+            bank_name = ${updatedBank},
+            upi_id = ${updatedUpi},
+            account_number = ${updatedAcc},
+            updates = ${JSON.stringify(curUpdates)},
+            complaint_draft = ${updatedDraft},
+            complaint_draft_hi = ${updatedDraftHi}
+          WHERE incident_id = ${incidentId}
+        `
       }
+    } catch (dbErr) {
+      console.error('[WhatsApp Agent] DB update error:', dbErr)
     }
+  }
 
-    // 3. Craft response showing what was read and understood
-    const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${session.incidentId}`
-    let reply = ''
+  const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${incidentId}`
+  let reply = ''
 
-    if (filledItems.length > 0) {
-      reply = isHi
-        ? `✅ *शिकायत में विवरण स्वतः जोड़ दिया गया!*
-📌 *घटना आईडी:* ${session.incidentId}
+  if (filledItems.length > 0) {
+    reply = isHi
+      ? `✅ *शिकायत (${incidentId}) में विवरण स्वतः जोड़ दिया गया!*
+📌 *घटना आईडी:* ${incidentId}
 
 🤖 *AI ने पढ़ा और अपडेट किया:*
 ${filledItems.map(f => `• ${f}`).join('\n')}
@@ -282,45 +499,53 @@ ${filledItems.map(f => `• ${f}`).join('\n')}
 ⚖️ आपकी आधिकारिक पुलिस FIR शिकायत व बैंक फ्रीज निर्देश अपडेट कर दिए गए हैं।
 
 📄 *अपडेटेड शिकायत देखें:*
-${trackingLink}`
-        : `✅ *Complaint Automatically Updated!*
-📌 *Incident ID:* ${session.incidentId}
+${trackingLink}
 
-🤖 *AI Understood & Filled:*
+💡 *सुझाव:* नई शिकायत शुरू करने के लिए कभी भी *NEW* लिखें।`
+      : `✅ *Complaint (${incidentId}) Automatically Updated!*
+📌 *Incident ID:* ${incidentId}
+
+🤖 *AI Understood & Applied:*
 ${filledItems.map(f => `• ${f}`).join('\n')}
 
 ⚖️ Your official FIR draft and bank freeze instructions have been updated with these details.
 
 📄 *View Updated Complaint:*
-${trackingLink}`
-    } else {
-      reply = isHi
-        ? `✅ *अतिरिक्त जानकारी नोट कर ली गई।*
-आपकी जानकारी घटना आईडी *${session.incidentId}* से जोड़ दी गई है।
-
-📄 *स्टेटस देखें:*
 ${trackingLink}
 
-(नई शिकायत शुरू करने के लिए *NEW* या *RESET* लिखें)`
-        : `✅ *Update Recorded.*
-Your note has been attached to Incident ID *${session.incidentId}*.
+💡 *Tip:* To start a brand new complaint anytime, reply *NEW*.`
+  } else {
+    reply = isHi
+      ? `✅ *अतिरिक्त जानकारी पुरानी शिकायत (${incidentId}) से जोड़ दी गई।*
+आपकी जानकारी घटना आईडी *${incidentId}* में दर्ज कर ली गई है।
+
+📄 *अपडेटेड केस देखें:*
+${trackingLink}
+
+💡 *सुझाव:* नई शिकायत शुरू करने के लिए *NEW* लिखें।`
+      : `✅ *Update Recorded on Complaint (${incidentId}).*
+Your note has been attached to Incident ID *${incidentId}*.
 
 📄 *Track Case:*
 ${trackingLink}
 
-(To start a new report, reply *NEW* or *RESET*)`
-    }
-
-    session.history.push({ role: 'assistant', content: reply, timestamp })
-    return { reply, incidentId: session.incidentId }
+💡 *Tip:* To start a brand new complaint anytime, reply *NEW*.`
   }
 
-  // STAGE 2: AWAITING_INCIDENT -> Listen, extract, and draft complaint
-  const isHi = session.language === 'hi'
-  const textToAnalyze = voiceTranscript || userInput
-  session.accumulatedText += (session.accumulatedText ? ' ' : '') + textToAnalyze
-  const extracted = quickExtract(session.accumulatedText)
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  session.history.push({ role: 'assistant', content: reply, timestamp })
+  return { reply, incidentId }
+}
 
+// Helper: Create a brand new complaint from scratch in Neon DB
+async function createAndSaveNewComplaint(
+  session: WhatsAppSession,
+  incidentText: string,
+  mediaUrl?: string,
+  voiceTranscript?: string
+): Promise<{ reply: string; filedComplaint: TriageResult; incidentId: string }> {
+  const isHi = session.language === 'hi'
+  const extracted = quickExtract(incidentText)
   const apiKey = process.env.OPENAI_API_KEY
   let triageResult: TriageResult
 
@@ -334,7 +559,7 @@ ${trackingLink}
             role: 'system',
             content: `You are an Indian cybercrime triage officer. Return ONLY JSON matching TriageResult schema. Fields: fraudType (Financial Fraud, Women/Children Related Crime, Extortion & Blackmail, Identity Theft, E-Commerce Scams, Investment Scam, Other Cyber Crime), fraudsterIdentifier, complainantName, amount (number), bankName, accountNumber, upiId, timeline, summary (2 sentences), summaryHi, complaintDraft (formal police complaint), complaintDraftHi, freezeSteps (string[]), applicableLaws (string[]), frauderContact, recommendedChannel ("bank"|"agency"|"platform"|"helpline"), recommendedChannelTarget.`,
           },
-          { role: 'user', content: session.accumulatedText },
+          { role: 'user', content: incidentText },
         ],
         response_format: { type: 'json_object' },
         temperature: 0.2,
@@ -375,13 +600,13 @@ ${trackingLink}
         recommendedChannelTarget: channelInfo.target,
       }
     } catch {
-      triageResult = generateFallbackResult(session.accumulatedText, extracted)
+      triageResult = generateFallbackResult(incidentText, extracted)
     }
   } else {
-    triageResult = generateFallbackResult(session.accumulatedText, extracted)
+    triageResult = generateFallbackResult(incidentText, extracted)
   }
 
-  // Save to database if DATABASE_URL is configured
+  // Save to database with citizen phone tag
   if (process.env.DATABASE_URL) {
     try {
       const dbUrl = process.env.DATABASE_URL
@@ -402,8 +627,8 @@ ${trackingLink}
           ${triageResult.summary}, ${triageResult.summaryHi}, ${triageResult.complaintDraft}, ${triageResult.complaintDraftHi},
           ${triageResult.frauderContact}, ${triageResult.bankName}, ${triageResult.accountNumber}, ${triageResult.upiId}, ${triageResult.timeline},
           ${JSON.stringify(triageResult.freezeSteps)}, ${JSON.stringify(triageResult.applicableLaws)}, ${new Date().toISOString()}, ${isHi ? 'hi' : 'en'},
-          'SUBMITTED', ${JSON.stringify([{ status: 'SUBMITTED', at: new Date().toISOString(), note: 'Filed automatically via WhatsApp Bot' }])},
-          ${JSON.stringify(mediaUrl ? [mediaUrl] : [])}, ${JSON.stringify([])},
+          'SUBMITTED', ${JSON.stringify([{ status: 'SUBMITTED', at: new Date().toISOString(), note: `Filed automatically via WhatsApp Bot (${session.phoneNumber})` }])},
+          ${JSON.stringify(mediaUrl ? [mediaUrl] : [])}, ${JSON.stringify([{ id: `init-${Date.now()}`, citizenPhone: session.phoneNumber, note: 'Intake via WhatsApp' }])},
           ${triageResult.recommendedChannel || 'bank'}, ${triageResult.recommendedChannelTarget || 'Bank Nodal Officer'}
         )
         ON CONFLICT (incident_id) DO UPDATE SET
@@ -418,6 +643,7 @@ ${trackingLink}
   session.stage = 'FILED'
   session.incidentId = triageResult.incidentId
   session.extractedData = triageResult
+  session.accumulatedText = incidentText
 
   const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${triageResult.incidentId}`
 
@@ -432,7 +658,7 @@ ${trackingLink}
     : ''
 
   const reply = isHi
-    ? `${voiceHeader}🚨 *शिकायत सफलतापूर्वक ड्राफ्ट की गई!*
+    ? `${voiceHeader}🚨 *नई शिकायत सफलतापूर्वक दर्ज की गई!*
 📌 *घटना आईडी:* ${triageResult.incidentId}
 ⚖️ *लागू कानून:* ${lawsList}
 💰 *राशि:* ₹${triageResult.amount.toLocaleString('en-IN')}
@@ -446,8 +672,10 @@ ${triageResult.summaryHi || triageResult.summary}
 2. अपने बैंक को कॉल करके UTR नंबर ${extracted.utr || 'लेनदेन संदर्भ'} फ्रीज करने को कहें।
 
 📄 *लाइव स्टेटस और औपचारिक FIR ड्राफ्ट देखें:*
-${trackingLink}`
-    : `${voiceHeader}🚨 *COMPLAINT DRAFTED SUCCESSFULLY!*
+${trackingLink}
+
+💡 *सुझाव:* इस शिकायत में नया विवरण जोड़ने के लिए कभी भी संदेश भेजें, या नई रिपोर्ट के लिए *NEW* लिखें।`
+    : `${voiceHeader}🚨 *NEW COMPLAINT FILED IN ITS ENTIRETY!*
 📌 *Incident ID:* ${triageResult.incidentId}
 ⚖️ *Applicable Laws:* ${lawsList}
 💰 *Amount:* ₹${triageResult.amount.toLocaleString('en-IN')}
@@ -461,9 +689,12 @@ ${triageResult.summary}
 2. Contact your bank nodal desk to freeze beneficiary account (Ref: ${extracted.utr || 'Pending'}).
 
 📄 *Track Live & Download Formal Complaint:*
-${trackingLink}`
+${trackingLink}
 
-  session.history.push({ role: 'assistant', content: reply, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+💡 *Tip:* Send updates (like UTRs) anytime to add to this case, or reply *NEW* for another case.`
+
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  session.history.push({ role: 'assistant', content: reply, timestamp })
 
   return {
     reply,
