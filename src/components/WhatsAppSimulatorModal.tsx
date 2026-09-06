@@ -141,7 +141,7 @@ export default function WhatsAppSimulatorModal({ isOpen, onClose, language = 'en
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-xl h-[85vh] max-h-[750px] bg-[#EFEAE2] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-zinc-300"
+        className="w-full max-w-xl h-[92vh] sm:h-[85vh] max-h-[750px] bg-[#EFEAE2] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-zinc-300"
       >
         {/* WhatsApp Header */}
         <div className="bg-[#075E54] text-white px-4 py-3 flex items-center justify-between shadow-md">
@@ -275,7 +275,7 @@ export default function WhatsAppSimulatorModal({ isOpen, onClose, language = 'en
               }
             }}
             placeholder={isHi ? 'संदेश लिखें...' : 'Type a message...'}
-            className="flex-1 bg-white border border-zinc-200 rounded-lg px-4 py-2 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#075E54]"
+            className="flex-1 bg-white border border-zinc-200 rounded-lg px-4 py-2 text-base sm:text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#075E54]"
           />
 
           {input.trim() ? (
