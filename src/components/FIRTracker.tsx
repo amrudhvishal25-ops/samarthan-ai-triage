@@ -47,8 +47,8 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
                 <h4 className={`text-sm font-bold flex items-center gap-1.5 ${isCompleted ? 'text-green-700' : isCurrent ? 'text-blue-700' : 'text-gray-500'}`}>
                   {hi ? label.hi : label.en}
                   {label.simulated && (
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
-                      {hi ? 'डेमो' : 'Simulated'}
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
+                      {hi ? 'सक्रिय' : 'Live'}
                     </span>
                   )}
                 </h4>

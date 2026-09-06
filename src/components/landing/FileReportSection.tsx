@@ -1,14 +1,13 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useTriage } from '@/context/TriageContext'
 import {
   DollarSign, User, ShieldAlert, Fingerprint, ShoppingCart, Briefcase,
-  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, Bot, ExternalLink, QrCode,
+  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, ExternalLink, QrCode,
 } from 'lucide-react'
-import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
 import WhatsAppQRModal from '@/components/WhatsAppQRModal'
 
 interface FileReportSectionProps {
@@ -24,9 +23,33 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
 
   const [inputText, setInputText] = useState('')
   const [channel, setChannel] = useState<Channel>('web')
-  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false)
   const [isQROpen, setIsQROpen] = useState(false)
+  const [liveState, setLiveState] = useState<{ isRunning: boolean; status: string; userPhone: string | null }>({
+    isRunning: false,
+    status: 'DISCONNECTED',
+    userPhone: null,
+  })
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Poll live WhatsApp state
+  useEffect(() => {
+    let mounted = true
+    const checkLive = async () => {
+      try {
+        const res = await fetch('/api/whatsapp/live')
+        if (res.ok && mounted) {
+          const data = await res.json()
+          setLiveState(data)
+        }
+      } catch {}
+    }
+    checkLive()
+    const interval = setInterval(checkLive, 4000)
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
+  }, [])
 
   const categories = [
     { title: 'Financial Fraud', titleHi: 'वित्तीय धोखाधड़ी', desc: 'UPI, banking, and credit-card fraud.', descHi: 'UPI, बैंकिंग और क्रेडिट कार्ड धोखाधड़ी।', icon: <DollarSign className="w-5 h-5" />, iconBg: 'bg-blue-50 text-blue-600' },
@@ -58,6 +81,21 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
     setScenarioId(null)
     setInputType('text')
     router.push(`/intake?category=${encodeURIComponent(title)}`)
+  }
+
+  const cleanPhone = liveState.userPhone ? liveState.userPhone.replace(/\D/g, '') : ''
+
+  const handleVisitAgent = () => {
+    if (cleanPhone) {
+      const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+        hi
+          ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।'
+          : 'Hi Samarthan, I want to report a cybercrime incident.'
+      )}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } else {
+      setIsQROpen(true)
+    }
   }
 
   const tabs: { id: Channel; label: string; labelHi: string; icon: React.ReactNode }[] = [
@@ -115,46 +153,56 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
         )}
 
         {channel === 'whatsapp' && (
-          <div className="rounded-xl border border-zinc-300 bg-white p-8 text-center max-w-xl mx-auto shadow-xs">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-6 h-6" />
+          <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center max-w-xl mx-auto shadow-xs">
+            <div className="relative w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+              <MessageCircle className="w-7 h-7" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
             </div>
+
             <h3 className="text-xl font-bold text-zinc-900 mb-2">
-              {hi ? 'व्हाट्सएप पर AI शिकायत ट्रायज' : 'WhatsApp AI Triage Bot'}
+              {hi ? 'व्हाट्सएप AI साइबर सहायता एजेंट' : 'Samarthan WhatsApp Cyber Agent'}
             </h3>
+
             <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
               {hi
-                ? 'हमारे AI बॉट को वॉइस नोट, मैसेज या स्क्रीनशॉट भेजें। बॉट विवरण निकालेगा और सीधे राष्ट्रीय पोर्टल पर शिकायत दर्ज करेगा।'
-                : 'Send a voice note, message, or screenshot to our AI bot. It extracts incident details, auto-detects applicable IT Act laws, and registers your formal complaint directly to the portal.'}
+                ? 'हमारे 24x7 AI एजेंट को वॉइस नोट, मैसेज या स्क्रीनशॉट भेजें। एजेंट विवरण निकालेगा, कानून धाराएं जोड़ेगा और लाइव पोर्टल ट्रैकिंग लिंक देगा।'
+                : 'Chat directly with our 24x7 WhatsApp AI triage agent. Send a voice note, message, or screenshot to receive instant legal advice, freeze steps, and your live complaint tracking link.'}
             </p>
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={() => setIsQROpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors shadow-sm"
+                onClick={handleVisitAgent}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-xl px-7 py-3.5 text-sm font-bold transition-all shadow-md hover:shadow-lg"
               >
-                <QrCode className="w-4 h-4" />
-                <span>{hi ? 'व्हाट्सएप लिंक करें (QR स्कैन करें)' : 'Link WhatsApp (Scan QR)'}</span>
+                <MessageCircle className="w-4 h-4 fill-white" />
+                <span>{hi ? 'व्हाट्सएप एजेंट से बात करें' : 'Visit the Agent on WhatsApp'}</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-80" />
               </button>
+
               <button
                 type="button"
-                onClick={() => setIsWhatsAppOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#075E54] hover:bg-[#064E46] text-white rounded-full px-5 py-3 text-sm font-semibold transition-colors shadow-sm"
+                onClick={() => setIsQROpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl px-5 py-3.5 text-sm font-semibold transition-colors shadow-sm"
               >
-                <Bot className="w-4 h-4" />
-                <span>{hi ? 'बॉट सिमुलेटर' : 'Bot Simulator'}</span>
+                <QrCode className="w-4 h-4" />
+                <span>{hi ? 'व्हाट्सएप लिंक करें (QR)' : 'Link WhatsApp (Scan QR)'}</span>
               </button>
-              <a
-                href="https://wa.me/911930"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-full px-5 py-3 text-sm font-semibold transition-colors shadow-sm"
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span>{hi ? 'व्हाट्सएप खोलें' : 'Open WhatsApp'}</span>
-              </a>
             </div>
-            <p className="mt-4 text-xs text-zinc-400">{hi ? 'डेमो: 1930 हेल्पलाइन पर आधारित' : 'Demo: Integrated with 1930 Helpline Framework'}</p>
+
+            {liveState.userPhone ? (
+              <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{hi ? `लाइव एजेंट सक्रिय: ${liveState.userPhone}` : `Agent Live & Active: ${liveState.userPhone}`}</span>
+              </div>
+            ) : (
+              <p className="mt-4 text-xs text-zinc-400">
+                {hi ? 'व्यवसाय या व्यक्तिगत व्हाट्सएप से लिंक करें • 24x7 सक्रिय' : 'Works with any WhatsApp or WhatsApp Business account • 24x7 Active'}
+              </p>
+            )}
           </div>
         )}
 
@@ -229,12 +277,6 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
           </>
         )}
       </div>
-
-      <WhatsAppSimulatorModal
-        isOpen={isWhatsAppOpen}
-        onClose={() => setIsWhatsAppOpen(false)}
-        language={language}
-      />
 
       <WhatsAppQRModal
         isOpen={isQROpen}

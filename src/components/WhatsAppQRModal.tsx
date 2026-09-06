@@ -330,13 +330,21 @@ export default function WhatsAppQRModal({
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                   <a
-                    href="https://web.whatsapp.com"
+                    href={
+                      state.userPhone
+                        ? `https://wa.me/${state.userPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                            hi
+                              ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।'
+                              : 'Hi Samarthan, I want to report a cybercrime incident.'
+                          )}`
+                        : 'https://web.whatsapp.com'
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors shadow-sm"
                   >
                     <MessageSquare className="w-4 h-4" />
-                    <span>{hi ? 'व्हाट्सएप वेब खोलें' : 'Open WhatsApp Web'}</span>
+                    <span>{hi ? 'एजेंट को व्हाट्सएप पर मैसेज करें' : 'Message Agent on WhatsApp'}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
 
