@@ -176,8 +176,8 @@ export async function processWhatsAppTurn(
           ${triageResult.amount}, ${triageResult.urgencyLevel},
           ${triageResult.summary}, ${triageResult.summaryHi}, ${triageResult.complaintDraft}, ${triageResult.complaintDraftHi},
           ${triageResult.frauderContact}, ${triageResult.bankName}, ${triageResult.accountNumber}, ${triageResult.upiId}, ${triageResult.timeline},
-          ${JSON.stringify(triageResult.freezeSteps)}, ${JSON.stringify(triageResult.applicableLaws)}, ${Date.now()}, ${isHi ? 'hi' : 'en'},
-          'SUBMITTED', ${JSON.stringify([{ status: 'SUBMITTED', timestamp: Date.now(), note: 'Filed automatically via WhatsApp Bot' }])},
+          ${JSON.stringify(triageResult.freezeSteps)}, ${JSON.stringify(triageResult.applicableLaws)}, ${new Date().toISOString()}, ${isHi ? 'hi' : 'en'},
+          'SUBMITTED', ${JSON.stringify([{ status: 'SUBMITTED', at: new Date().toISOString(), note: 'Filed automatically via WhatsApp Bot' }])},
           ${JSON.stringify(mediaUrl ? [mediaUrl] : [])}, ${JSON.stringify([])},
           ${triageResult.recommendedChannel || 'bank'}, ${triageResult.recommendedChannelTarget || 'Bank Nodal Officer'}
         )
