@@ -93,15 +93,15 @@ Contact me 24x7 to report cyber fraud, online scams, or financial theft.
     return { reply: welcomeMsg }
   }
 
-  // Handle explicit reset or greeting when already filed
-  if (isResetCommand || (session.stage === 'FILED' && (isInitialGreeting || isWebsiteDefaultMsg))) {
+  // Handle explicit reset or greeting in any stage
+  if (isResetCommand || isInitialGreeting || isWebsiteDefaultMsg) {
     return sendGreeting()
   }
 
   // STAGE 1: SELECT_LANGUAGE
   if (session.stage === 'SELECT_LANGUAGE') {
     const isSelectEn = /^(1|1\.|1️⃣|en|english)$/i.test(trimmed)
-    const isSelectHi = /^(2|2\.|2️⃣|hi|hindi|हिंदी|हिन्दी)$/i.test(trimmed)
+    const isSelectHi = /^(2|2\.|2️⃣|hindi|हिंदी|हिन्दी)$/i.test(trimmed)
 
     if (isSelectEn) {
       session.language = 'en'
