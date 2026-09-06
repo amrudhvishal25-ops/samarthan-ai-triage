@@ -57,15 +57,19 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
-      // JSON body (from simulator, Meta API, or companion Baileys bot)
       const json = await req.json()
       from = json.phoneNumber || json.From || 'simulated-user'
       body = json.message || json.Body || ''
       mediaUrl = json.mediaUrl
       voiceTranscript = json.voiceTranscript || ''
       imageBase64 = json.imageBase64
+      const activeIncidentId = json.activeIncidentId || undefined
 
       const session = getOrCreateSession(from)
+      if (activeIncidentId) {
+        session.incidentId = activeIncidentId
+        session.stage = 'FILED'
+      }
 
       if (!voiceTranscript && json.audioBase64) {
         try {

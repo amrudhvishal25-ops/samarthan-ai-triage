@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         frauder_contact, bank_name, account_number, upi_id, timeline,
         freeze_steps, applicable_laws, saved_at, language,
         status, status_history, evidence_images, updates,
-        recommended_channel, recommended_channel_target
+        recommended_channel, recommended_channel_target, citizen_phone
       ) VALUES (
         ${c.incident_id}, ${c.fraud_type}, ${c.fraudster_identifier ?? c.victim_name ?? ''}, ${c.complainant_name ?? ''},
         ${c.amount}, ${c.urgency_level},
@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
         ${c.saved_at}, ${c.language ?? 'en'},
         ${c.status ?? 'SUBMITTED'}, ${JSON.stringify(c.status_history ?? [])},
         ${JSON.stringify(c.evidence_images ?? [])}, ${JSON.stringify(c.updates ?? [])},
-        ${c.recommended_channel ?? 'helpline'}, ${c.recommended_channel_target ?? '1930'}
+        ${c.recommended_channel ?? 'helpline'}, ${c.recommended_channel_target ?? '1930'},
+        ${c.citizen_phone ?? null}
       )
       ON CONFLICT (incident_id) DO UPDATE SET
         fraud_type = EXCLUDED.fraud_type,
@@ -85,11 +86,24 @@ export async function POST(req: NextRequest) {
         applicable_laws = EXCLUDED.applicable_laws,
         language = EXCLUDED.language,
         status = EXCLUDED.status,
-        status_history = EXCLUDED.status_history,
-        evidence_images = EXCLUDED.evidence_images,
-        updates = EXCLUDED.updates,
+        status_history = CASE 
+          WHEN jsonb_array_length(EXCLUDED.status_history::jsonb) > 1 
+          THEN EXCLUDED.status_history 
+          ELSE COALESCE(NULLIF(complaints.status_history, '[]'::jsonb), EXCLUDED.status_history) 
+        END,
+        evidence_images = CASE
+          WHEN jsonb_array_length(EXCLUDED.evidence_images::jsonb) > 0
+          THEN EXCLUDED.evidence_images
+          ELSE COALESCE(complaints.evidence_images, EXCLUDED.evidence_images)
+        END,
+        updates = CASE 
+          WHEN jsonb_array_length(EXCLUDED.updates::jsonb) > 0 
+          THEN EXCLUDED.updates 
+          ELSE COALESCE(complaints.updates, EXCLUDED.updates) 
+        END,
         recommended_channel = EXCLUDED.recommended_channel,
-        recommended_channel_target = EXCLUDED.recommended_channel_target
+        recommended_channel_target = EXCLUDED.recommended_channel_target,
+        citizen_phone = COALESCE(complaints.citizen_phone, EXCLUDED.citizen_phone)
     `
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {

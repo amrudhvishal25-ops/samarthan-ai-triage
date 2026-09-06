@@ -83,6 +83,11 @@ export function isDetailedIncidentPrompt(text: string, voiceTranscript?: string)
     return false
   }
 
+  // Disqualify corrections or update notes (e.g. "his name is not X it's Y", "update:", "correction:")
+  if (/^(his name is not|his name is|not [a-z0-9\s]+ (?:it's|its|it is)|its not|it is not|correction|actually|update|ye galat hai|naam galat hai|change name|correct name)\b/i.test(full)) {
+    return false
+  }
+
   // Pure greeting prefixes under 35 chars
   if (/^(hi|hello|hey|namaste|help|madad)\b/i.test(full) && full.length < 35) {
     return false
@@ -290,11 +295,18 @@ export async function processWhatsAppTurn(
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(process.env.DATABASE_URL)
       const phonePattern = `%${session.phoneNumber}%`
+      const cleanDigits = session.phoneNumber.replace(/[^0-9]/g, '')
+      const digitPattern = cleanDigits.length >= 10 ? `%${cleanDigits.slice(-10)}%` : phonePattern
+
       const rows = await sql`
         SELECT incident_id, language, summary, summary_hi
         FROM complaints
-        WHERE status_history::text ILIKE ${phonePattern}
+        WHERE citizen_phone = ${session.phoneNumber}
+           OR citizen_phone ILIKE ${digitPattern}
+           OR status_history::text ILIKE ${phonePattern}
            OR updates::text ILIKE ${phonePattern}
+           OR status_history::text ILIKE ${digitPattern}
+           OR updates::text ILIKE ${digitPattern}
         ORDER BY saved_at DESC LIMIT 1
       `
       if (rows[0]?.incident_id) {
@@ -535,11 +547,14 @@ async function extractUpdateDetailsWithAI(note: string) {
   const accountMatch = note.match(/(?:a\/c|acc|account)[\s:#-]*([0-9]{9,18})/i)
   const nameMatch = note.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
 
+  // Accused / fraudster correction regex: e.g. "his name is not amrit vijal its amruth vishal and he is from tapmi manipal"
+  const fraudsterCorrectionMatch = note.match(/(?:his name is not|his name is|not [a-z0-9\s]+ (?:it's|its|it is)|correct name is|accused is|fraudster is)\s*([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?(?:\s+(?:from|at)\s+[A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)?)/i)
+
   const fallback = {
     utr: utrMatch ? utrMatch[1] : null,
     bankName: bankMatch ? bankMatch[0] : null,
     upiId: upiMatch ? upiMatch[0] : null,
-    fraudsterIdentifier: phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null,
+    fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null),
     accountNumber: accountMatch ? accountMatch[1] : null,
     amount: null,
     complainantName: nameMatch ? nameMatch[1].trim() : null,
@@ -557,7 +572,7 @@ async function extractUpdateDetailsWithAI(note: string) {
       messages: [
         {
           role: 'system',
-          content: `You are an Indian cybercrime triage assistant. Extract any updated incident details from the victim's update message. Return JSON with fields: utr (string|null), bankName (string|null), upiId (string|null), fraudsterIdentifier (string|null), accountNumber (string|null), amount (number|null), complainantName (string|null).`,
+          content: `You are an Indian cybercrime triage assistant. The user is providing an update or correction to an existing cybercrime complaint (e.g. correcting the accused fraudster's name like "his name is not X it's Y", providing a UTR, bank name, amount, UPI ID, account number, or complainant name). Extract all updated/corrected incident details. Return JSON with fields: utr (string|null), bankName (string|null), upiId (string|null), fraudsterIdentifier (string|null), accountNumber (string|null), amount (number|null), complainantName (string|null).`,
         },
         { role: 'user', content: note },
       ],
@@ -605,7 +620,7 @@ async function updateExistingComplaint(
   if (extractedUpdate.utr) filledItems.push(isHi ? `UTR नंबर: ${extractedUpdate.utr}` : `UTR Number: ${extractedUpdate.utr}`)
   if (extractedUpdate.bankName) filledItems.push(isHi ? `बैंक: ${extractedUpdate.bankName}` : `Bank Name: ${extractedUpdate.bankName}`)
   if (extractedUpdate.upiId) filledItems.push(isHi ? `UPI ID: ${extractedUpdate.upiId}` : `UPI Handle: ${extractedUpdate.upiId}`)
-  if (extractedUpdate.fraudsterIdentifier) filledItems.push(isHi ? `आरोपी: ${extractedUpdate.fraudsterIdentifier}` : `Fraudster Detail: ${extractedUpdate.fraudsterIdentifier}`)
+  if (extractedUpdate.fraudsterIdentifier) filledItems.push(isHi ? `संशोधित/पहचाना गया आरोपी: ${extractedUpdate.fraudsterIdentifier}` : `Updated/Corrected Accused: ${extractedUpdate.fraudsterIdentifier}`)
   if (extractedUpdate.accountNumber) filledItems.push(isHi ? `खाता संख्या: ${extractedUpdate.accountNumber}` : `Account Number: ${extractedUpdate.accountNumber}`)
   if (extractedUpdate.complainantName) filledItems.push(isHi ? `शिकायतकर्ता: ${extractedUpdate.complainantName}` : `Complainant: ${extractedUpdate.complainantName}`)
 
@@ -620,7 +635,7 @@ async function updateExistingComplaint(
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(process.env.DATABASE_URL)
 
-      const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, amount, complaint_draft, complaint_draft_hi, complainant_name FROM complaints WHERE incident_id = ${incidentId} LIMIT 1`
+      const existing = await sql`SELECT updates, frauder_contact, bank_name, upi_id, account_number, amount, complaint_draft, complaint_draft_hi, complainant_name, fraudster_identifier FROM complaints WHERE incident_id = ${incidentId} LIMIT 1`
 
       if (existing[0]) {
         const row = existing[0]
@@ -649,22 +664,30 @@ async function updateExistingComplaint(
         const updatedAcc = extractedUpdate.accountNumber || row.account_number
         const updatedAmount = extractedUpdate.amount || row.amount
         const updatedComplainant = extractedUpdate.complainantName || row.complainant_name || 'Citizen Complainant'
+        const updatedFraudster = extractedUpdate.fraudsterIdentifier || row.fraudster_identifier
 
         const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-        const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp (${session.phoneNumber}): ${noteToSave}`
-        const updatedDraftHi = (row.complaint_draft_hi || '') + `\n\n[पूरक बयान — ${timeStr}]\nव्हाट्सएप द्वारा नया विवरण (${session.phoneNumber}): ${noteToSave}`
+        let updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp (${session.phoneNumber}): ${noteToSave}`
+        let updatedDraftHi = (row.complaint_draft_hi || '') + `\n\n[पूरक बयान — ${timeStr}]\nव्हाट्सएप द्वारा नया विवरण (${session.phoneNumber}): ${noteToSave}`
+
+        if (extractedUpdate.fraudsterIdentifier && row.fraudster_identifier) {
+          updatedDraft = updatedDraft.replaceAll(row.fraudster_identifier, extractedUpdate.fraudsterIdentifier)
+          updatedDraftHi = updatedDraftHi.replaceAll(row.fraudster_identifier, extractedUpdate.fraudsterIdentifier)
+        }
 
         // Clear vision evidence after consuming
         session.pendingVisionEvidence = undefined
 
         await sql`
           UPDATE complaints SET
+            fraudster_identifier = ${updatedFraudster},
             frauder_contact = ${updatedContact},
             bank_name = ${updatedBank},
             upi_id = ${updatedUpi},
             account_number = ${updatedAcc},
             amount = ${updatedAmount},
             complainant_name = ${updatedComplainant},
+            citizen_phone = COALESCE(complaints.citizen_phone, ${session.phoneNumber}),
             updates = ${JSON.stringify(curUpdates)},
             complaint_draft = ${updatedDraft},
             complaint_draft_hi = ${updatedDraftHi}
@@ -838,7 +861,7 @@ async function createAndSaveNewComplaint(
           frauder_contact, bank_name, account_number, upi_id, timeline,
           freeze_steps, applicable_laws, saved_at, language,
           status, status_history, evidence_images, updates,
-          recommended_channel, recommended_channel_target
+          recommended_channel, recommended_channel_target, citizen_phone
         ) VALUES (
           ${triageResult.incidentId}, ${triageResult.fraudType}, ${triageResult.fraudsterIdentifier}, ${triageResult.complainantName || ''},
           ${triageResult.amount}, ${triageResult.urgencyLevel},
@@ -847,11 +870,13 @@ async function createAndSaveNewComplaint(
           ${JSON.stringify(triageResult.freezeSteps)}, ${JSON.stringify(triageResult.applicableLaws)}, ${new Date().toISOString()}, ${isHi ? 'hi' : 'en'},
           'SUBMITTED', ${JSON.stringify([{ status: 'SUBMITTED', at: new Date().toISOString(), note: `Filed automatically via WhatsApp Bot (${session.phoneNumber})` }])},
           ${JSON.stringify(mediaUrl ? [mediaUrl] : [])}, ${JSON.stringify([{ id: `init-${Date.now()}`, citizenPhone: session.phoneNumber, note: 'Intake via WhatsApp' }])},
-          ${triageResult.recommendedChannel || 'bank'}, ${triageResult.recommendedChannelTarget || 'Bank Nodal Officer'}
+          ${triageResult.recommendedChannel || 'bank'}, ${triageResult.recommendedChannelTarget || 'Bank Nodal Officer'},
+          ${session.phoneNumber}
         )
         ON CONFLICT (incident_id) DO UPDATE SET
           amount = EXCLUDED.amount,
-          frauder_contact = EXCLUDED.frauder_contact;
+          frauder_contact = EXCLUDED.frauder_contact,
+          citizen_phone = COALESCE(complaints.citizen_phone, EXCLUDED.citizen_phone);
       `
     } catch (dbErr) {
       console.error('[WhatsApp Agent] Neon DB save error:', dbErr)

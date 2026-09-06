@@ -28,9 +28,37 @@ try {
 const AUTH_DIR = path.resolve(process.cwd(), '.whatsapp_auth')
 const STATE_FILE = path.resolve(process.cwd(), '.whatsapp_live_state.json')
 const PID_FILE = path.resolve(process.cwd(), '.whatsapp_bot.pid')
+const SESSIONS_FILE = path.resolve(process.cwd(), '.whatsapp_sessions.json')
 const NEXT_API_URL = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/api/whatsapp`
   : 'https://samarthan-ai-parichay-s-projects.vercel.app/api/whatsapp'
+
+function getActiveIncident(phone) {
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'))
+      return data[phone] || null
+    }
+  } catch {}
+  return null
+}
+
+function setActiveIncident(phone, incidentId) {
+  try {
+    let data = {}
+    if (fs.existsSync(SESSIONS_FILE)) {
+      try { data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8')) } catch {}
+    }
+    if (incidentId) {
+      data[phone] = incidentId
+    } else {
+      delete data[phone]
+    }
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data, null, 2), 'utf-8')
+  } catch (e) {
+    console.error('[Session Save Error]:', e.message)
+  }
+}
 
 const startTime = Date.now()
 let currentSocket = null
@@ -328,11 +356,19 @@ async function startWhatsAppBot() {
       } catch {}
 
       try {
+        const isExplicitNew = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test((text || '').trim())
+        if (isExplicitNew) {
+          setActiveIncident(senderPhone, null)
+        }
+
+        const activeIncidentId = getActiveIncident(senderPhone)
+
         const res = await fetch(NEXT_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             phoneNumber: senderPhone,
+            activeIncidentId,
             message: text,
             audioBase64,
             voiceTranscript,
@@ -346,6 +382,10 @@ async function startWhatsAppBot() {
 
         const data = await res.json()
         const replyText = data.reply || 'Your report was received. Our team is processing.'
+
+        if (data.incidentId) {
+          setActiveIncident(senderPhone, data.incidentId)
+        }
 
         await sock.sendMessage(remoteJid, { text: replyText })
         console.log(`[📤 Outbound Reply] To: +${senderPhone} | Sent ${replyText.length} chars`)
