@@ -121,9 +121,9 @@ export default function HeroSection({ language }: HeroSectionProps) {
   }
 
   return (
-    <section className="relative w-full pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
+    <section className="relative w-full pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden isolate">
       <RadialBackground />
-      <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
 
         {/* Left: copy */}
         <div>
