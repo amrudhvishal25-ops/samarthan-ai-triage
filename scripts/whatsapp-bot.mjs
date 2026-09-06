@@ -9,6 +9,21 @@ import pino from 'pino'
 import QRCode from 'qrcode'
 import fs from 'node:fs'
 import path from 'node:path'
+import OpenAI, { toFile } from 'openai'
+
+// Load .env.local if not already in environment
+try {
+  const envPath = path.resolve(process.cwd(), '.env.local')
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf-8').split('\n')
+    for (const line of lines) {
+      const match = line.match(/^\s*([\w_]+)\s*=\s*(.*)?\s*$/)
+      if (match && !process.env[match[1]]) {
+        process.env[match[1]] = match[2].trim().replace(/^['"]|['"]$/g, '')
+      }
+    }
+  }
+} catch {}
 
 const AUTH_DIR = path.resolve(process.cwd(), '.whatsapp_auth')
 const STATE_FILE = path.resolve(process.cwd(), '.whatsapp_live_state.json')
@@ -234,6 +249,7 @@ async function startWhatsAppBot() {
         ''
 
       let audioBase64 = undefined
+      let voiceTranscript = undefined
 
       // Voice note / audio message handling (PTT or standard audio)
       const isAudio = Boolean(
@@ -253,15 +269,33 @@ async function startWhatsAppBot() {
           if (buffer) {
             audioBase64 = buffer.toString('base64')
             console.log(`[Audio Message] Successfully extracted audio (${buffer.length} bytes)`)
+
+            // Try Whisper transcription locally using OPENAI_API_KEY
+            if (process.env.OPENAI_API_KEY) {
+              try {
+                const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+                const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' })
+                const transcription = await openai.audio.transcriptions.create({
+                  file,
+                  model: 'whisper-1',
+                })
+                if (transcription?.text) {
+                  voiceTranscript = transcription.text.trim()
+                  console.log(`[Audio Message] Transcribed locally: "${voiceTranscript}"`)
+                }
+              } catch (whisperErr) {
+                console.warn('[Local Whisper Warning]:', whisperErr.message)
+              }
+            }
           }
         } catch (e) {
           console.error('[Audio Download Error]:', e.message)
         }
       }
 
-      if (!text.trim() && !audioBase64) continue
+      if (!text.trim() && !audioBase64 && !voiceTranscript) continue
 
-      console.log(`\n[📩 Inbound WhatsApp] From: +${senderPhone} | Text: "${text || '(Voice Note)'}"`)
+      console.log(`\n[📩 Inbound WhatsApp] From: +${senderPhone} | Text: "${text || (voiceTranscript ? `[Voice: ${voiceTranscript}]` : '(Voice Note)')}"`)
 
       // Indicate typing status in WhatsApp
       try {
@@ -276,6 +310,7 @@ async function startWhatsAppBot() {
             phoneNumber: senderPhone,
             message: text,
             audioBase64,
+            voiceTranscript,
           }),
         })
 

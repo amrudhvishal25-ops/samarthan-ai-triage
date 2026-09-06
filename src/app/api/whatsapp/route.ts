@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOrCreateSession, processWhatsAppTurn } from '@/lib/whatsapp-agent'
-import OpenAI from 'openai'
+import OpenAI, { toFile } from 'openai'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     let body = ''
     let mediaUrl: string | undefined
     let isTwilio = false
+    let voiceTranscript = ''
 
     if (contentType.includes('application/x-www-form-urlencoded')) {
       isTwilio = true
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
           try {
             const transcribed = await transcribeAudioUrl(mediaUrl)
             if (transcribed) {
+              voiceTranscript = transcribed
               body = body ? `${body} (Voice note: "${transcribed}")` : transcribed
             }
           } catch (e) {
@@ -58,12 +60,16 @@ export async function POST(req: NextRequest) {
       from = json.phoneNumber || json.From || 'simulated-user'
       body = json.message || json.Body || ''
       mediaUrl = json.mediaUrl
+      voiceTranscript = json.voiceTranscript || ''
 
-      if (json.audioBase64) {
+      const session = getOrCreateSession(from)
+
+      if (!voiceTranscript && json.audioBase64) {
         try {
-          const transcribed = await transcribeAudioBase64(json.audioBase64)
+          const transcribed = await transcribeAudioBase64(json.audioBase64, session.language)
           if (transcribed) {
-            body = body ? `${body} (Voice note: "${transcribed}")` : transcribed
+            voiceTranscript = transcribed
+            body = body ? `${body} (Voice Note: "${transcribed}")` : transcribed
           }
         } catch (e) {
           console.error('[WhatsApp Webhook] Audio base64 transcription error:', e)
@@ -71,12 +77,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!body && !mediaUrl) {
+    if (!body && !mediaUrl && !voiceTranscript) {
       return NextResponse.json({ error: 'Empty message' }, { status: 400 })
     }
 
     const session = getOrCreateSession(from)
-    const result = await processWhatsAppTurn(session, body, mediaUrl)
+    const result = await processWhatsAppTurn(session, body, mediaUrl, voiceTranscript)
 
     if (isTwilio) {
       // Return TwiML XML response for Twilio WhatsApp
@@ -117,7 +123,8 @@ async function transcribeAudioUrl(audioUrl: string): Promise<string | null> {
   if (!res.ok) return null
 
   const blob = await res.blob()
-  const file = new File([blob], 'audio.ogg', { type: 'audio/ogg' })
+  const buffer = Buffer.from(await blob.arrayBuffer())
+  const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' })
 
   const openai = new OpenAI({ apiKey })
   const transcription = await openai.audio.transcriptions.create({
@@ -128,23 +135,36 @@ async function transcribeAudioUrl(audioUrl: string): Promise<string | null> {
   return transcription.text
 }
 
-async function transcribeAudioBase64(base64Data: string): Promise<string | null> {
+async function transcribeAudioBase64(base64Data: string, language?: 'en' | 'hi'): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
     return 'Maine 45000 rupaye transfer kiye the ek fraudster ko.'
   }
 
   const buffer = Buffer.from(base64Data, 'base64')
-  const blob = new Blob([buffer], { type: 'audio/ogg' })
-  const file = new File([blob], 'audio.ogg', { type: 'audio/ogg' })
+  const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' })
 
   const openai = new OpenAI({ apiKey })
-  const transcription = await openai.audio.transcriptions.create({
-    file,
-    model: 'whisper-1',
-  })
-
-  return transcription.text
+  try {
+    const transcription = await openai.audio.transcriptions.create({
+      file,
+      model: 'whisper-1',
+      language: language === 'hi' ? 'hi' : undefined,
+    })
+    return transcription.text
+  } catch (err: any) {
+    console.warn('[transcribeAudioBase64] Attempting without language constraint:', err?.message)
+    try {
+      const fileRetry = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' })
+      const transcription = await openai.audio.transcriptions.create({
+        file: fileRetry,
+        model: 'whisper-1',
+      })
+      return transcription.text
+    } catch {
+      return null
+    }
+  }
 }
 
 function escapeXml(unsafe: string): string {
