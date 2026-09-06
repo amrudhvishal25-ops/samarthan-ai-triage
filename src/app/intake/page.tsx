@@ -180,7 +180,7 @@ function IntakeContent() {
       <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
 
       {/* ── BACK BAR ── */}
-      <header className="border-b border-zinc-200 bg-white sticky top-14 z-40">
+      <header className="border-b border-zinc-200 bg-white sticky top-[74px] z-40">
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
           <button
             onClick={() => router.back()}

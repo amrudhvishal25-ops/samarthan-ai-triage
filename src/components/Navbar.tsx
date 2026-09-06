@@ -41,98 +41,105 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
         onSuccess={() => setUser(getUser())}
       />
 
-      <header className="border-b border-zinc-200 bg-white sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <header className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-50 transition-all">
+        <div className="max-w-6xl mx-auto px-6 h-[74px] flex items-center justify-between">
 
           {/* Logo */}
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-md bg-zinc-900 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors">
-              <BotMessageSquareIcon size={16} />
+          <button onClick={() => router.push('/')} className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-lg bg-zinc-950 flex items-center justify-center text-white shadow-xs group-hover:bg-zinc-800 transition-colors">
+              <BotMessageSquareIcon size={21} />
             </div>
-            <span className="font-semibold text-zinc-900 text-sm tracking-tight">Samarthan</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-zinc-950 text-base md:text-lg tracking-tight">Samarthan</span>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50/80 border border-blue-200/60 px-2 py-0.5 rounded-md">
+                AI Triage
+              </span>
+            </div>
           </button>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2">
+          {/* Right side: 3 Action Items scaled up by ~31% */}
+          <div className="flex items-center gap-2.5">
 
-            {/* My Complaints */}
+            {/* 1. My Complaints */}
             <button
               onClick={() => router.push('/complaints')}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 border border-zinc-200 rounded-md px-3 py-1.5 transition-colors "
+              className="inline-flex items-center gap-2 text-sm font-medium text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100/80 border border-zinc-200/90 rounded-lg px-4 py-2.5 h-10 transition-colors shadow-2xs"
             >
-              <FileText className="w-3.5 h-3.5" />
-              {hi ? 'मेरी शिकायतें' : 'My Complaints'}
+              <FileText className="w-4 h-4 text-zinc-500" />
+              <span className="hidden sm:inline">{hi ? 'मेरी शिकायतें' : 'My Complaints'}</span>
             </button>
 
-            {/* Language toggle */}
+            {/* 2. Language toggle */}
             <button
               onClick={onLanguageToggle}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors "
+              aria-label="Toggle language between English and Hindi"
+              className="inline-flex items-center gap-2 text-sm font-medium text-zinc-700 border border-zinc-200/90 hover:bg-zinc-100/80 rounded-lg px-3.5 sm:px-4 py-2.5 h-10 transition-colors shadow-2xs"
             >
-              <Globe className="w-3.5 h-3.5" />
-              {language === 'en' ? 'हिन्दी' : 'English'}
+              <Globe className="w-4 h-4 text-zinc-500" />
+              <span>{language === 'en' ? 'हिन्दी' : 'English'}</span>
             </button>
 
-            {/* Auth button */}
+            {/* 3. Auth button / Login */}
             {user ? (
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(v => !v)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 rounded-md px-3 py-1.5 transition-colors "
+                  className="inline-flex items-center gap-2 text-sm font-medium text-zinc-900 bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 rounded-lg px-4 py-2.5 h-10 transition-colors shadow-2xs"
                 >
-                  <div className="w-4 h-4 rounded-sm bg-orange-500 flex items-center justify-center">
-                    <User className="w-2.5 h-2.5 text-white" />
+                  <div className="w-5 h-5 rounded-md bg-orange-500 flex items-center justify-center">
+                    <User className="w-3 h-3 text-white" />
                   </div>
-                  {user.name.split(' ')[0]}
-                  <ChevronDown className="w-3 h-3 text-zinc-400" />
+                  <span>{user.name.split(' ')[0]}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-zinc-200 rounded-lg shadow-lg overflow-hidden z-50">
-                    <div className="px-4 py-3 border-b border-zinc-100">
+                  <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl overflow-hidden z-50">
+                    <div className="px-4 py-3 border-b border-zinc-100 bg-zinc-50/50">
                       <p className="text-xs font-semibold text-zinc-900">{user.name}</p>
                       <p className="text-xs text-zinc-400 mt-0.5">Aadhaar: {user.aadhaar}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        <p className="text-xs text-green-600 font-medium">DigiLocker Verified</p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <p className="text-xs text-emerald-600 font-medium">DigiLocker Verified</p>
                       </div>
                     </div>
                     <button
                       onClick={() => { router.push('/complaints'); setUserMenuOpen(false) }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 transition-colors text-left "
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 transition-colors text-left font-medium"
                     >
-                      <FileText className="w-3.5 h-3.5" />
+                      <FileText className="w-4 h-4 text-zinc-500" />
                       {hi ? 'मेरी शिकायतें' : 'My Complaints'}
                     </button>
                     <button
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 transition-colors text-left "
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 transition-colors text-left font-medium"
                     >
-                      <LogOut className="w-3.5 h-3.5" />
+                      <LogOut className="w-4 h-4 text-red-500" />
                       {hi ? 'साइन आउट' : 'Sign out'}
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
                     signIn({ name: 'Parichay Prabhu', aadhaar: '****-****-8421' })
                     setUser(getUser())
                   }}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md px-2.5 py-1.5 transition-colors shadow-xs"
+                  className="hidden md:inline-flex items-center gap-1.5 text-sm font-medium text-amber-950 bg-amber-50 hover:bg-amber-100/80 border border-amber-200/80 rounded-lg px-3.5 py-2.5 h-10 transition-colors shadow-2xs"
                   title="Direct 1-Click Login (Verified Citizen)"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                  <Zap className="w-4 h-4 text-amber-600 fill-amber-500" />
                   <span>{hi ? 'सीधा लॉगिन' : 'Direct Login'}</span>
                 </button>
 
                 <button
                   onClick={() => setModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-700 rounded-md px-3 py-1.5 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-zinc-950 hover:bg-zinc-850 border border-zinc-800 rounded-lg px-4 sm:px-5 py-2.5 h-10 transition-all shadow-xs hover:scale-[1.01] active:scale-[0.98]"
                 >
-                  {hi ? 'डिजीलॉकर से साइन इन करें' : 'Sign in with DigiLocker'}
+                  <span className="hidden sm:inline">{hi ? 'डिजीलॉकर से साइन इन करें' : 'Sign in with DigiLocker'}</span>
+                  <span className="sm:hidden">{hi ? 'लॉगिन' : 'Sign in'}</span>
                 </button>
               </div>
             )}

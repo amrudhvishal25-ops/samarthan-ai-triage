@@ -5,26 +5,32 @@
 @tailwind utilities;
 
 :root {
-  /* shadcn/Vercel light-mode tokens */
-  --background: #ffffff;
+  /* Modern Minimal Remix theme tokens (21st.dev @otiktok932) */
+  --background: #fafafa;
   --foreground: #09090b;
   --card: #ffffff;
   --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
   --muted: #f4f4f5;
   --muted-foreground: #71717a;
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
+  --primary: #09090b;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --ring: #18181b;
-  --radius: 0.5rem;
+  --accent: #eff6ff;
+  --accent-foreground: #1d4ed8;
+  --ring: #2563eb;
+  --radius: 0.625rem;
 
-  /* Legacy tokens kept for backward compat */
+  /* Modern Minimal Remix palette accents */
   --civic-blue: #1A3A6B;
+  --civic-blue-hover: #142e56;
+  --brand-blue: #2563eb;
   --saffron: #FF6B00;
 }
 

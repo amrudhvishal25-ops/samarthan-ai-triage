@@ -13,6 +13,12 @@ module.exports = {
           blueMid: '#2B5199',
           blueLight: '#EEF3FB',
         },
+        brand: {
+          blue:      '#2563eb',
+          blueHover: '#1d4ed8',
+          sky:       '#eff6ff',
+          dark:      '#09090b',
+        },
         saffron: {
           DEFAULT: '#FF6B00',
           light:   '#FFF3EB',
