@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, ArrowDown, ShieldCheck, Scale, Wallet, Building2, Loader2, RotateCcw, MessageCircle } from 'lucide-react'
 import AudioRecorder from '@/components/AudioRecorder'
 import { useTriage } from '@/context/TriageContext'
+import { RadialBackground } from '@/components/ui/light-theme-tailwind-css-background-snippet'
 
 interface HeroSectionProps {
   language: 'en' | 'hi'
@@ -120,7 +121,8 @@ export default function HeroSection({ language }: HeroSectionProps) {
   }
 
   return (
-    <section className="relative w-full bg-[#FAFAF8] pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
+    <section className="relative w-full pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
+      <RadialBackground />
       <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
 
         {/* Left: copy */}
