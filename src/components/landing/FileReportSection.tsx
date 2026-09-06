@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation'
 import { useTriage } from '@/context/TriageContext'
 import {
   DollarSign, User, ShieldAlert, Fingerprint, ShoppingCart, Briefcase,
-  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, Bot, ExternalLink,
+  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, Bot, ExternalLink, QrCode,
 } from 'lucide-react'
 import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
+import WhatsAppQRModal from '@/components/WhatsAppQRModal'
 
 interface FileReportSectionProps {
   language: 'en' | 'hi'
@@ -24,6 +25,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
   const [inputText, setInputText] = useState('')
   const [channel, setChannel] = useState<Channel>('web')
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false)
+  const [isQROpen, setIsQROpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const categories = [
@@ -128,17 +130,25 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 type="button"
+                onClick={() => setIsQROpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors shadow-sm"
+              >
+                <QrCode className="w-4 h-4" />
+                <span>{hi ? 'व्हाट्सएप लिंक करें (QR स्कैन करें)' : 'Link WhatsApp (Scan QR)'}</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsWhatsAppOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#075E54] hover:bg-[#064E46] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors shadow-sm"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#075E54] hover:bg-[#064E46] text-white rounded-full px-5 py-3 text-sm font-semibold transition-colors shadow-sm"
               >
                 <Bot className="w-4 h-4" />
-                <span>{hi ? 'व्हाट्सएप बॉट सिमुलेटर आज़माएं' : 'Try WhatsApp Bot Simulator'}</span>
+                <span>{hi ? 'बॉट सिमुलेटर' : 'Bot Simulator'}</span>
               </button>
               <a
                 href="https://wa.me/911930"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors shadow-sm"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-full px-5 py-3 text-sm font-semibold transition-colors shadow-sm"
               >
                 <ExternalLink className="w-4 h-4" />
                 <span>{hi ? 'व्हाट्सएप खोलें' : 'Open WhatsApp'}</span>
@@ -223,6 +233,12 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
       <WhatsAppSimulatorModal
         isOpen={isWhatsAppOpen}
         onClose={() => setIsWhatsAppOpen(false)}
+        language={language}
+      />
+
+      <WhatsAppQRModal
+        isOpen={isQROpen}
+        onClose={() => setIsQROpen(false)}
         language={language}
       />
     </section>

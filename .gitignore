@@ -6,3 +6,8 @@ out/
 *.log
 .DS_Store
 .vercel
+.whatsapp_auth/
+.whatsapp_live_state.json
+.whatsapp_bot.pid
+*.tsbuildinfo
+

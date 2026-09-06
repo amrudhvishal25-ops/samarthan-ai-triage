@@ -53,11 +53,22 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
-      // JSON body (from simulator or Meta API)
+      // JSON body (from simulator, Meta API, or companion Baileys bot)
       const json = await req.json()
       from = json.phoneNumber || json.From || 'simulated-user'
       body = json.message || json.Body || ''
       mediaUrl = json.mediaUrl
+
+      if (json.audioBase64) {
+        try {
+          const transcribed = await transcribeAudioBase64(json.audioBase64)
+          if (transcribed) {
+            body = body ? `${body} (Voice note: "${transcribed}")` : transcribed
+          }
+        } catch (e) {
+          console.error('[WhatsApp Webhook] Audio base64 transcription error:', e)
+        }
+      }
     }
 
     if (!body && !mediaUrl) {
@@ -106,6 +117,25 @@ async function transcribeAudioUrl(audioUrl: string): Promise<string | null> {
   if (!res.ok) return null
 
   const blob = await res.blob()
+  const file = new File([blob], 'audio.ogg', { type: 'audio/ogg' })
+
+  const openai = new OpenAI({ apiKey })
+  const transcription = await openai.audio.transcriptions.create({
+    file,
+    model: 'whisper-1',
+  })
+
+  return transcription.text
+}
+
+async function transcribeAudioBase64(base64Data: string): Promise<string | null> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
+    return 'Maine 45000 rupaye transfer kiye the ek fraudster ko.'
+  }
+
+  const buffer = Buffer.from(base64Data, 'base64')
+  const blob = new Blob([buffer], { type: 'audio/ogg' })
   const file = new File([blob], 'audio.ogg', { type: 'audio/ogg' })
 
   const openai = new OpenAI({ apiKey })
