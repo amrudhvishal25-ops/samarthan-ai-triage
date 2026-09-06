@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation'
 import { useTriage } from '@/context/TriageContext'
 import {
   DollarSign, User, ShieldAlert, Fingerprint, ShoppingCart, Briefcase,
-  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe,
+  Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, Bot, ExternalLink,
 } from 'lucide-react'
+import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
 
 interface FileReportSectionProps {
   language: 'en' | 'hi'
@@ -22,6 +23,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
 
   const [inputText, setInputText] = useState('')
   const [channel, setChannel] = useState<Channel>('web')
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const categories = [
@@ -111,20 +113,38 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
         )}
 
         {channel === 'whatsapp' && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center">
-            <p className="text-sm text-zinc-500 mb-4">
-              {hi ? 'व्हाट्सएप पर वॉइस नोट या स्क्रीनशॉट भेजें' : 'Send a voice note or screenshot on WhatsApp'}
+          <div className="rounded-xl border border-zinc-300 bg-white p-8 text-center max-w-xl mx-auto shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-900 mb-2">
+              {hi ? 'व्हाट्सएप पर AI शिकायत ट्रायज' : 'WhatsApp AI Triage Bot'}
+            </h3>
+            <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
+              {hi
+                ? 'हमारे AI बॉट को वॉइस नोट, मैसेज या स्क्रीनशॉट भेजें। बॉट विवरण निकालेगा और सीधे राष्ट्रीय पोर्टल पर शिकायत दर्ज करेगा।'
+                : 'Send a voice note, message, or screenshot to our AI bot. It extracts incident details, auto-detects applicable IT Act laws, and registers your formal complaint directly to the portal.'}
             </p>
-            <a
-              href="https://wa.me/911930"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors shadow-sm"
-            >
-              <MessageCircle className="w-4 h-4" />
-              {hi ? 'व्हाट्सएप खोलें' : 'Open WhatsApp'}
-            </a>
-            <p className="mt-3 text-xs text-zinc-400">{hi ? 'डेमो: नंबर सांकेतिक है' : 'Demo: number is illustrative'}</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsWhatsAppOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#075E54] hover:bg-[#064E46] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors shadow-sm"
+              >
+                <Bot className="w-4 h-4" />
+                <span>{hi ? 'व्हाट्सएप बॉट सिमुलेटर आज़माएं' : 'Try WhatsApp Bot Simulator'}</span>
+              </button>
+              <a
+                href="https://wa.me/911930"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors shadow-sm"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>{hi ? 'व्हाट्सएप खोलें' : 'Open WhatsApp'}</span>
+              </a>
+            </div>
+            <p className="mt-4 text-xs text-zinc-400">{hi ? 'डेमो: 1930 हेल्पलाइन पर आधारित' : 'Demo: Integrated with 1930 Helpline Framework'}</p>
           </div>
         )}
 
@@ -199,6 +219,12 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
           </>
         )}
       </div>
+
+      <WhatsAppSimulatorModal
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        language={language}
+      />
     </section>
   )
 }
