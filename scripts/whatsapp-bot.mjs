@@ -15,9 +15,12 @@ const STATE_FILE = path.resolve(process.cwd(), '.whatsapp_live_state.json')
 const PID_FILE = path.resolve(process.cwd(), '.whatsapp_bot.pid')
 const NEXT_API_URL = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/api/whatsapp`
-  : 'http://localhost:3000/api/whatsapp'
+  : 'https://samarthan-ai-parichay-s-projects.vercel.app/api/whatsapp'
 
 const startTime = Date.now()
+let currentSocket = null
+let reconnectTimer = null
+let isStarting = false
 
 // Write PID
 fs.writeFileSync(PID_FILE, process.pid.toString(), 'utf-8')
@@ -59,6 +62,10 @@ const pingInterval = setInterval(() => {
 
 function cleanupAndExit() {
   clearInterval(pingInterval)
+  if (reconnectTimer) clearTimeout(reconnectTimer)
+  if (currentSocket) {
+    try { currentSocket.end(undefined) } catch {}
+  }
   updateState({ status: 'DISCONNECTED', qrDataUrl: null })
   try {
     if (fs.existsSync(PID_FILE)) fs.unlinkSync(PID_FILE)
@@ -70,13 +77,37 @@ process.on('SIGINT', cleanupAndExit)
 process.on('SIGTERM', cleanupAndExit)
 
 async function startWhatsAppBot() {
+  if (isStarting) return
+  isStarting = true
+
+  // Safely close existing socket before starting a new one
+  if (currentSocket) {
+    try {
+      currentSocket.ev.removeAllListeners('connection.update')
+      currentSocket.ev.removeAllListeners('creds.update')
+      currentSocket.ev.removeAllListeners('messages.upsert')
+      currentSocket.end(undefined)
+    } catch {}
+    currentSocket = null
+  }
+
   console.log('\n======================================================')
   console.log('🤖 Samarthan Cybercrime AI - WhatsApp Live Companion')
   console.log('======================================================\n')
   console.log(`[Init] Using auth directory: ${AUTH_DIR}`)
   console.log(`[Init] Forwarding triage calls to: ${NEXT_API_URL}`)
 
-  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR)
+  let state, saveCreds
+  try {
+    const auth = await useMultiFileAuthState(AUTH_DIR)
+    state = auth.state
+    saveCreds = auth.saveCreds
+  } catch (e) {
+    console.error('[Auth Load Error]:', e.message)
+    isStarting = false
+    return
+  }
+
   const { version, isLatest } = await fetchLatestBaileysVersion()
   console.log(`[Init] Using WA version v${version.join('.')}, isLatest: ${isLatest}`)
 
@@ -93,6 +124,9 @@ async function startWhatsAppBot() {
     browser: ['Samarthan Cyber Triage', 'Chrome', '1.0.0'],
     generateHighQualityLinkPreview: true,
   })
+
+  currentSocket = sock
+  isStarting = false
 
   sock.ev.on('creds.update', saveCreds)
 
@@ -144,20 +178,33 @@ async function startWhatsAppBot() {
 
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode
-      const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+      console.log(`\n[Connection Closed] Reason code: ${statusCode}`)
 
-      console.log(`\n[Connection Closed] Reason code: ${statusCode}. Reconnecting: ${shouldReconnect}`)
-
-      if (shouldReconnect) {
-        updateState({ status: 'INITIALIZING' })
-        setTimeout(() => startWhatsAppBot(), 3000)
-      } else {
+      if (statusCode === DisconnectReason.loggedOut) {
         console.log('[Logged Out] Clear auth cache to link a new WhatsApp account.')
         updateState({ status: 'DISCONNECTED', userPhone: null, qrDataUrl: null })
         try {
           fs.rmSync(AUTH_DIR, { recursive: true, force: true })
         } catch {}
+        return
       }
+
+      if (statusCode === DisconnectReason.connectionReplaced) {
+        console.log('[Connection Replaced] Another session opened or conflict detected. Backing off 10s...')
+        updateState({ status: 'INITIALIZING' })
+        if (reconnectTimer) clearTimeout(reconnectTimer)
+        reconnectTimer = setTimeout(() => {
+          startWhatsAppBot().catch(console.error)
+        }, 10000)
+        return
+      }
+
+      // Standard reconnect
+      updateState({ status: 'INITIALIZING' })
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      reconnectTimer = setTimeout(() => {
+        startWhatsAppBot().catch(console.error)
+      }, 3000)
     }
   })
 
@@ -172,22 +219,40 @@ async function startWhatsAppBot() {
 
       const senderPhone = remoteJid.replace('@s.whatsapp.net', '')
 
+      const messageContent =
+        msg.message.ephemeralMessage?.message ||
+        msg.message.viewOnceMessage?.message ||
+        msg.message.viewOnceMessageV2?.message ||
+        msg.message
+
       // Extract text content
       let text =
-        msg.message.conversation ||
-        msg.message.extendedTextMessage?.text ||
-        msg.message.imageMessage?.caption ||
+        messageContent.conversation ||
+        messageContent.extendedTextMessage?.text ||
+        messageContent.imageMessage?.caption ||
+        messageContent.videoMessage?.caption ||
         ''
 
       let audioBase64 = undefined
 
-      // Voice note / audio message handling
-      if (msg.message.audioMessage) {
+      // Voice note / audio message handling (PTT or standard audio)
+      const isAudio = Boolean(
+        messageContent.audioMessage ||
+        (messageContent.documentMessage?.mimetype && messageContent.documentMessage.mimetype.startsWith('audio/'))
+      )
+
+      if (isAudio) {
         try {
           console.log(`[Audio Message] Received voice note from +${senderPhone}, downloading...`)
-          const buffer = await downloadMediaMessage(msg, 'buffer', {})
+          const buffer = await downloadMediaMessage(
+            msg,
+            'buffer',
+            {},
+            { logger, reuploadRequest: sock.updateMediaMessage }
+          )
           if (buffer) {
             audioBase64 = buffer.toString('base64')
+            console.log(`[Audio Message] Successfully extracted audio (${buffer.length} bytes)`)
           }
         } catch (e) {
           console.error('[Audio Download Error]:', e.message)

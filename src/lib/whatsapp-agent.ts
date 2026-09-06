@@ -196,10 +196,14 @@ export async function processWhatsAppTurn(
 
   const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${triageResult.incidentId}`
 
+  const lawsList = triageResult.applicableLaws
+    .map((l: any) => (typeof l === 'string' ? l : (l.section || l.title || 'IT Act')))
+    .join(', ')
+
   const reply = isHi
     ? `🚨 *आपकी शिकायत दर्ज कर ली गई है!*
 📌 *घटना आईडी:* ${triageResult.incidentId}
-⚖️ *कानूनी धारा:* ${triageResult.applicableLaws.join(', ')}
+⚖️ *कानूनी धारा:* ${lawsList}
 💰 *राशि:* ₹${triageResult.amount.toLocaleString('en-IN')}
 
 ⚡ *तत्काल गोल्डन ऑवर कार्रवाई:*
@@ -210,7 +214,7 @@ export async function processWhatsAppTurn(
 ${trackingLink}`
     : `🚨 *COMPLAINT FILED SUCCESSFULLY!*
 📌 *Incident ID:* ${triageResult.incidentId}
-⚖️ *Applicable Laws:* ${triageResult.applicableLaws.join(', ')}
+⚖️ *Applicable Laws:* ${lawsList}
 💰 *Amount:* ₹${triageResult.amount.toLocaleString('en-IN')}
 
 ⚡ *IMMEDIATE GOLDEN HOUR ACTIONS:*

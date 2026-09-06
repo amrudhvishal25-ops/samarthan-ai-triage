@@ -55,7 +55,7 @@ export default function ComplaintsPage() {
       recommendedChannel: c.recommendedChannel ?? inferChannelFromFraudType(c.fraudType).channel,
       recommendedChannelTarget: c.recommendedChannelTarget ?? inferChannelFromFraudType(c.fraudType).target,
     })
-    router.push('/dashboard')
+    router.push(`/dashboard?id=${encodeURIComponent(c.incidentId)}`)
   }
 
   const formatDate = (iso: string) => {

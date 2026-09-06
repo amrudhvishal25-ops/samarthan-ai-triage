@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Globe, FileText, LogOut, User, ChevronDown } from 'lucide-react'
+import { Globe, FileText, LogOut, User, ChevronDown, Zap } from 'lucide-react'
 import { useAuth, DigiLockerUser } from '@/hooks/useAuth'
 import DigiLockerModal from './DigiLockerModal'
 import { BotMessageSquareIcon } from './BotMessageSquareIcon'
@@ -14,7 +14,7 @@ interface NavbarProps {
 
 export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
   const router = useRouter()
-  const { getUser, signOut } = useAuth()
+  const { getUser, signIn, signOut } = useAuth()
   const [user, setUser] = useState<DigiLockerUser | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -115,12 +115,26 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
                 )}
               </div>
             ) : (
-              <button
-                onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-700 rounded-md px-3 py-1.5 transition-colors "
-              >
-                {hi ? 'डिजीलॉकर से साइन इन करें' : 'Sign in with DigiLocker'}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    signIn({ name: 'Parichay Prabhu', aadhaar: '****-****-8421' })
+                    setUser(getUser())
+                  }}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md px-2.5 py-1.5 transition-colors shadow-xs"
+                  title="Direct 1-Click Login (Verified Citizen)"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                  <span>{hi ? 'सीधा लॉगिन' : 'Direct Login'}</span>
+                </button>
+
+                <button
+                  onClick={() => setModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-700 rounded-md px-3 py-1.5 transition-colors"
+                >
+                  {hi ? 'डिजीलॉकर से साइन इन करें' : 'Sign in with DigiLocker'}
+                </button>
+              </div>
             )}
           </div>
         </div>

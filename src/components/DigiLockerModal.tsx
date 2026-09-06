@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ShieldCheck, Loader2, CheckCircle2, Lock, User, CreditCard } from 'lucide-react'
+import { X, ShieldCheck, Loader2, CheckCircle2, Lock, User, CreditCard, Zap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 interface DigiLockerModalProps {
@@ -51,6 +51,15 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
       return `****-****-${clean.slice(-4)}`
     }
     return '****-****-8421'
+  }
+
+  const handleDirectLogin = () => {
+    signIn({
+      name: name.trim() || 'Parichay Prabhu',
+      aadhaar: getMaskedAadhaar(),
+    })
+    onSuccess()
+    onClose()
   }
 
   const handleStartAuth = (e: React.FormEvent) => {
@@ -113,7 +122,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
               {/* INTRO / MOCK SIGN IN STEP */}
               {step === 'intro' && (
                 <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
-                  <div className="flex items-center gap-3 mb-5">
+                  <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
                       <ShieldCheck className="w-5 h-5 text-white" />
                     </div>
@@ -121,6 +130,22 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                       <h2 className="text-base font-bold text-zinc-900">Sign in with DigiLocker</h2>
                       <p className="text-xs text-zinc-500">Government of India — MeitY Sandbox</p>
                     </div>
+                  </div>
+
+                  {/* 1-Click Direct Demo Login */}
+                  <button
+                    type="button"
+                    onClick={handleDirectLogin}
+                    className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.99] text-white rounded-xl py-2.5 font-medium text-xs transition-all shadow-sm mb-3.5"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                    <span>1-Click Direct Login (Verified Citizen)</span>
+                  </button>
+
+                  <div className="relative flex py-1 items-center mb-3.5">
+                    <div className="flex-grow border-t border-zinc-200"></div>
+                    <span className="flex-shrink mx-2 text-[10.5px] font-medium text-zinc-400 uppercase tracking-wider">or sign in with custom details</span>
+                    <div className="flex-grow border-t border-zinc-200"></div>
                   </div>
 
                   <form onSubmit={handleStartAuth} className="space-y-4 mb-4">

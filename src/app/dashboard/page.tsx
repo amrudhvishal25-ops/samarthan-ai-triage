@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
@@ -27,8 +27,10 @@ function readAsDataUrl(file: File): Promise<string> {
   })
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const paramId = searchParams?.get('id')
   const { triageResult, setTriageResult, language, setLanguage, reset, sharedImage } = useTriage()
   const { save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage, addUpdate } = useComplaints()
   const [status, setStatus] = useState<ComplaintStatus>('SUBMITTED')
@@ -36,6 +38,7 @@ export default function DashboardPage() {
   const [updates, setUpdates] = useState<ComplaintUpdate[]>([])
   const [callModalHotline, setCallModalHotline] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [loadingRecord, setLoadingRecord] = useState(Boolean(paramId && !triageResult))
   const hi = language === 'hi'
   const mounted = useRef(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -45,9 +48,69 @@ export default function DashboardPage() {
     setTimeout(() => { mounted.current = true }, 0)
   }, [])
 
+  // Load complaint if paramId is present in URL
   useEffect(() => {
-    if (mounted.current && !triageResult) router.replace('/')
-  }, [triageResult, router])
+    if (!paramId) {
+      if (mounted.current && !triageResult) {
+        router.replace('/')
+      }
+      return
+    }
+
+    if (triageResult && triageResult.incidentId === paramId) {
+      setLoadingRecord(false)
+      return
+    }
+
+    let isCancelled = false
+    setLoadingRecord(true)
+
+    getById(paramId)
+      .then(record => {
+        if (isCancelled) return
+        if (record) {
+          setTriageResult({
+            incidentId: record.incidentId,
+            fraudType: record.fraudType,
+            fraudsterIdentifier: record.fraudsterIdentifier,
+            complainantName: record.complainantName,
+            amount: record.amount,
+            urgencyLevel: record.urgencyLevel,
+            summary: record.summary,
+            summaryHi: record.summaryHi,
+            complaintDraft: record.complaintDraft,
+            complaintDraftHi: record.complaintDraftHi,
+            frauderContact: record.frauderContact,
+            bankName: record.bankName,
+            accountNumber: record.accountNumber,
+            upiId: record.upiId,
+            timeline: record.timeline,
+            freezeSteps: record.freezeSteps,
+            applicableLaws: record.applicableLaws,
+            recommendedChannel: record.recommendedChannel,
+            recommendedChannelTarget: record.recommendedChannelTarget,
+          })
+          setStatus(record.status)
+          setEvidenceImages(record.evidenceImages)
+          setUpdates(record.updates)
+          initialSavedFor.current = record.incidentId
+        } else {
+          setToast(hi ? 'शिकायत नहीं मिली' : 'Complaint not found')
+          setTimeout(() => router.replace('/complaints'), 2000)
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load complaint by ID:', err)
+        if (!isCancelled) {
+          setToast(hi ? 'डेटा लोड करने में त्रुटि' : 'Error loading complaint')
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) setLoadingRecord(false)
+      })
+
+    return () => { isCancelled = true }
+  }, [paramId, triageResult, getById, setTriageResult, router, hi])
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -188,6 +251,25 @@ export default function DashboardPage() {
     if (!triageResult) return
     const next = await setStatusAtLeast(triageResult.incidentId, 'FIR_FILED')
     if (next) setStatus(next)
+  }
+
+  if (loadingRecord || (!triageResult && paramId)) {
+    return (
+      <main className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans">
+        <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mb-4 animate-pulse">
+            <ShieldAlert className="w-7 h-7 text-[#1A3A6B]" />
+          </div>
+          <h2 className="text-base font-bold text-zinc-900">
+            {hi ? 'आधिकारिक शिकायत लोड हो रही है...' : 'Retrieving Official Complaint Report...'}
+          </h2>
+          <p className="text-xs text-zinc-500 mt-1.5 font-mono bg-zinc-100 px-3 py-1 rounded-md border border-zinc-200">
+            Incident ID: {paramId}
+          </p>
+        </div>
+      </main>
+    )
   }
 
   if (!triageResult) return null
@@ -505,5 +587,19 @@ export default function DashboardPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-zinc-300 border-t-zinc-900 animate-spin" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   )
 }
