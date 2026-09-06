@@ -74,6 +74,31 @@ export function quickExtract(text: string) {
   }
 }
 
+export function isDetailedIncidentPrompt(text: string, voiceTranscript?: string): boolean {
+  const full = (voiceTranscript || text).trim()
+  if (!full) return false
+
+  // Disqualify short navigation keywords, greetings, and system numbers
+  if (/^(status|track|reset|\/reset|restart|clear|hi|hello|hey|namaste|help|madad|pranam|hlo|hii|1|2|yes|no)$/i.test(full)) {
+    return false
+  }
+
+  // Pure greeting prefixes under 35 chars
+  if (/^(hi|hello|hey|namaste|help|madad)\b/i.test(full) && full.length < 35) {
+    return false
+  }
+
+  const ext = quickExtract(full)
+  const hasFinancial = Boolean(ext.amount || ext.utr || ext.upi)
+
+  const crimeKeywords = /\b(fraud|scam|deduct|cut gaye|kat gaye|chori|paisa|paise|transfer|stolen|hacked|cyber|otp|apk|account|bank|police|fir|complaint|threat|blackmail|extortion|loan app|speedrupee|telegram|quicksupport|anydesk|morph|unauthorized|rupaye|rupees|inr|credit card|pan|aadhaar|tafcop|transaction|dispute|olx)\b/i
+  const hasKeywords = crimeKeywords.test(full)
+  const isNarrative = full.length >= 40 || full.split(/\s+/).length >= 6
+
+  // True if user provides financial markers with keywords/narrative, or a descriptive narrative of crime
+  return (hasFinancial && (hasKeywords || isNarrative)) || (isNarrative && hasKeywords) || full.length >= 80
+}
+
 export async function analyzeScreenshotWithVision(base64Image: string): Promise<ExtractedVisionEvidence | null> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
@@ -350,6 +375,23 @@ ${visionEvidence.amount ? `• 💰 *Detected Amount:* ₹${visionEvidence.amoun
         return result
       }
     }
+  }
+
+  // Direct Incident Prompt Handler:
+  // When a user pastes a substantive incident prompt directly, bypass all greeting menus,
+  // language selection, and update choices, and immediately file the complaint!
+  if (isDetailedIncidentPrompt(trimmed, voiceTranscript)) {
+    const fullIncidentText = (voiceTranscript || trimmed).trim()
+    console.log(`\n⚡ [WhatsApp Agent] DIRECT INCIDENT PROMPT DETECTED from +${session.phoneNumber}!`)
+    console.log(`[WhatsApp Agent] Skipping intermediate menus and filing complaint directly...`)
+
+    session.language = detectLanguage(fullIncidentText) === 'hi' ? 'hi' : 'en'
+    session.stage = 'AWAITING_INCIDENT'
+    session.accumulatedText = fullIncidentText
+    session.pendingUpdateText = undefined
+    session.pendingMediaUrl = undefined
+
+    return await createAndSaveNewComplaint(session, fullIncidentText, mediaUrl, voiceTranscript)
   }
 
   const isResetCommand = /^(reset|\/reset|restart|\/restart|clear)$/i.test(trimmed)
