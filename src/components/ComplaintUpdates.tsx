@@ -33,7 +33,7 @@ export default function ComplaintUpdates({ hi, updates = [], onAdd }: ComplaintU
   const allActionPoints = updates.flatMap(u => hi ? u.actionPointsHi : u.actionPoints)
 
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
+    <div className="bg-white rounded-none border border-zinc-200 p-6 shadow-sm">
       <h3 className="text-sm font-bold text-zinc-900 mb-1 uppercase tracking-wide flex items-center gap-2">
         <MessageSquarePlus className="w-4 h-4 text-blue-500" />
         {hi ? 'नई जानकारी जोड़ें' : 'Add an Update'}
@@ -53,12 +53,12 @@ export default function ComplaintUpdates({ hi, updates = [], onAdd }: ComplaintU
             onChange={(e) => setNote(e.target.value)}
             rows={2}
             placeholder={hi ? 'उदाहरण: मुझे एक और मैसेज मिला उसी नंबर से…' : 'e.g. I got another message from the same number…'}
-            className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 placeholder-zinc-400 resize-none outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
+            className="flex-1 bg-zinc-50 border border-zinc-200 rounded-none p-3 text-sm text-zinc-900 placeholder-zinc-400 resize-none outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
           />
         <button
           onClick={handleSubmit}
           disabled={submitting || !note.trim()}
-          className="flex-shrink-0 self-end flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl px-4 py-3 text-xs font-semibold transition-all"
+          className="flex-shrink-0 self-end flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-none px-4 py-3 text-xs font-semibold transition-all"
         >
           {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (hi ? 'जोड़ें' : 'Add')}
         </button>
@@ -66,7 +66,7 @@ export default function ComplaintUpdates({ hi, updates = [], onAdd }: ComplaintU
       </div>
 
       {allActionPoints.length > 0 && (
-        <div className="mb-4 border border-amber-200 bg-amber-50 rounded-xl p-3.5">
+        <div className="mb-4 border border-amber-200 bg-amber-50 rounded-none p-3.5">
           <p className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5 mb-2">
             <ListChecks className="w-3.5 h-3.5" />
             {hi ? 'फॉलो-अप कार्रवाई (1930/बैंक/पुलिस को बताएं)' : 'Follow-Up Actions (mention to 1930/bank/police)'}

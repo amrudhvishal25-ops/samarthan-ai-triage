@@ -121,7 +121,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
             <button
               key={t.id}
               onClick={() => setChannel(t.id)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-none px-4 py-2 text-sm font-medium transition-colors ${
                 channel === t.id
                   ? 'bg-[#1A3A6B] text-white shadow-sm'
                   : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300'
@@ -135,7 +135,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
 
         {/* Channel body */}
         {channel === 'call' && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center">
+          <div className="rounded-none border border-zinc-200 bg-white p-8 text-center">
             <p className="text-sm text-zinc-500 mb-2">{hi ? 'राष्ट्रीय साइबर अपराध हेल्पलाइन' : 'National Cybercrime Helpline'}</p>
             <a href="tel:1930" className="text-5xl font-extrabold text-[#0A0A0A] tracking-tight">1930</a>
             <p className="mt-3 text-sm text-zinc-500 max-w-md mx-auto">
@@ -147,12 +147,12 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
         )}
 
         {channel === 'whatsapp' && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center max-w-xl mx-auto shadow-xs">
-            <div className="relative w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+          <div className="rounded-none border border-zinc-200 bg-white p-8 text-center max-w-xl mx-auto shadow-xs">
+            <div className="relative w-14 h-14 rounded-none bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
               <MessageCircle className="w-7 h-7" />
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-none h-3 w-3 bg-emerald-500"></span>
               </span>
             </div>
 
@@ -175,7 +175,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-xl px-8 py-4 text-base font-bold transition-all shadow-md hover:shadow-lg"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-none px-8 py-4 text-base font-bold transition-all shadow-md hover:shadow-lg"
               >
                 <MessageCircle className="w-5 h-5 fill-white" />
                 <span>{hi ? 'व्हाट्सएप एजेंट से बात करें' : 'Visit the Agent on WhatsApp'}</span>
@@ -183,8 +183,8 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
               </a>
             </div>
 
-            <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-none bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-800">
+              <span className="w-2 h-2 rounded-none bg-emerald-500 animate-pulse" />
               <span>{hi ? 'लाइव एजेंट 24x7 सक्रिय (+91 63038 07967)' : 'Agent Live & Active: +91 63038 07967 (24x7)'}</span>
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
         {channel === 'web' && (
           <>
             <input type="file" ref={fileRef} onChange={handleFileSelect} className="hidden" accept="image/*,.pdf" />
-            <div className="rounded-xl border border-zinc-300 bg-white shadow-xs overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent transition-all">
+            <div className="rounded-none border border-zinc-300 bg-white shadow-xs overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent transition-all">
               <textarea
                 className="w-full p-4 min-h-[120px] outline-none resize-none text-zinc-800 placeholder:text-zinc-400"
                 placeholder={hi ? 'मुझे एक फिशिंग लिंक मिला...' : 'I received a phishing link...'}
@@ -208,7 +208,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-lg transition-colors shadow-xs"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-none transition-colors shadow-xs"
                   >
                     <Plus className="w-4 h-4 text-zinc-500" />
                     <span>{hi ? 'सबूत जोड़ें' : 'Add evidence'}</span>
@@ -221,7 +221,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                       const q = inputText.trim() ? `&text=${encodeURIComponent(inputText)}` : ''
                       router.push(`/intake?category=auto&mode=voice${q}`)
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-lg transition-colors shadow-xs"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-none transition-colors shadow-xs"
                   >
                     <Mic className="w-4 h-4 text-blue-600" />
                     <span>{hi ? 'आवाज़ का उपयोग करें' : 'Use voice'}</span>
@@ -231,7 +231,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                   type="button"
                   onClick={handleAutoAnalyze}
                   disabled={!inputText.trim()}
-                  className="flex items-center justify-center p-2 rounded-full bg-[#1A3A6B] text-white hover:bg-[#152d54] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="flex items-center justify-center p-2 rounded-none bg-[#1A3A6B] text-white hover:bg-[#152d54] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   <ArrowUp className="w-5 h-5" />
                 </button>
@@ -250,9 +250,9 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.04 }}
                   onClick={() => handleCategory(cat.title)}
-                  className="flex flex-col items-start p-5 rounded-xl bg-white border border-zinc-200/90 hover:border-blue-500/50 hover:shadow-xs transition-all text-left"
+                  className="flex flex-col items-start p-5 rounded-none bg-white border border-zinc-200/90 hover:border-blue-500/50 hover:shadow-xs transition-all text-left"
                 >
-                  <div className={`p-2.5 rounded-xl mb-3 ${cat.iconBg}`}>{cat.icon}</div>
+                  <div className={`p-2.5 rounded-none mb-3 ${cat.iconBg}`}>{cat.icon}</div>
                   <h3 className="text-sm font-bold text-[#0A0A0A] mb-1">{hi ? cat.titleHi : cat.title}</h3>
                   <p className="text-xs text-zinc-500">{hi ? cat.descHi : cat.desc}</p>
                 </motion.button>

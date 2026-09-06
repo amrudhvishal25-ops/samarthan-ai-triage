@@ -141,7 +141,7 @@ export default function WhatsAppSimulatorModal({ isOpen, onClose, language = 'en
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-xl h-[92vh] sm:h-[85vh] max-h-[750px] bg-[#EFEAE2] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-zinc-300"
+        className="w-full max-w-xl h-[92vh] sm:h-[85vh] max-h-[750px] bg-[#EFEAE2] rounded-none shadow-2xl flex flex-col overflow-hidden border border-zinc-300"
       >
         {/* WhatsApp Header */}
         <div className="bg-[#075E54] text-white px-4 py-3 flex items-center justify-between shadow-md">
@@ -226,7 +226,7 @@ export default function WhatsAppSimulatorModal({ isOpen, onClose, language = 'en
                           onClose()
                           router.push(`/dashboard?id=${m.incidentId}`)
                         }}
-                        className="w-full mt-1.5 flex items-center justify-center gap-1.5 bg-[#075E54] hover:bg-[#064E46] text-white py-1.5 px-3 rounded-md text-xs font-semibold shadow-xs transition-colors"
+                        className="w-full mt-1.5 flex items-center justify-center gap-1.5 bg-[#075E54] hover:bg-[#064E46] text-white py-1.5 px-3 rounded-none text-xs font-semibold shadow-xs transition-colors"
                       >
                         <span>{isHi ? 'लाइव समर्थन डैशबोर्ड खोलें' : 'Open in Live Dashboard'}</span>
                         <ExternalLink className="w-3.5 h-3.5" />

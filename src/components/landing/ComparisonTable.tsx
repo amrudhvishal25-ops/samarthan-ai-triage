@@ -68,7 +68,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
         </div>
 
         {/* Sharper, cleaner table container */}
-        <div className="w-full bg-white border border-zinc-300 rounded-xl overflow-hidden shadow-xs">
+        <div className="w-full bg-white border border-zinc-300 rounded-none overflow-hidden shadow-xs">
           {/* Header */}
           <div className="hidden md:grid grid-cols-[2fr_1.5fr_1.6fr] border-b border-zinc-200">
             <div className="bg-zinc-50/80 px-6 py-4 text-xs font-bold text-zinc-600 uppercase tracking-wider border-r border-zinc-200 flex items-center">
@@ -79,7 +79,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             </div>
             <div className="bg-[#1A3A6B] px-6 py-4 text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
               <span>{isHi ? "समर्थन" : "Samarthan"}</span>
-              <span className="text-[10px] bg-blue-500/30 text-blue-100 px-2 py-0.5 rounded-full font-medium tracking-normal lowercase">
+              <span className="text-[10px] bg-blue-500/30 text-blue-100 px-2 py-0.5 rounded-none font-medium tracking-normal lowercase font-mono">
                 ai-powered
               </span>
             </div>

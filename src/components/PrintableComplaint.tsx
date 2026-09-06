@@ -37,7 +37,7 @@ export default function PrintableComplaint({ result, language }: PrintableCompla
         </h1>
       </div>
 
-      <div className="border-2 border-black rounded-md p-4 mb-6 text-center">
+      <div className="border-2 border-black rounded-none p-4 mb-6 text-center">
         <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
           {hi ? 'पावती संख्या' : 'Acknowledgement Number'}
         </p>

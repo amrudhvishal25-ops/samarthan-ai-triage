@@ -23,12 +23,12 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-      <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wide">
+    <div className="bg-white rounded-none border border-zinc-200 p-6 shadow-sm">
+      <h3 className="text-sm font-bold text-zinc-900 mb-6 uppercase tracking-wide">
         {hi ? 'शिकायत स्थिति ट्रैकर' : 'Complaint Status Tracker'}
       </h3>
 
-      <div className="relative border-l-2 border-gray-100 ml-3 space-y-6">
+      <div className="relative border-l-2 border-zinc-100 ml-3 space-y-6">
         {COMPLAINT_STATUSES.map((s, idx) => {
           const label = COMPLAINT_STATUS_LABELS[s]
           const isCompleted = idx < currentIdx
@@ -37,17 +37,17 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
 
           return (
             <div key={s} className="relative pl-6">
-              <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 bg-white ${
+              <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-none border-2 bg-white ${
                 isCompleted ? 'border-green-500 bg-green-500' :
                 isCurrent ? 'border-blue-500 bg-blue-500 animate-pulse' :
-                'border-gray-300'
+                'border-zinc-300'
               }`} />
 
               <div className={isPending ? 'opacity-50' : ''}>
-                <h4 className={`text-sm font-bold flex items-center gap-1.5 ${isCompleted ? 'text-green-700' : isCurrent ? 'text-blue-700' : 'text-gray-500'}`}>
+                <h4 className={`text-sm font-bold flex items-center gap-1.5 ${isCompleted ? 'text-green-700' : isCurrent ? 'text-blue-700' : 'text-zinc-500'}`}>
                   {hi ? label.hi : label.en}
                   {label.simulated && (
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-blue-600 bg-blue-50 border border-blue-200 rounded-none px-1.5 py-0.5">
                       {hi ? 'सक्रिय' : 'Live'}
                     </span>
                   )}
@@ -58,14 +58,14 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
         })}
       </div>
 
-      <div className="mt-6 pt-5 border-t border-dashed border-gray-200">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
+      <div className="mt-6 pt-5 border-t border-dashed border-zinc-200">
+        <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-2">
           {hi ? 'डेमो नियंत्रण' : 'Demo Controls'}
         </p>
         <button
           onClick={handleAdvance}
           disabled={advancing || isFinal}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs font-semibold py-2.5 transition-all"
+          className="w-full flex items-center justify-center gap-2 rounded-none border border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-700 text-xs font-semibold py-2.5 transition-all"
         >
           {advancing ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />

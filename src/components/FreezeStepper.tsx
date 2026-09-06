@@ -36,7 +36,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
           {/* Step number + connector */}
           <div className="flex flex-col items-center">
             <div className={clsx(
-              'w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0',
+              'w-9 h-9 rounded-none flex items-center justify-center text-white font-bold text-sm flex-shrink-0',
               step.step === 1 ? 'bg-red-500' : 'bg-civic-blue'
             )}>
               {step.step}
@@ -48,7 +48,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
 
           {/* Content */}
           <div className={clsx(
-            'flex-1 rounded-xl border p-4 mb-4',
+            'flex-1 rounded-none border p-4 mb-4',
             step.step === 1 ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'
           )}>
             <div className="flex items-start justify-between gap-2">
@@ -60,7 +60,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
               </h4>
               <button
                 onClick={() => handleCopy(step, idx)}
-                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                className="flex-shrink-0 p-1.5 rounded-none hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                 aria-label="Copy step"
               >
                 {copied === idx
@@ -81,7 +81,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
                   onHotlineClick ? (
                     <button
                       onClick={() => onHotlineClick(step.hotline!)}
-                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-civic-blueMid transition-colors min-h-[44px]"
+                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-none hover:bg-civic-blueMid transition-colors min-h-[44px]"
                     >
                       <Phone className="w-3.5 h-3.5" />
                       {step.hotline}
@@ -89,7 +89,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
                   ) : (
                     <a
                       href={`tel:${step.hotline}`}
-                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-civic-blueMid transition-colors min-h-[44px]"
+                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-none hover:bg-civic-blueMid transition-colors min-h-[44px]"
                     >
                       <Phone className="w-3.5 h-3.5" />
                       {step.hotline}
@@ -101,7 +101,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
                     href={step.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors min-h-[44px]"
+                    className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-2 rounded-none hover:bg-gray-50 transition-colors min-h-[44px]"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     {hi ? 'खोलें' : 'Open'}

@@ -153,14 +153,14 @@ export default function HeroSection({ language }: HeroSectionProps) {
           >
             <button
               onClick={goToIntake}
-              className="inline-flex items-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-full px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-none px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm"
             >
               {c.primary}
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#how-it-works"
-              className="inline-flex items-center gap-2 border border-zinc-300 text-zinc-700 hover:bg-white rounded-full px-6 py-3.5 text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-2 border border-zinc-300 text-zinc-700 hover:bg-white rounded-none px-6 py-3.5 text-sm font-medium transition-colors"
             >
               {c.secondary}
               <ArrowDown className="w-4 h-4" />
@@ -175,7 +175,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="relative"
         >
-          <div className="rounded-3xl border border-zinc-200 bg-white shadow-[0_20px_60px_-20px_rgba(0,0,0,0.15)] p-6">
+          <div className="rounded-none border border-zinc-200 bg-white shadow-[0_20px_60px_-20px_rgba(0,0,0,0.15)] p-6">
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-4">
               {committed ? c.demoHintDone : c.demoHint}
             </p>
@@ -188,7 +188,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
             />
 
             {isTranscribing && (
-              <div className="mt-4 p-4 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center justify-center gap-2.5 text-xs font-semibold text-[#1A3A6B]">
+              <div className="mt-4 p-4 rounded-none bg-blue-50/60 border border-blue-100 flex items-center justify-center gap-2.5 text-xs font-semibold text-[#1A3A6B]">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                 <span>{hi ? 'आपकी आवाज़ सुनी जा रही है और रिपोर्ट तैयार हो रही है...' : 'Transcribing what you said and preparing report...'}</span>
               </div>
@@ -216,7 +216,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-4 overflow-hidden"
                 >
-                  <div className="rounded-xl bg-[#FAFAF8] border border-zinc-200 p-4">
+                  <div className="rounded-none bg-[#FAFAF8] border border-zinc-200 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
                         {c.resultTitle}
@@ -231,7 +231,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                       </button>
                     </div>
 
-                    <div className="mb-3.5 p-3 rounded-xl bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
+                    <div className="mb-3.5 p-3 rounded-none bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
                       <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">{c.youSaid}</span>
                       &ldquo;{committed}&rdquo;
                     </div>
@@ -249,7 +249,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
                     <button
                       onClick={goToIntake}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-xl px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
+                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-none px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
                     >
                       <span>{c.continueCta}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -275,7 +275,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </div>
 
           {/* Simulated badge */}
-          <div className="absolute -top-3 -right-3 bg-white border border-zinc-200 rounded-full px-3 py-1 text-[10px] font-medium text-zinc-500 shadow-sm">
+          <div className="absolute -top-3 -right-3 bg-white border border-zinc-200 rounded-none px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-zinc-500 shadow-sm">
             {hi ? 'लाइव डेमो' : 'Live demo'}
           </div>
         </motion.div>

@@ -236,7 +236,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
 
   if (permissionDenied) {
     return (
-      <div className={clsx("rounded-xl p-4 text-sm border", isDark ? "bg-red-500/10 border-red-500/30 text-red-300" : "bg-red-50 border-red-200 text-red-700")}>
+      <div className={clsx("rounded-none p-4 text-sm border", isDark ? "bg-red-500/10 border-red-500/30 text-red-300" : "bg-red-50 border-red-200 text-red-700")}>
         {hi
           ? 'माइक्रोफोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग में माइक की अनुमति दें।'
           : 'Microphone permission denied. Please allow mic access in browser settings.'}
@@ -251,18 +251,18 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
         <button
           onClick={recording ? stopRecording : startRecording}
           className={clsx(
-            'relative w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-150 shadow-lg',
-            'focus:outline-none focus:ring-4 focus:ring-offset-2',
-            isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white',
+            'relative w-16 h-16 rounded-none flex items-center justify-center transition-transform duration-150 shadow-sm border',
+            'focus:outline-none focus:ring-2 focus:ring-offset-2',
+            isDark ? 'focus:ring-offset-black border-zinc-700' : 'focus:ring-offset-white border-zinc-300',
             recording
-              ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500/50 scale-105'
-              : (isDark ? 'bg-white hover:bg-gray-200 focus:ring-white/50 text-gray-900' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-300 text-white')
+              ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500/50 scale-105 border-red-600'
+              : (isDark ? 'bg-white hover:bg-gray-200 focus:ring-white/50 text-gray-900' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-300 text-white border-blue-700')
           )}
           aria-label={recording ? 'Stop recording' : 'Start recording'}
         >
           {recording && (
             <span
-              className="absolute inset-0 rounded-full bg-red-500/40"
+              className="absolute inset-0 rounded-none bg-red-500/40"
               style={{ transform: `scale(${1 + levels[0] * 0.5})`, transition: 'transform 80ms linear' }}
             />
           )}
@@ -278,7 +278,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
             <div
               key={i}
               className={clsx(
-                'w-[3px] rounded-full',
+                'w-[3px] rounded-none',
                 recording ? (isDark ? 'bg-white' : 'bg-blue-600') : (isDark ? 'bg-white/20' : 'bg-zinc-200')
               )}
               style={{
@@ -291,7 +291,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
 
         {recording && (
           <div className={clsx("flex items-center gap-2 font-mono text-xs font-bold", isDark ? "text-red-400" : "text-red-600")}>
-            <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-none animate-pulse" />
             {formatTime(seconds)} / {formatTime(MAX_SECONDS)}
           </div>
         )}
@@ -305,7 +305,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
 
       {/* Live caption */}
       {recording && (
-        <div className={clsx("rounded-lg p-2.5 text-xs min-h-[2.5rem] max-h-24 overflow-y-auto", isDark ? "bg-white/5 text-white/80" : "bg-white text-zinc-600 border border-zinc-200")}>
+        <div className={clsx("rounded-none p-2.5 text-xs min-h-[2.5rem] max-h-24 overflow-y-auto", isDark ? "bg-white/5 text-white/80" : "bg-white text-zinc-600 border border-zinc-200")}>
           {liveText || (captionError
             ? <span className="text-amber-600">{captionError}</span>
             : <span className="opacity-50 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" />{hi ? 'सुन रहा है…' : 'Listening…'}</span>
@@ -315,7 +315,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
 
       {/* Playback */}
       {blobUrl && !recording && (
-        <div className={clsx("rounded-lg p-2.5 border", isDark ? "bg-green-500/10 border-green-500/30" : "bg-green-50 border-green-200")}>
+        <div className={clsx("rounded-none p-2.5 border", isDark ? "bg-green-500/10 border-green-500/30" : "bg-green-50 border-green-200")}>
           <p className={clsx("text-[10px] font-semibold mb-1.5 uppercase tracking-wide", isDark ? "text-green-400" : "text-green-700")}>
             {hi ? 'रिकॉर्डिंग तैयार है' : 'Recording ready'}
           </p>

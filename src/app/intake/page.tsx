@@ -185,7 +185,7 @@ function IntakeContent() {
           <button
             onClick={() => router.back()}
             aria-label={hi ? 'वापस जाएं' : 'Go back'}
-            className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors "
+            className="p-1.5 rounded-none hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors "
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -206,7 +206,7 @@ function IntakeContent() {
 
         {scenario && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="border border-zinc-200 bg-zinc-50 rounded-xl p-4">
+            className="border border-zinc-200 bg-zinc-50 rounded-none p-4">
             <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-1 flex items-center gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5" />
               {hi ? 'Sandbox Mode' : 'Sandbox Mode — Synthetic Data'}
@@ -226,7 +226,7 @@ function IntakeContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           {/* Voice — hero cell, spans both rows on desktop */}
-          <div className="md:row-span-2 border border-zinc-200 rounded-2xl bg-zinc-50 shadow-sm p-5 flex flex-col min-h-[280px]">
+          <div className="md:row-span-2 border border-zinc-200 rounded-none bg-zinc-50 shadow-sm p-5 flex flex-col min-h-[280px]">
             <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
               <span className="flex items-center gap-1.5"><Mic className="w-3.5 h-3.5" />{hi ? 'वॉइस नोट' : 'Voice Note'}</span>
             </label>
@@ -236,7 +236,7 @@ function IntakeContent() {
           </div>
 
           {/* Text */}
-          <div className="border border-zinc-200 rounded-2xl bg-white shadow-sm p-5">
+          <div className="border border-zinc-200 rounded-none bg-white shadow-sm p-5">
             <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
               <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />{hi ? 'विवरण लिखें' : 'Type Details'}</span>
             </label>
@@ -245,7 +245,7 @@ function IntakeContent() {
               onChange={(e) => setTextValue(e.target.value)}
               rows={5}
               placeholder={hi ? 'विस्तार से बताएं…' : 'Describe the incident in detail…'}
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 text-sm text-zinc-900 placeholder-zinc-400 resize-none outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-none p-3.5 text-sm text-zinc-900 placeholder-zinc-400 resize-none outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
             />
             {voiceTranscript && (
               <p className="mt-2 text-xs text-zinc-500 flex items-start gap-1.5">
@@ -256,13 +256,13 @@ function IntakeContent() {
           </div>
 
           {/* Upload */}
-          <div className="border border-zinc-200 rounded-2xl bg-white shadow-sm p-5">
+          <div className="border border-zinc-200 rounded-none bg-white shadow-sm p-5">
             <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
               <span className="flex items-center gap-1.5"><ImagePlus className="w-3.5 h-3.5" />{hi ? 'सबूत संलग्न करें' : 'Attach Evidence'}</span>
             </label>
             {imageFile ? (
-              <div className="flex items-center gap-3 border border-zinc-200 rounded-xl p-3 bg-zinc-50">
-                <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 border border-zinc-200 rounded-none p-3 bg-zinc-50">
+                <div className="w-9 h-9 rounded-none bg-green-100 flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -271,7 +271,7 @@ function IntakeContent() {
                 </div>
                 <button
                   onClick={() => { setImageFile(null); setSharedImage(null) }}
-                  className="p-1.5 hover:bg-zinc-200 rounded-md text-zinc-500 transition-colors "
+                  className="p-1.5 hover:bg-zinc-200 rounded-none text-zinc-500 transition-colors "
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -279,7 +279,7 @@ function IntakeContent() {
             ) : (
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full h-24 rounded-xl border-2 border-dashed border-zinc-200 hover:border-zinc-400 bg-zinc-50 hover:bg-zinc-100 flex flex-col items-center justify-center gap-1 text-zinc-400 hover:text-zinc-600 transition-all "
+                className="w-full h-24 rounded-none border-2 border-dashed border-zinc-200 hover:border-zinc-400 bg-zinc-50 hover:bg-zinc-100 flex flex-col items-center justify-center gap-1 text-zinc-400 hover:text-zinc-600 transition-all "
               >
                 <ImagePlus className="w-5 h-5" />
                 <span className="text-xs font-medium">{hi ? 'फ़ाइल अपलोड करें' : 'Upload Screenshot or File'}</span>
@@ -292,7 +292,7 @@ function IntakeContent() {
 
         {error && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+            className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-none p-4 text-red-700 text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             {error}
           </motion.div>
@@ -302,7 +302,7 @@ function IntakeContent() {
         <button
           onClick={() => handleAIAnalyze()}
           disabled={!textValue && !voiceTranscript && !audioBlob && !imageFile && !scenario}
-          className="w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-white py-3.5 text-sm bg-zinc-900 hover:bg-zinc-700 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 rounded-none font-semibold text-white py-3.5 text-sm bg-zinc-900 hover:bg-zinc-700 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {scenario ? (hi ? 'AI से तैयार करें' : 'Run AI Triage') : (hi ? 'AI से विश्लेषण करें' : 'Analyze with AI')}
           <ArrowRight className="w-4 h-4" />

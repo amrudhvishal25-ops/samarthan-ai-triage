@@ -80,13 +80,13 @@ export default function ComplaintsPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div></div>
+          <div className="flex justify-center p-12"><div className="animate-spin rounded-none h-8 w-8 border-b-2 border-zinc-900"></div></div>
         ) : complaints.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="border border-dashed border-zinc-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center"
+            className="border border-dashed border-zinc-200 rounded-none p-12 flex flex-col items-center justify-center text-center"
           >
-            <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-none bg-zinc-100 flex items-center justify-center mb-4">
               <FileText className="w-6 h-6 text-zinc-400" />
             </div>
             <p className="text-sm font-semibold text-zinc-700">
@@ -98,7 +98,7 @@ export default function ComplaintsPage() {
             </p>
             <button
               onClick={() => router.push('/')}
-              className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-700 text-white rounded-xl px-4 py-2.5 transition-all"
+              className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-700 text-white rounded-none px-4 py-2.5 transition-all"
             >
               {hi ? 'शिकायत दर्ज करें' : 'File a Complaint'}
             </button>
@@ -115,10 +115,10 @@ export default function ComplaintsPage() {
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOpen(c) }}
                 role="button"
                 tabIndex={0}
-                className="group cursor-pointer border border-zinc-200 rounded-2xl bg-white hover:border-zinc-400 hover:shadow-md transition-all p-5 flex items-start gap-4 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                className="group cursor-pointer border border-zinc-200 rounded-none bg-white hover:border-zinc-400 hover:shadow-md transition-all p-5 flex items-start gap-4 focus:outline-none focus:ring-2 focus:ring-zinc-900"
               >
                 {/* Icon */}
-                <div className="w-9 h-9 rounded-lg bg-zinc-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-9 h-9 rounded-none bg-zinc-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <AlertCircle className="w-5 h-5 text-zinc-500" />
                 </div>
 
@@ -126,10 +126,10 @@ export default function ComplaintsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xs font-mono font-semibold text-zinc-900">{c.incidentId}</span>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${URGENCY_COLORS[c.urgencyLevel] || URGENCY_COLORS.MEDIUM}`}>
+                    <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-none border ${URGENCY_COLORS[c.urgencyLevel] || URGENCY_COLORS.MEDIUM}`}>
                       {c.urgencyLevel}
                     </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-zinc-50 text-zinc-600 border-zinc-200">
+                    <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-none border bg-zinc-50 text-zinc-600 border-zinc-200">
                       {hi ? COMPLAINT_STATUS_LABELS[c.status ?? 'SUBMITTED'].hi : COMPLAINT_STATUS_LABELS[c.status ?? 'SUBMITTED'].en}
                     </span>
                   </div>

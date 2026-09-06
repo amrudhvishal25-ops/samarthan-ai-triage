@@ -38,7 +38,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
           return (
             <div
               key={idx}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-50 border border-zinc-200/90 text-xs md:text-[13px] font-medium text-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-blue-300 hover:bg-blue-50/40 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-none bg-zinc-50 border border-zinc-200/90 text-xs md:text-[13px] font-medium text-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-blue-300 hover:bg-blue-50/40 transition-all duration-200"
             >
               <Icon className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
               <span>{isHi ? item.hi : item.en}</span>

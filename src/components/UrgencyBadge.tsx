@@ -47,7 +47,7 @@ export default function UrgencyBadge({ level, language, size = 'sm' }: UrgencyBa
 
   return (
     <div className={clsx(
-      'inline-flex items-center gap-2 rounded-xl border font-semibold',
+      'inline-flex items-center gap-2 rounded-none border font-semibold',
       c.bg, c.text, c.border,
       size === 'lg' ? 'px-4 py-3 text-sm w-full' : 'px-3 py-1.5 text-xs'
     )}>

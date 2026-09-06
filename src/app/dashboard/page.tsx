@@ -308,13 +308,13 @@ function DashboardContent() {
       <main className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans">
         <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mb-4 animate-pulse">
+          <div className="w-14 h-14 rounded-none bg-blue-50 border border-blue-200 flex items-center justify-center mb-4 animate-pulse">
             <ShieldAlert className="w-7 h-7 text-[#1A3A6B]" />
           </div>
           <h2 className="text-base font-bold text-zinc-900">
             {hi ? 'आधिकारिक शिकायत लोड हो रही है...' : 'Retrieving Official Complaint Report...'}
           </h2>
-          <p className="text-xs text-zinc-500 mt-1.5 font-mono bg-zinc-100 px-3 py-1 rounded-md border border-zinc-200">
+          <p className="text-xs text-zinc-500 mt-1.5 font-mono bg-zinc-100 px-3 py-1 rounded-none border border-zinc-200">
             Incident ID: {paramId}
           </p>
         </div>
@@ -351,7 +351,7 @@ function DashboardContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-zinc-900 text-white text-sm px-4 py-2 rounded-full shadow-lg"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-zinc-900 text-white text-sm px-4 py-2 rounded-none shadow-lg border border-zinc-700"
           >
             {toast}
           </motion.div>
@@ -391,7 +391,7 @@ function DashboardContent() {
           </div>
           <button
             onClick={() => { reset(); router.push('/') }}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors "
+            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-none px-3 py-1.5 transition-colors "
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {hi ? 'फिर से' : 'New Report'}
@@ -423,7 +423,7 @@ function DashboardContent() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-700 text-white shadow-md flex items-center justify-between gap-3 border border-emerald-400/40"
+              className="mb-6 p-4 rounded-none bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-700 text-white shadow-md flex items-center justify-between gap-3 border border-emerald-400/40"
             >
               <div className="flex items-center gap-2.5">
                 <Sparkles className="w-5 h-5 text-amber-300 animate-pulse flex-shrink-0" />
@@ -432,7 +432,7 @@ function DashboardContent() {
               <button
                 type="button"
                 onClick={() => setAutoFillBanner(null)}
-                className="text-xs text-white/80 hover:text-white px-2.5 py-1 rounded-md bg-black/20 hover:bg-black/30 transition-colors flex-shrink-0"
+                className="text-xs text-white/80 hover:text-white px-2.5 py-1 rounded-none bg-black/20 hover:bg-black/30 transition-colors flex-shrink-0"
               >
                 ✕
               </button>
@@ -447,7 +447,7 @@ function DashboardContent() {
 
             {/* Editable Report Details */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="border border-zinc-200 rounded-2xl bg-white shadow-sm overflow-hidden">
+              className="border border-zinc-200 rounded-none bg-white shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
                 <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
@@ -465,7 +465,7 @@ function DashboardContent() {
                     id="crime-category"
                     value={r.fraudType}
                     onChange={(e) => handleUpdate('fraudType', e.target.value)}
-                    className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                    className="w-full border border-zinc-200 rounded-none p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   >
                     <option value="Financial Fraud">Financial Fraud</option>
                     <option value="Women/Children Related Crime">Women/Children Related Crime</option>
@@ -485,7 +485,7 @@ function DashboardContent() {
                     id="complainant-name"
                     type="text" value={r.complainantName || ''}
                     readOnly
-                    className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-500 bg-zinc-100 cursor-not-allowed outline-none transition-all"
+                    className="w-full border border-zinc-200 rounded-none p-3 text-sm text-zinc-500 bg-zinc-100 cursor-not-allowed outline-none transition-all"
                   />
                 </div>
 
@@ -499,7 +499,7 @@ function DashboardContent() {
                       id="fraudster-name"
                       type="text" value={r.fraudsterIdentifier || ''}
                       onChange={(e) => handleUpdate('fraudsterIdentifier', e.target.value)}
-                      className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                      className="w-full border border-zinc-200 rounded-none p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                   <div>
@@ -510,7 +510,7 @@ function DashboardContent() {
                       id="amount-lost"
                       type="number" value={r.amount}
                       onChange={(e) => handleUpdate('amount', Number(e.target.value))}
-                      className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                      className="w-full border border-zinc-200 rounded-none p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -524,7 +524,7 @@ function DashboardContent() {
                     id="fraudster-contact"
                     type="text" value={r.frauderContact}
                     onChange={(e) => handleUpdate('frauderContact', e.target.value)}
-                    className="w-full border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                    className="w-full border border-zinc-200 rounded-none p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   />
                 </div>
 
@@ -542,7 +542,7 @@ function DashboardContent() {
                       : handleUpdate('complaintDraft', e.target.value)
                     }
                     rows={10}
-                    className="w-full border border-zinc-200 rounded-xl p-4 text-sm font-mono leading-relaxed text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none"
+                    className="w-full border border-zinc-200 rounded-none p-4 text-sm font-mono leading-relaxed text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none"
                   />
                 </div>
               </div>
@@ -567,13 +567,13 @@ function DashboardContent() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-col gap-3">
               <button
                 onClick={() => setCallModalHotline('1930')}
-                className="w-full flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-4 font-semibold text-base transition-all shadow-sm"
+                className="w-full flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-700 text-white rounded-none py-4 font-semibold text-base transition-all shadow-sm"
               >
                 <div className="flex items-center gap-2">
                   <Phone className="w-5 h-5" />
                   {hi ? '1930 कॉल करें' : 'Call 1930 Helpline'}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 rounded px-1.5 py-0.5 mt-0.5">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-white/20 rounded-none px-1.5 py-0.5 mt-0.5">
                   Live Emergency
                 </span>
               </button>
@@ -581,25 +581,25 @@ function DashboardContent() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleShare}
-                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 rounded-xl py-3 font-semibold text-sm transition-all"
+                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 rounded-none py-3 font-semibold text-sm transition-all"
                 >
                   <div className="flex items-center gap-1.5">
                     <Share2 className="w-4 h-4" />
                     {hi ? 'स्थिति साझा करें' : 'Share Status'}
                   </div>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded-none px-1.5 py-0.5">
                     Live
                   </span>
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-xl py-3 font-medium text-sm transition-all"
+                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-none py-3 font-medium text-sm transition-all"
                 >
                   <div className="flex items-center gap-1.5">
                     <Printer className="w-4 h-4" />
                     {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
                   </div>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded-none px-1.5 py-0.5">
                     Live
                   </span>
                 </button>
@@ -618,7 +618,7 @@ function DashboardContent() {
             {/* Incident ID + Urgency */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
               className="grid grid-cols-2 gap-3">
-              <div className="border border-zinc-200 rounded-2xl bg-white p-4 shadow-sm">
+              <div className="border border-zinc-200 rounded-none bg-white p-4 shadow-sm">
                 <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">
                   {hi ? 'घटना संख्या' : 'Incident ID'}
                 </p>
@@ -663,12 +663,12 @@ function DashboardContent() {
 
             {/* Freeze Steps */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-              className="border border-zinc-200 rounded-2xl bg-white p-5 shadow-sm">
+              className="border border-zinc-200 rounded-none bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                   {hi ? 'तत्काल सुझाई गई कार्रवाई' : 'Recommended Immediate Actions'}
                 </p>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded-none px-1.5 py-0.5">
                   Live Guidance
                 </span>
               </div>
@@ -687,7 +687,7 @@ export default function DashboardPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-2 border-zinc-300 border-t-zinc-900 animate-spin" />
+          <div className="w-8 h-8 rounded-none border-2 border-zinc-300 border-t-zinc-900 animate-spin" />
         </div>
       }
     >
