@@ -293,9 +293,34 @@ async function startWhatsAppBot() {
         }
       }
 
-      if (!text.trim() && !audioBase64 && !voiceTranscript) continue
+      // Image / screenshot / receipt handling
+      let imageBase64 = undefined
+      const isImage = Boolean(
+        messageContent.imageMessage ||
+        (messageContent.documentMessage?.mimetype && messageContent.documentMessage.mimetype.startsWith('image/'))
+      )
 
-      console.log(`\n[📩 Inbound WhatsApp] From: +${senderPhone} | Text: "${text || (voiceTranscript ? `[Voice: ${voiceTranscript}]` : '(Voice Note)')}"`)
+      if (isImage) {
+        try {
+          console.log(`[Image Message] Received screenshot/receipt from +${senderPhone}, downloading...`)
+          const buffer = await downloadMediaMessage(
+            msg,
+            'buffer',
+            {},
+            { logger, reuploadRequest: sock.updateMediaMessage }
+          )
+          if (buffer) {
+            imageBase64 = buffer.toString('base64')
+            console.log(`[Image Message] Successfully extracted image (${buffer.length} bytes)`)
+          }
+        } catch (e) {
+          console.error('[Image Download Error]:', e.message)
+        }
+      }
+
+      if (!text.trim() && !audioBase64 && !voiceTranscript && !imageBase64) continue
+
+      console.log(`\n[📩 Inbound WhatsApp] From: +${senderPhone} | Text: "${text || (voiceTranscript ? `[Voice: ${voiceTranscript}]` : (imageBase64 ? '[Screenshot / Receipt Image]' : '(Empty)'))}"`)
 
       // Indicate typing status in WhatsApp
       try {
@@ -311,6 +336,7 @@ async function startWhatsAppBot() {
             message: text,
             audioBase64,
             voiceTranscript,
+            imageBase64,
           }),
         })
 

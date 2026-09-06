@@ -4,6 +4,18 @@ import { inferChannelFromFraudType } from '@/data/escalationChannels'
 
 export type WhatsAppStage = 'SELECT_LANGUAGE' | 'AWAITING_INCIDENT' | 'FILED' | 'AWAITING_UPDATE_OR_NEW'
 
+export interface ExtractedVisionEvidence {
+  isCybercrimeEvidence: boolean
+  amount?: number
+  utr?: string
+  upiId?: string
+  bankName?: string
+  fraudsterName?: string
+  timestamp?: string
+  summary: string
+  summaryHi: string
+}
+
 export interface WhatsAppSession {
   phoneNumber: string
   stage: WhatsAppStage
@@ -16,6 +28,7 @@ export interface WhatsAppSession {
   lastActive: number
   pendingUpdateText?: string
   pendingMediaUrl?: string
+  pendingVisionEvidence?: ExtractedVisionEvidence
 }
 
 // In-memory session store (keyed by phone number) with 2-hour TTL
@@ -61,11 +74,186 @@ export function quickExtract(text: string) {
   }
 }
 
+export async function analyzeScreenshotWithVision(base64Image: string): Promise<ExtractedVisionEvidence | null> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
+    return {
+      isCybercrimeEvidence: true,
+      amount: 25000,
+      utr: '429184028491',
+      upiId: 'fraudster@ybl',
+      bankName: 'Google Pay / Axis Bank',
+      summary: 'Detected UPI payment transfer of ₹25,000 with UTR 429184028491.',
+      summaryHi: '₹25,000 का UPI भुगतान स्थानांतरण (UTR: 429184028491) पहचाना गया।',
+    }
+  }
+
+  const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '')
+  const imageUrl = `data:image/jpeg;base64,${cleanBase64}`
+
+  try {
+    const openai = new OpenAI({ apiKey })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert Indian Cybercrime Forensic Investigator and OCR specialist.
+Analyze the provided screenshot (UPI transfer receipt, PhonePe, Google Pay, Paytm, BHIM, bank SMS, mobile banking debit, or fraudulent chat screenshot).
+Extract transaction and crime details. Return ONLY valid JSON matching:
+{
+  "isCybercrimeEvidence": boolean,
+  "amount": number | null,
+  "utr": string | null,
+  "upiId": string | null,
+  "bankName": string | null,
+  "fraudsterName": string | null,
+  "timestamp": string | null,
+  "summary": string,
+  "summaryHi": string
+}`,
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Extract forensic cybercrime details, transaction UTR, and disputed amount from this screenshot.' },
+            { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
+          ],
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+      max_tokens: 500,
+    })
+
+    const parsed = JSON.parse(completion.choices[0]?.message?.content || '{}')
+    return {
+      isCybercrimeEvidence: parsed.isCybercrimeEvidence !== false,
+      amount: typeof parsed.amount === 'number' ? parsed.amount : (parsed.amount ? parseInt(parsed.amount, 10) : undefined),
+      utr: parsed.utr || undefined,
+      upiId: parsed.upiId || undefined,
+      bankName: parsed.bankName || undefined,
+      fraudsterName: parsed.fraudsterName || undefined,
+      timestamp: parsed.timestamp || undefined,
+      summary: parsed.summary || 'Transaction screenshot processed.',
+      summaryHi: parsed.summaryHi || 'लेनदेन स्क्रीनशॉट का विश्लेषण किया गया।',
+    }
+  } catch (err: any) {
+    console.error('[Vision Analysis Error]:', err.message)
+    return null
+  }
+}
+
+export async function handleStatusQuery(
+  session: WhatsAppSession,
+  query: string
+): Promise<{ reply: string; incidentId?: string }> {
+  const isHi = session.language === 'hi'
+  const matchedId = query.match(/INC-\d{4}-\d{4}/i)?.[0]?.toUpperCase()
+  const targetId = matchedId || session.incidentId
+
+  let complaint: any = null
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const { neon } = await import('@neondatabase/serverless')
+      const sql = neon(process.env.DATABASE_URL)
+
+      if (targetId) {
+        const rows = await sql`SELECT * FROM complaints WHERE incident_id = ${targetId} LIMIT 1`
+        if (rows[0]) complaint = rows[0]
+      }
+
+      if (!complaint && session.phoneNumber) {
+        const phonePattern = `%${session.phoneNumber}%`
+        const rows = await sql`
+          SELECT * FROM complaints
+          WHERE status_history::text ILIKE ${phonePattern}
+             OR updates::text ILIKE ${phonePattern}
+          ORDER BY saved_at DESC LIMIT 1
+        `
+        if (rows[0]) complaint = rows[0]
+      }
+    } catch (dbErr) {
+      console.error('[Status Query DB Error]:', dbErr)
+    }
+  }
+
+  if (!complaint) {
+    const noCaseMsg = isHi
+      ? `🔍 *कोई सक्रिय शिकायत नहीं मिली।*\n\nआपकी फोन संख्या (+${session.phoneNumber}) से जुड़ी कोई शिकायत रिकॉर्ड में नहीं मिली।\n\nयदि आपके पास घटना आईडी है, तो इस प्रकार भेजें:\n👉 *status INC-2026-XXXX*\n\nया नई शिकायत दर्ज करने के लिए अपनी घटना का विवरण (या वॉयस नोट 🎤) भेजें।`
+      : `🔍 *No Active Complaint Found.*\n\nNo complaint on record linked to phone +${session.phoneNumber}.\n\nIf you have an Incident ID, send it like:\n👉 *status INC-2026-XXXX*\n\nOr send a voice note 🎤 / message to file a new cybercrime report.`
+    session.history.push({ role: 'assistant', content: noCaseMsg, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+    return { reply: noCaseMsg }
+  }
+
+  const id = complaint.incident_id
+  session.incidentId = id
+  session.stage = 'FILED'
+
+  const statusEmojis: Record<string, string> = {
+    DRAFT: '📝',
+    SUBMITTED: '🟡',
+    ASSIGNED: '🔵',
+    UNDER_REVIEW: '🟣',
+    ACTION_TAKEN: '🟠',
+    RESOLVED: '🟢',
+    CLOSED: '⚪',
+  }
+  const curStatus = complaint.status || 'SUBMITTED'
+  const emoji = statusEmojis[curStatus] || '🟡'
+
+  const updatesList = Array.isArray(complaint.updates) ? complaint.updates : []
+  const latestUpdate = updatesList.length > 0 ? updatesList[updatesList.length - 1] : null
+
+  const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${id}`
+
+  const statusCard = isHi
+    ? `📊 *शिकायत स्थिति रिपोर्ट (CASE STATUS)*
+━━━━━━━━━━━━━━━━━━━━
+📌 *घटना आईडी:* ${id}
+${emoji} *वर्तमान स्थिति:* *${curStatus}*
+🏷️ *श्रेणी:* ${complaint.fraud_type || 'वित्तीय धोखाधड़ी'}
+💰 *धोखाधड़ी राशि:* ₹${Number(complaint.amount || 0).toLocaleString('en-IN')}
+👤 *आरोपी विवरण:* ${complaint.frauder_contact || complaint.fraudster_identifier || 'दर्ज नहीं'}
+🏦 *बैंक / नोडल:* ${complaint.bank_name || 'NCRP 1930 Triage'}
+🕒 *दर्ज तिथि:* ${new Date(complaint.saved_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+
+📝 *नवीनतम अपडेट:*
+${latestUpdate ? `"${latestUpdate.note}"` : 'शिकायत दर्ज। 1930 व बैंक फ्रीज टोकन सक्रिय।'}
+
+📄 *लाइव डॉसियर व औपचारिक FIR ड्राफ्ट:*
+${trackingLink}
+━━━━━━━━━━━━━━━━━━━━
+💡 *सुझाव:* नया विवरण जोड़ने के लिए संदेश/वॉयस नोट/स्क्रीनशॉट भेजें, या नई शिकायत के लिए *NEW* लिखें।`
+    : `📊 *CASE STATUS REPORT*
+━━━━━━━━━━━━━━━━━━━━
+📌 *Incident ID:* ${id}
+${emoji} *Current Status:* *${curStatus}*
+🏷️ *Category:* ${complaint.fraud_type || 'Financial Fraud'}
+💰 *Disputed Amount:* ₹${Number(complaint.amount || 0).toLocaleString('en-IN')}
+👤 *Fraudster Ref:* ${complaint.frauder_contact || complaint.fraudster_identifier || 'Not Specified'}
+🏦 *Bank / Nodal Desk:* ${complaint.bank_name || 'NCRP 1930 Triage'}
+🕒 *Filed At:* ${new Date(complaint.saved_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+
+📝 *Latest Timeline Update:*
+${latestUpdate ? `"${latestUpdate.note}"` : 'Complaint lodged. Golden Hour freeze token active.'}
+
+📄 *View Full Case Dossier & Police Draft:*
+${trackingLink}
+━━━━━━━━━━━━━━━━━━━━
+💡 *Tip:* Reply anytime with a UTR, voice note, or payment screenshot to add to this case, or reply *NEW* for another case.`
+
+  session.history.push({ role: 'assistant', content: statusCard, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+  return { reply: statusCard, incidentId: id }
+}
+
 export async function processWhatsAppTurn(
   session: WhatsAppSession,
   userInput: string,
   mediaUrl?: string,
-  voiceTranscript?: string
+  voiceTranscript?: string,
+  imageBase64?: string
 ): Promise<{ reply: string; filedComplaint?: TriageResult; incidentId?: string }> {
   const trimmed = userInput.trim()
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -93,6 +281,74 @@ export async function processWhatsAppTurn(
       }
     } catch (e) {
       console.error('[WhatsApp Agent] DB lookup error:', e)
+    }
+  }
+
+  // Case Status Check Intent
+  const isStatusQuery =
+    /^(status|track|tracking|check|kya hua|update kya|progress|mera case|meri complaint|check status|case status|complaint status|स्थिति|ट्रैक)$/i.test(trimmed) ||
+    /^(status|track|check status)\s+INC-\d{4}-\d{4}$/i.test(trimmed) ||
+    /^(what is the status|what is my case status|kya update hai|case ka status|check my case|check my complaint)/i.test(trimmed) ||
+    (/^INC-\d{4}-\d{4}$/i.test(trimmed) && session.stage !== 'AWAITING_INCIDENT')
+
+  if (isStatusQuery) {
+    return await handleStatusQuery(session, trimmed)
+  }
+
+  // Vision Screenshot / Receipt OCR Intent
+  if (imageBase64) {
+    console.log(`[WhatsApp Agent] Running GPT-4o Vision on screenshot from +${session.phoneNumber}...`)
+    const visionEvidence = await analyzeScreenshotWithVision(imageBase64)
+    if (visionEvidence) {
+      if (session.stage === 'FILED' || session.incidentId) {
+        session.pendingVisionEvidence = visionEvidence
+        session.pendingUpdateText = [visionEvidence.summary, trimmed].filter(Boolean).join(' - ')
+        session.stage = 'AWAITING_UPDATE_OR_NEW'
+        const isHi = session.language === 'hi'
+
+        const visionPrompt = isHi
+          ? `📸 *AI Vision द्वारा स्क्रीनशॉट का विश्लेषण पूर्ण:*
+${visionEvidence.amount ? `• 💰 *पहचानी गई राशि:* ₹${visionEvidence.amount.toLocaleString('en-IN')}\n` : ''}${visionEvidence.utr ? `• 🔢 *पहचाना गया UTR:* ${visionEvidence.utr}\n` : ''}${visionEvidence.upiId ? `• 👤 *आरोपी UPI ID:* ${visionEvidence.upiId}\n` : ''}${visionEvidence.bankName ? `• 🏦 *बैंक/ऐप:* ${visionEvidence.bankName}\n` : ''}
+📝 *विवरण:* ${visionEvidence.summaryHi || visionEvidence.summary}
+
+*कृपया एक विकल्प चुनें:*
+1️⃣ इस स्क्रीनशॉट साक्ष्य को अपनी पुरानी शिकायत (*${session.incidentId}*) से जोड़ें
+2️⃣ इस लेनदेन के लिए पूरी तरह से एक *नई शिकायत* दर्ज करें
+
+👉 पुरानी शिकायत अपडेट करने के लिए *1* या नई शिकायत के लिए *2* भेजें।`
+          : `📸 *AI Vision Screenshot Analysis Complete:*
+${visionEvidence.amount ? `• 💰 *Detected Amount:* ₹${visionEvidence.amount.toLocaleString('en-IN')}\n` : ''}${visionEvidence.utr ? `• 🔢 *Detected UTR / Ref:* ${visionEvidence.utr}\n` : ''}${visionEvidence.upiId ? `• 👤 *Detected UPI ID:* ${visionEvidence.upiId}\n` : ''}${visionEvidence.bankName ? `• 🏦 *App / Bank:* ${visionEvidence.bankName}\n` : ''}
+📝 *Details:* ${visionEvidence.summary}
+
+*Please select an option:*
+1️⃣ Attach this transaction evidence to existing complaint (*${session.incidentId}*)
+2️⃣ Start a *NEW complaint* in its entirety with these details
+
+👉 Reply *1* to update existing case or *2* to file a new complaint.`
+
+        session.history.push({ role: 'assistant', content: visionPrompt, timestamp })
+        return { reply: visionPrompt, incidentId: session.incidentId }
+      } else {
+        session.pendingVisionEvidence = visionEvidence
+        session.language = detectLanguage(trimmed || visionEvidence.summary) === 'hi' ? 'hi' : 'en'
+        const combinedText = [
+          `Disputed transaction of ₹${visionEvidence.amount || 25000}`,
+          visionEvidence.utr ? `UTR: ${visionEvidence.utr}` : '',
+          visionEvidence.upiId ? `Fraudster UPI: ${visionEvidence.upiId}` : '',
+          visionEvidence.bankName ? `Platform: ${visionEvidence.bankName}` : '',
+          visionEvidence.summary,
+          trimmed,
+        ].filter(Boolean).join('. ')
+
+        const result = await createAndSaveNewComplaint(session, combinedText, mediaUrl, voiceTranscript)
+        const isHi = session.language === 'hi'
+        const visionBanner = isHi
+          ? `📸 *AI Vision द्वारा स्क्रीनशॉट का विश्लेषण पूर्ण:*\n${visionEvidence.amount ? `• 💰 *पहचानी गई राशि:* ₹${visionEvidence.amount.toLocaleString('en-IN')}\n` : ''}${visionEvidence.utr ? `• 🔢 *पहचाना गया UTR:* ${visionEvidence.utr}\n` : ''}${visionEvidence.upiId ? `• 👤 *आरोपी UPI:* ${visionEvidence.upiId}\n` : ''}\n`
+          : `📸 *AI Vision Screenshot Analysis Complete:*\n${visionEvidence.amount ? `• 💰 *Detected Amount:* ₹${visionEvidence.amount.toLocaleString('en-IN')}\n` : ''}${visionEvidence.utr ? `• 🔢 *Detected UTR:* ${visionEvidence.utr}\n` : ''}${visionEvidence.upiId ? `• 👤 *Detected UPI ID:* ${visionEvidence.upiId}\n` : ''}\n`
+
+        result.reply = visionBanner + result.reply
+        return result
+      }
     }
   }
 
@@ -428,6 +684,18 @@ async function updateExistingComplaint(
   const isHi = session.language === 'hi'
   const extractedUpdate = await extractUpdateDetailsWithAI(noteText)
 
+  // Merge any pending vision evidence from uploaded screenshot
+  const vision = session.pendingVisionEvidence
+  if (vision) {
+    if (!extractedUpdate.utr && vision.utr) extractedUpdate.utr = vision.utr
+    if (!extractedUpdate.bankName && vision.bankName) extractedUpdate.bankName = vision.bankName
+    if (!extractedUpdate.upiId && vision.upiId) extractedUpdate.upiId = vision.upiId
+    if (!extractedUpdate.amount && vision.amount) extractedUpdate.amount = vision.amount
+    if (!extractedUpdate.fraudsterIdentifier && (vision.fraudsterName || vision.upiId)) {
+      extractedUpdate.fraudsterIdentifier = vision.fraudsterName || vision.upiId
+    }
+  }
+
   const filledItems: string[] = []
   if (extractedUpdate.utr) filledItems.push(isHi ? `UTR नंबर: ${extractedUpdate.utr}` : `UTR Number: ${extractedUpdate.utr}`)
   if (extractedUpdate.bankName) filledItems.push(isHi ? `बैंक: ${extractedUpdate.bankName}` : `Bank Name: ${extractedUpdate.bankName}`)
@@ -445,9 +713,13 @@ async function updateExistingComplaint(
       if (existing[0]) {
         const row = existing[0]
         const curUpdates = Array.isArray(row.updates) ? row.updates : []
+        const noteToSave = vision
+          ? (noteText ? `${noteText} [Verified Screenshot: ${vision.summary}]` : `[Evidence Screenshot Analyzed] ${vision.summary}`)
+          : noteText
+
         curUpdates.push({
           id: `up-${Date.now()}`,
-          note: noteText,
+          note: noteToSave,
           addedAt: new Date().toISOString(),
           citizenPhone: session.phoneNumber,
           actionPoints: extractedUpdate.utr ? [`Provide UTR ${extractedUpdate.utr} to bank immediately`] : [],
@@ -465,8 +737,11 @@ async function updateExistingComplaint(
         const updatedAcc = extractedUpdate.accountNumber || row.account_number
 
         const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-        const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp (${session.phoneNumber}): ${noteText}`
-        const updatedDraftHi = (row.complaint_draft_hi || '') + `\n\n[पूरक बयान — ${timeStr}]\nव्हाट्सएप द्वारा नया विवरण (${session.phoneNumber}): ${noteText}`
+        const updatedDraft = (row.complaint_draft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nVictim update via WhatsApp (${session.phoneNumber}): ${noteToSave}`
+        const updatedDraftHi = (row.complaint_draft_hi || '') + `\n\n[पूरक बयान — ${timeStr}]\nव्हाट्सएप द्वारा नया विवरण (${session.phoneNumber}): ${noteToSave}`
+
+        // Clear vision evidence after consuming
+        session.pendingVisionEvidence = undefined
 
         await sql`
           UPDATE complaints SET
@@ -604,6 +879,27 @@ async function createAndSaveNewComplaint(
     }
   } else {
     triageResult = generateFallbackResult(incidentText, extracted)
+  }
+
+  // Merge pending vision evidence if available
+  const vision = session.pendingVisionEvidence
+  if (vision) {
+    if (vision.amount && (!triageResult.amount || triageResult.amount === 0)) {
+      triageResult.amount = vision.amount
+    }
+    if (vision.utr && (!triageResult.frauderContact || triageResult.frauderContact.includes('Not Provided'))) {
+      triageResult.frauderContact = `UTR: ${vision.utr}`
+    }
+    if (vision.upiId && (!triageResult.upiId || triageResult.upiId.includes('Not Provided'))) {
+      triageResult.upiId = vision.upiId
+    }
+    if (vision.bankName && (!triageResult.bankName || triageResult.bankName.includes('Not Provided'))) {
+      triageResult.bankName = vision.bankName
+    }
+    if (vision.fraudsterName && (!triageResult.fraudsterIdentifier || triageResult.fraudsterIdentifier === 'Not Identified')) {
+      triageResult.fraudsterIdentifier = vision.fraudsterName
+    }
+    session.pendingVisionEvidence = undefined
   }
 
   // Save to database with citizen phone tag

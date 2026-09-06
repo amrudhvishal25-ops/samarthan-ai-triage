@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
     let isTwilio = false
     let voiceTranscript = ''
 
+    let imageBase64: string | undefined = undefined
+
     if (contentType.includes('application/x-www-form-urlencoded')) {
       isTwilio = true
       const formData = await req.formData()
@@ -61,6 +63,7 @@ export async function POST(req: NextRequest) {
       body = json.message || json.Body || ''
       mediaUrl = json.mediaUrl
       voiceTranscript = json.voiceTranscript || ''
+      imageBase64 = json.imageBase64
 
       const session = getOrCreateSession(from)
 
@@ -77,12 +80,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!body && !mediaUrl && !voiceTranscript) {
+    if (!body && !mediaUrl && !voiceTranscript && !imageBase64) {
       return NextResponse.json({ error: 'Empty message' }, { status: 400 })
     }
 
     const session = getOrCreateSession(from)
-    const result = await processWhatsAppTurn(session, body, mediaUrl, voiceTranscript)
+    const result = await processWhatsAppTurn(session, body, mediaUrl, voiceTranscript, imageBase64)
 
     if (isTwilio) {
       // Return TwiML XML response for Twilio WhatsApp
