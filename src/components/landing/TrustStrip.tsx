@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { ShieldCheck, Fingerprint, Scale, Building2, ExternalLink } from 'lucide-react'
+import { ShieldCheck, Fingerprint, Scale, Building2, ExternalLink, TrendingUp, AlertTriangle, Clock } from 'lucide-react'
+import { animate, stagger } from 'animejs'
 
 interface TrustStripProps {
   language: 'en' | 'hi'
@@ -9,10 +11,174 @@ interface TrustStripProps {
 
 export default function TrustStrip({ language }: TrustStripProps) {
   const isHi = language === 'hi'
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const hasAnimatedRef = useRef(false)
+
+  // Counter targets matching exact HTML element types
+  const counter60Ref = useRef<HTMLHeadingElement | null>(null)
+  const counterFraudsRef = useRef<HTMLParagraphElement | null>(null)
+  const counterLossRef = useRef<HTMLParagraphElement | null>(null)
+  const counterGoldenRef = useRef<HTMLParagraphElement | null>(null)
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (entry.isIntersecting && !hasAnimatedRef.current) {
+          hasAnimatedRef.current = true
+
+          // 1. Primary 60s counter animation
+          if (counter60Ref.current) {
+            const countObj = { val: 0 }
+            animate(countObj, {
+              val: 60,
+              round: 1,
+              ease: 'outExpo',
+              duration: 1800,
+              onUpdate: () => {
+                if (counter60Ref.current) {
+                  counter60Ref.current.innerText = `${Math.round(countObj.val)}s`
+                }
+              },
+            })
+          }
+
+          // 2. 11.3 Lakh+ Complaints counter
+          if (counterFraudsRef.current) {
+            const countObj = { val: 0 }
+            animate(countObj, {
+              val: 11.3,
+              ease: 'outExpo',
+              duration: 2000,
+              onUpdate: () => {
+                if (counterFraudsRef.current) {
+                  counterFraudsRef.current.innerText = `${countObj.val.toFixed(1)} ${isHi ? 'लाख+' : 'Lakh+'}`
+                }
+              },
+            })
+          }
+
+          // 3. ₹66,000 Cr counter
+          if (counterLossRef.current) {
+            const countObj = { val: 0 }
+            animate(countObj, {
+              val: 66000,
+              round: 1,
+              ease: 'outExpo',
+              duration: 2200,
+              onUpdate: () => {
+                if (counterLossRef.current) {
+                  counterLossRef.current.innerText = `₹${Math.round(countObj.val).toLocaleString('en-IN')} ${isHi ? 'करोड़' : 'Cr'}`
+                }
+              },
+            })
+          }
+
+          // 4. < 3% Golden Hour response counter
+          if (counterGoldenRef.current) {
+            const countObj = { val: 0 }
+            animate(countObj, {
+              val: 3,
+              round: 1,
+              ease: 'outExpo',
+              duration: 1600,
+              onUpdate: () => {
+                if (counterGoldenRef.current) {
+                  counterGoldenRef.current.innerText = `< ${Math.round(countObj.val)}%`
+                }
+              },
+            })
+          }
+
+          // 5. DigiLocker Telemetry wave equalizer animation
+          animate('.telemetry-bar', {
+            scaleY: [0.25, 1],
+            delay: stagger(65, { from: 'center' }),
+            direction: 'alternate',
+            loop: true,
+            ease: 'inOutQuad',
+            duration: 600,
+          })
+        }
+      },
+      { threshold: 0.2 }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [isHi])
 
   return (
-    <section className="w-full bg-surface border-y border-zinc-200/80 py-16">
+    <section ref={sectionRef} className="w-full bg-surface border-y border-zinc-200/80 py-16">
       <div className="max-w-6xl mx-auto px-6">
+        
+        {/* National Stats Ticker Header with Anime.js Counters */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-lg p-4 border border-zinc-200/80 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-zinc-500 mb-1">
+              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-[11px] font-mono uppercase tracking-wider">
+                {isHi ? 'वार्षिक साइबर मामले' : 'Annual Cyber Frauds'}
+              </span>
+            </div>
+            <p ref={counterFraudsRef} className="text-2xl font-extrabold text-zinc-900 tracking-tight font-mono">
+              0.0 {isHi ? 'लाख+' : 'Lakh+'}
+            </p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {isHi ? '2024 NCRP भारत रिपोर्ट' : 'Reported on 1930 in 2024'}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border border-zinc-200/80 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-zinc-500 mb-1">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[11px] font-mono uppercase tracking-wider">
+                {isHi ? 'डिजिटल नुकसान' : 'Digital Losses'}
+              </span>
+            </div>
+            <p ref={counterLossRef} className="text-2xl font-extrabold text-zinc-900 tracking-tight font-mono">
+              ₹0 {isHi ? 'करोड़' : 'Cr'}
+            </p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {isHi ? 'वार्षिक राष्ट्रीय वित्तीय हानि' : 'Lost to digital financial fraud'}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border border-zinc-200/80 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-zinc-500 mb-1">
+              <Clock className="w-3.5 h-3.5 text-red-500" />
+              <span className="text-[11px] font-mono uppercase tracking-wider">
+                {isHi ? 'गोल्डन ऑवर रिपोर्टिंग' : 'Golden Hour Act'}
+              </span>
+            </div>
+            <p ref={counterGoldenRef} className="text-2xl font-extrabold text-red-600 tracking-tight font-mono">
+              &lt; 0%
+            </p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {isHi ? 'पारंपरिक पोर्टल पर देरी' : 'Victims report in time to freeze'}
+            </p>
+          </div>
+
+          <div className="bg-blue-50/80 rounded-lg p-4 border border-blue-200/80 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-blue-700 mb-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
+                {isHi ? 'समर्थन ट्रायज गति' : 'Samarthan AI Triage'}
+              </span>
+            </div>
+            <p className="text-2xl font-extrabold text-primary tracking-tight font-mono">
+              60s
+            </p>
+            <p className="text-[11px] text-blue-600/80 mt-0.5">
+              {isHi ? 'घबराहट से FIR व बैंक फ्रीज' : 'Immediate freeze dossier generated'}
+            </p>
+          </div>
+        </div>
+
+        {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-6 md:grid-rows-2 gap-4">
           {/* Primary Stat (Span 3 cols, 2 rows) - primary blue */}
           <motion.div
@@ -32,8 +198,8 @@ export default function TrustStrip({ language }: TrustStripProps) {
                   {isHi ? "NCRP 1930 ढांचा" : "1930 NCRP Framework"}
                 </span>
               </div>
-              <h3 className="text-5xl md:text-6xl font-extrabold tracking-tighter text-white">
-                60s
+              <h3 ref={counter60Ref} className="text-5xl md:text-6xl font-extrabold tracking-tighter text-white font-mono">
+                0s
               </h3>
               <p className="text-xs font-mono uppercase tracking-wider text-blue-200/90 mt-2">
                 {isHi ? "घबराहट से FIR तक का समय" : "Panic to FIR Triage Time"}
@@ -49,7 +215,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
             </div>
           </motion.div>
 
-          {/* Secondary Stat A (Span 3 cols) - DigiLocker Verification */}
+          {/* Secondary Stat A (Span 3 cols) - DigiLocker Verification with Live Telemetry wave */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -71,12 +237,13 @@ export default function TrustStrip({ language }: TrustStripProps) {
                   : "1-click tamper-evident Aadhaar & PAN official verification"}
               </p>
             </div>
-            {/* Animated-style activity bars */}
-            <div className="flex gap-1.5 items-end h-10 shrink-0">
-              {[20, 35, 50, 40, 70, 60, 90, 80, 100, 105, 115].map((h, i) => (
+
+            {/* Anime.js live telemetry activity bars */}
+            <div className="flex gap-1.5 items-end h-10 shrink-0 origin-bottom">
+              {[25, 45, 60, 50, 85, 75, 95, 80, 100, 105, 115].map((h, i) => (
                 <div
                   key={i}
-                  className="w-1.5 bg-primary rounded-sm"
+                  className="telemetry-bar w-1.5 bg-primary rounded-sm origin-bottom"
                   style={{ height: `${h}%` }}
                 />
               ))}
@@ -128,4 +295,3 @@ export default function TrustStrip({ language }: TrustStripProps) {
     </section>
   )
 }
-

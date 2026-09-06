@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, ArrowDown, ShieldCheck, Scale, Wallet, Building2, Loader2, RotateCcw, MessageCircle } from 'lucide-react'
 import AudioRecorder from '@/components/AudioRecorder'
 import { useTriage } from '@/context/TriageContext'
 import { RadialBackground } from '@/components/ui/light-theme-tailwind-css-background-snippet'
+import { createTimeline, stagger } from 'animejs'
 
 interface HeroSectionProps {
   language: 'en' | 'hi'
@@ -120,6 +121,59 @@ export default function HeroSection({ language }: HeroSectionProps) {
     router.push(`/intake?category=auto${q}`)
   }
 
+  useEffect(() => {
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) return
+
+    const tl = createTimeline({
+      defaults: {
+        ease: 'outExpo',
+      },
+    })
+
+    tl.add('.hero-eyebrow-pill', {
+      y: [-14, 0],
+      opacity: [0, 1],
+      duration: 600,
+      ease: 'outCubic',
+    })
+    tl.add('.hero-title-word', {
+      y: ['115%', '0%'],
+      opacity: [0, 1],
+      rotateZ: [-1.5, 0],
+      duration: 900,
+      delay: stagger(55),
+      ease: 'outElastic(1, .85)',
+    }, '-=350')
+    tl.add('.hero-highlight-word', {
+      y: ['115%', '0%'],
+      opacity: [0, 1],
+      duration: 950,
+      delay: stagger(65),
+      ease: 'outElastic(1, .85)',
+    }, '-=600')
+    tl.add('.hero-sub-text', {
+      y: [15, 0],
+      opacity: [0, 1],
+      duration: 700,
+      ease: 'outCubic',
+    }, '-=650')
+    tl.add('.hero-cta-btn', {
+      y: [15, 0],
+      opacity: [0, 1],
+      duration: 650,
+      delay: stagger(70),
+      ease: 'outCubic',
+    }, '-=550')
+    tl.add('.hero-trust-tag', {
+      y: [10, 0],
+      opacity: [0, 1],
+      duration: 550,
+      delay: stagger(50),
+      ease: 'outCubic',
+    }, '-=500')
+  }, [language])
+
   return (
     <section className="relative w-full pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden isolate">
       <RadialBackground />
@@ -128,12 +182,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
         {/* Left: copy */}
         <div>
           {/* Eyebrow Pill */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-zinc-200 shadow-xs mb-6 backdrop-blur-sm"
-          >
+          <div className="hero-eyebrow-pill inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-zinc-200 shadow-xs mb-6 backdrop-blur-sm">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
@@ -141,72 +190,61 @@ export default function HeroSection({ language }: HeroSectionProps) {
             <span className="text-xs font-semibold text-zinc-800 tracking-tight">
               {hi ? '1930 NCRP राष्ट्रीय प्रोटोकॉल • 60-सेकंड AI ट्रायज' : '1930 NCRP Golden Hour Protocol • 60-Second AI Triage'}
             </span>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 leading-[1.08]"
-          >
-            {c.headline}
-            <br />
-            <span className="text-primary">
-              {c.headlineHighlight}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 leading-[1.08]">
+            <span className="block overflow-hidden py-0.5">
+              {c.headline.split(' ').map((word, idx) => (
+                <span key={idx} className="hero-title-word inline-block mr-2.5 will-change-transform">
+                  {word}
+                </span>
+              ))}
             </span>
-          </motion.h1>
+            <span className="block overflow-hidden text-primary mt-1 py-0.5">
+              {c.headlineHighlight.split(' ').map((word, idx) => (
+                <span key={idx} className="hero-highlight-word inline-block mr-2.5 will-change-transform">
+                  {word}
+                </span>
+              ))}
+            </span>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="mt-5 text-base sm:text-lg text-zinc-600 max-w-lg leading-relaxed"
-          >
+          <p className="hero-sub-text mt-5 text-base sm:text-lg text-zinc-600 max-w-lg leading-relaxed">
             {c.sub}
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="mt-8 flex flex-wrap items-center gap-3.5"
-          >
+          <div className="mt-8 flex flex-wrap items-center gap-3.5">
             <button
               onClick={goToIntake}
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-all shadow-sm hover:scale-[1.01] active:scale-[0.98]"
+              className="hero-cta-btn inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-all shadow-sm hover:scale-[1.01] active:scale-[0.98]"
             >
               {c.primary}
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#how-it-works"
-              className="inline-flex items-center gap-2 border border-zinc-200 bg-white/90 hover:bg-zinc-50 text-zinc-700 rounded-lg px-6 py-3.5 text-sm font-medium transition-all shadow-2xs"
+              className="hero-cta-btn inline-flex items-center gap-2 border border-zinc-200 bg-white/90 hover:bg-zinc-50 text-zinc-700 rounded-lg px-6 py-3.5 text-sm font-medium transition-all shadow-2xs"
             >
               {c.secondary}
               <ArrowDown className="w-4 h-4 text-zinc-400" />
             </a>
-          </motion.div>
+          </div>
 
           {/* Micro trust indicators */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            className="mt-8 pt-6 border-t border-zinc-200/70 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-500 font-medium"
-          >
-            <span className="flex items-center gap-1.5">
+          <div className="mt-8 pt-6 border-t border-zinc-200/70 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-500 font-medium">
+            <span className="hero-trust-tag flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               {hi ? 'डिजीलॉकर प्रमाणित पहचान' : 'DigiLocker Verified'}
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="hero-trust-tag flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               {hi ? 'ऑटो IT एक्ट व BNS धाराएं' : 'Auto IT Act & BNS'}
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="hero-trust-tag flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               {hi ? 'गोल्डन ऑवर 1930 हैंडऑफ़' : '1930 NCRP Handoff'}
             </span>
-          </motion.div>
+          </div>
         </div>
 
         {/* Right: 21st-Century Studio Window Terminal */}
