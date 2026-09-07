@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
+import { motion } from 'framer-motion'
 import {
   X,
   Send,
@@ -11,14 +12,7 @@ import {
   ShieldCheck,
   ExternalLink,
   RotateCcw,
-  Square,
-  Play,
-  Pause,
   Image as ImageIcon,
-  Loader2,
-  Phone,
-  Video,
-  MoreVertical,
   Volume2,
   VolumeX,
   Sparkles,
@@ -90,8 +84,7 @@ async function compressAndResizeImage(file: File, maxWidth = 1200, maxHeight = 1
           return
         }
         ctx.drawImage(img, 0, 0, width, height)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
-        resolve(compressedDataUrl)
+        resolve(canvas.toDataURL('image/jpeg', quality))
       }
       img.onerror = () => reject(new Error('Failed to load image'))
       img.src = e.target?.result as string
@@ -101,7 +94,7 @@ async function compressAndResizeImage(file: File, maxWidth = 1200, maxHeight = 1
   })
 }
 
-// Generates an authentic simulated UPI fraud receipt on an HTML5 canvas for instant testing
+// Generates an authentic simulated UPI fraud receipt on an HTML5 canvas for instant 1-click testing
 function generateSampleReceiptCanvas(): string {
   const canvas = document.createElement('canvas')
   canvas.width = 600
@@ -214,8 +207,16 @@ export default function WhatsAppSimulatorModal({
   const { setTriageResult } = useTriage()
   const isHi = language === 'hi'
 
-  // Dynamic Simulator Session ID - guarantees fresh clean state for every simulation run
-  const [simSessionId, setSimSessionId] = useState<string>(() => `sim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`)
+  // Hydration safety for createPortal
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Dynamic Simulator Session ID - clean isolated state for every simulation run
+  const [simSessionId, setSimSessionId] = useState<string>(
+    () => `sim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+  )
   const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null)
 
   const initialGreeting = isHi
@@ -232,7 +233,7 @@ export default function WhatsAppSimulatorModal({
   ])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatFeedRef = useRef<HTMLDivElement>(null)
 
   // Audio Recording & Web Speech Recognition states
   const [isRecording, setIsRecording] = useState(false)
@@ -275,9 +276,12 @@ export default function WhatsAppSimulatorModal({
     }
   }, [isOpen])
 
+  // Efficient direct scroll — triggered ONLY when message count changes or typing starts (NO LAG)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping, isRecording, liveSpeechText])
+    if (chatFeedRef.current) {
+      chatFeedRef.current.scrollTop = chatFeedRef.current.scrollHeight
+    }
+  }, [messages.length, isTyping])
 
   useEffect(() => {
     return () => {
@@ -294,7 +298,7 @@ export default function WhatsAppSimulatorModal({
     }
   }, [])
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
   // Reset entire simulator conversation to start brand new
   const handleReset = async () => {
@@ -318,7 +322,6 @@ export default function WhatsAppSimulatorModal({
     setLiveSpeechText('')
     setShowAttachMenu(false)
 
-    // Notify backend to drop any in-memory state for this session
     try {
       await fetch('/api/whatsapp', {
         method: 'POST',
@@ -343,7 +346,6 @@ export default function WhatsAppSimulatorModal({
     }
 
     window.speechSynthesis.cancel()
-    // Strip markdown formatting and URLs for natural speech synthesis
     const cleanText = text
       .replace(/https?:\/\/[^\s]+/g, 'link to complaint report')
       .replace(/[*_#`~]/g, '')
@@ -433,7 +435,6 @@ export default function WhatsAppSimulatorModal({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
-      // Detect best supported MIME type for recording
       const supportedMime = [
         'audio/webm;codecs=opus',
         'audio/webm',
@@ -465,7 +466,6 @@ export default function WhatsAppSimulatorModal({
         await handleSendAudio(finalBlob, capturedSpeech)
       }
 
-      // Start Browser Speech Recognition in parallel for real-time live captions & fallback
       if (typeof window !== 'undefined') {
         const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
         if (SpeechRec) {
@@ -486,10 +486,6 @@ export default function WhatsAppSimulatorModal({
               }
             }
 
-            recognition.onerror = () => {
-              /* ignore non-fatal speech errors */
-            }
-
             recognition.start()
             speechRecognitionRef.current = recognition
           } catch (srErr) {
@@ -498,7 +494,7 @@ export default function WhatsAppSimulatorModal({
         }
       }
 
-      mediaRecorder.start(250)
+      mediaRecorder.start()
       setIsRecording(true)
       setRecordingSeconds(0)
       timerRef.current = setInterval(() => {
@@ -556,7 +552,6 @@ export default function WhatsAppSimulatorModal({
 
       let transcriptText = (immediateSpeechTranscript || '').trim()
 
-      // If live SpeechRecognition did not yield text, attempt Whisper transcription
       if (!transcriptText && blob.size > 800) {
         try {
           const fd = new FormData()
@@ -715,7 +710,6 @@ export default function WhatsAppSimulatorModal({
     if (!file) return
 
     try {
-      // Compress and scale down to guarantee <200KB payload
       const compressedDataUrl = await compressAndResizeImage(file, 1200, 1200, 0.82)
       await processImageBase64(
         compressedDataUrl,
@@ -782,7 +776,6 @@ export default function WhatsAppSimulatorModal({
         )
       }
 
-      // Convert bold markdown (*text*)
       const boldParts = part.split(/(\*[^*]+\*)/g)
       return (
         <span key={i}>
@@ -797,14 +790,10 @@ export default function WhatsAppSimulatorModal({
     })
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/75 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.2 }}
-        className="w-full max-w-2xl h-[94vh] sm:h-[88vh] max-h-[780px] bg-[#EFEAE2] dark:bg-[#0b141a] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800"
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/75 backdrop-blur-xs overflow-y-auto">
+      <div
+        className="w-full max-w-2xl h-[88vh] max-h-[740px] bg-[#EFEAE2] dark:bg-[#0b141a] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800 my-auto"
       >
         {/* Hidden File Input for Image Uploads */}
         <input
@@ -815,26 +804,29 @@ export default function WhatsAppSimulatorModal({
           onChange={handleImageFile}
         />
 
-        {/* WhatsApp Header */}
-        <div className="bg-[#075E54] dark:bg-[#1f2c34] text-white px-4 py-3 flex items-center justify-between shadow-md flex-shrink-0">
+        {/* WhatsApp Header - Always 100% visible & comfortable */}
+        <div className="bg-[#075E54] dark:bg-[#1f2c34] text-white px-4 py-3.5 flex items-center justify-between shadow-md flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-emerald-700 dark:bg-emerald-600 flex items-center justify-center text-white font-bold border border-emerald-400/50">
+              <div className="w-10 h-10 rounded-full bg-emerald-700 dark:bg-emerald-600 flex items-center justify-center text-white font-bold border border-emerald-400/50 shadow-xs">
                 <ShieldCheck className="w-5 h-5 text-white" />
               </div>
               <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-[#075E54] dark:border-[#1f2c34] rounded-full" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="text-sm font-semibold tracking-tight">Samarthan 1930 AI Bot</h3>
                 <span className="bg-emerald-500 text-white rounded-full px-1 text-[9px] font-bold">✓</span>
+                <span className="bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 text-[9px] font-mono px-1.5 py-0.5 rounded-full">
+                  GPT-4o API
+                </span>
               </div>
               <p className="text-[11px] text-emerald-200 dark:text-emerald-300/80">
                 {isTyping
-                  ? 'typing...'
+                  ? '⚡ GPT-4o is triaging & drafting legal sections...'
                   : activeIncidentId
-                  ? `Active Case: ${activeIncidentId} • Auto-Sync On`
-                  : 'National Cybercrime Portal Partner • 24x7 Live'}
+                  ? `Active Case: ${activeIncidentId} • Auto-Sync Active`
+                  : 'Live 24x7 Cybercrime AI Triage • National Portal'}
               </p>
             </div>
           </div>
@@ -922,8 +914,8 @@ export default function WhatsAppSimulatorModal({
           ))}
         </div>
 
-        {/* Message Feed */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+        {/* Message Feed - Hardware Accelerated Smooth Scroll without CPU thrash */}
+        <div ref={chatFeedRef} className="flex-1 overflow-y-auto p-4 space-y-3.5">
           {messages.map((m) => {
             const isUser = m.role === 'user'
             return (
@@ -938,7 +930,7 @@ export default function WhatsAppSimulatorModal({
                       : 'bg-white dark:bg-[#202c33] text-zinc-900 dark:text-zinc-100 rounded-tl-none border border-zinc-200/60 dark:border-zinc-700/40'
                   }`}
                 >
-                  {/* Image Attachment Preview if present */}
+                  {/* Image Attachment Preview */}
                   {m.imageUrl && (
                     <div className="mb-2.5 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 max-w-xs shadow-xs">
                       <img
@@ -1041,7 +1033,6 @@ export default function WhatsAppSimulatorModal({
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.4s]" />
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Recording Overlay in Input Bar */}
@@ -1077,7 +1068,6 @@ export default function WhatsAppSimulatorModal({
               </div>
             </div>
 
-            {/* Live speech-to-text transcript ticker */}
             {liveSpeechText && (
               <div className="text-xs text-zinc-700 dark:text-zinc-200 bg-white/90 dark:bg-black/40 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 italic truncate">
                 "{liveSpeechText}"
@@ -1170,7 +1160,8 @@ export default function WhatsAppSimulatorModal({
             )}
           </div>
         )}
-      </motion.div>
-    </div>
+      </div>
+    </div>,
+    document.body
   )
 }

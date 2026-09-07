@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
@@ -31,6 +32,11 @@ export default function WhatsAppChoiceModal({
 }: WhatsAppChoiceModalProps) {
   const isHi = language === 'hi'
   const [botOnline, setBotOnline] = useState<boolean | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!isOpen) return
@@ -52,7 +58,7 @@ export default function WhatsAppChoiceModal({
     }
   }, [isOpen])
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
   const defaultText = isHi
     ? 'नमस्ते समर्थन, मुझे एक साइबर अपराध घटना की रिपोर्ट करनी है।'
@@ -61,8 +67,8 @@ export default function WhatsAppChoiceModal({
   const textToForward = prefilledText?.trim() || defaultText
   const realWhatsAppUrl = `https://wa.me/916303807967?text=${encodeURIComponent(textToForward)}`
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -228,6 +234,7 @@ export default function WhatsAppChoiceModal({
           </button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   )
 }
