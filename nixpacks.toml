@@ -1,0 +1,14 @@
+# Railway / Nixpacks build for the standalone WhatsApp bot service.
+# No Next.js build — this service only runs scripts/whatsapp-bot.mjs.
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm ci --omit=dev --no-audit --no-fund"]
+
+[phases.build]
+cmds = ["echo 'skip: WhatsApp bot worker, no build'"]
+
+[start]
+cmd = "node scripts/whatsapp-bot.mjs"
