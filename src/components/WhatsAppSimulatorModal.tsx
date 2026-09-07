@@ -19,6 +19,10 @@ import {
   Phone,
   Video,
   MoreVertical,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  FileCheck,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTriage } from '@/context/TriageContext'
@@ -60,6 +64,147 @@ const PRESETS = [
   },
 ]
 
+// Canvas helper to compress & resize images under 200KB to stay well under Vercel payload limit
+async function compressAndResizeImage(file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new window.Image()
+      img.onload = () => {
+        let { width, height } = img
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          } else {
+            width = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(e.target?.result as string)
+          return
+        }
+        ctx.drawImage(img, 0, 0, width, height)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+        resolve(compressedDataUrl)
+      }
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = e.target?.result as string
+    }
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
+}
+
+// Generates an authentic simulated UPI fraud receipt on an HTML5 canvas for instant testing
+function generateSampleReceiptCanvas(): string {
+  const canvas = document.createElement('canvas')
+  canvas.width = 600
+  canvas.height = 760
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+
+  // Background
+  ctx.fillStyle = '#f1f5f9'
+  ctx.fillRect(0, 0, 600, 760)
+
+  // Top Header Card (Green UPI Theme)
+  ctx.fillStyle = '#047857'
+  ctx.fillRect(0, 0, 600, 180)
+
+  // Checkmark circle
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  ctx.arc(300, 65, 34, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = '#047857'
+  ctx.font = 'bold 34px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('✓', 300, 77)
+
+  // Amount text
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 30px sans-serif'
+  ctx.fillText('Paid ₹45,000', 300, 135)
+  ctx.font = '14px sans-serif'
+  ctx.fillStyle = '#a7f3d0'
+  ctx.fillText('UPI Transaction Successful', 300, 160)
+
+  // Details Container Card
+  ctx.fillStyle = '#ffffff'
+  if (ctx.roundRect) {
+    ctx.roundRect(35, 200, 530, 480, 16)
+  } else {
+    ctx.fillRect(35, 200, 530, 480)
+  }
+  ctx.fill()
+  ctx.strokeStyle = '#e2e8f0'
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+
+  ctx.textAlign = 'left'
+  ctx.fillStyle = '#64748b'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('To (Beneficiary UPI ID)', 65, 240)
+  ctx.fillStyle = '#0f172a'
+  ctx.font = 'bold 17px monospace'
+  ctx.fillText('electricitybill@ybl', 65, 266)
+
+  ctx.fillStyle = '#64748b'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('Beneficiary Name', 65, 305)
+  ctx.fillStyle = '#0f172a'
+  ctx.font = 'bold 17px sans-serif'
+  ctx.fillText('State Electricity Power Services Ltd', 65, 330)
+
+  ctx.fillStyle = '#64748b'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('UPI Ref / UTR Number', 65, 370)
+  ctx.fillStyle = '#0f172a'
+  ctx.font = 'bold 19px monospace'
+  ctx.fillText('429104829102', 65, 396)
+
+  ctx.fillStyle = '#64748b'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('Transaction Date & Time', 65, 436)
+  ctx.fillStyle = '#0f172a'
+  ctx.font = '15px sans-serif'
+  ctx.fillText('07 Sep 2026, 14:32:10 IST', 65, 460)
+
+  ctx.fillStyle = '#64748b'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('Debited From Account', 65, 500)
+  ctx.fillStyle = '#0f172a'
+  ctx.font = '15px sans-serif'
+  ctx.fillText('State Bank of India (A/C **5402)', 65, 524)
+
+  // Suspicious notice banner
+  ctx.fillStyle = '#fef2f2'
+  if (ctx.roundRect) {
+    ctx.roundRect(65, 560, 470, 85, 10)
+  } else {
+    ctx.fillRect(65, 560, 470, 85)
+  }
+  ctx.fill()
+  ctx.strokeStyle = '#fecaca'
+  ctx.stroke()
+
+  ctx.fillStyle = '#dc2626'
+  ctx.font = 'bold 13px sans-serif'
+  ctx.fillText('⚠️ SUSPECTED FRAUDULENT DEBIT REPORT', 85, 592)
+  ctx.font = '12px sans-serif'
+  ctx.fillStyle = '#7f1d1d'
+  ctx.fillText('Disputed under Cybercrime Golden Hour (Helpline 1930 / Samarthan)', 85, 616)
+
+  return canvas.toDataURL('image/jpeg', 0.85)
+}
+
 export default function WhatsAppSimulatorModal({
   isOpen,
   onClose,
@@ -69,13 +214,19 @@ export default function WhatsAppSimulatorModal({
   const { setTriageResult } = useTriage()
   const isHi = language === 'hi'
 
+  // Dynamic Simulator Session ID - guarantees fresh clean state for every simulation run
+  const [simSessionId, setSimSessionId] = useState<string>(() => `sim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`)
+  const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null)
+
+  const initialGreeting = isHi
+    ? '👋 *नमस्ते! मैं समर्थन (Samarthan) AI साइबर अपराध ट्रायज बॉट हूँ।*\n\nमैं 24x7 आपातकालीन साइबर धोखाधड़ी रिपोर्टिंग और 1930 गोल्डन ऑवर फंड फ्रीज में आपकी सहायता करूँगा।\n\n📋 *अगले चरण के लिए आवश्यक बुनियादी जानकारी:*\n• क्या हुआ (फर्जी कॉल, UPI फ्रॉड, निवेश स्कैम, ब्लैकमेल)\n• खोई हुई राशि (₹)\n• धोखेबाज़ की जानकारी (UPI ID, फोन नंबर, खाता)\n• 12-अंकों का UTR संदर्भ नंबर (यदि पैसे कटे हों)\n\n🎙️ आप **वॉइस नोट 🎤**, टेक्स्ट संदेश ✍️, या लेनदेन का **स्क्रीनशॉट 📸** भेज सकते हैं। मैं तुरंत विश्लेषण कर आपकी FIR शिकायत तैयार करूँगा!'
+    : '👋 *Hi, I\'m the Samarthan AI Cybercrime Triage Bot.*\n\nI provide 24x7 automated emergency cybercrime triage and golden-hour fund freeze assistance under the Indian IT Act 2000.\n\n📋 *Basic information needed before the next stage:*\n• What happened (fake bank call, UPI scam, loan app, or investment fraud)\n• Total amount lost in ₹\n• Fraudster details (UPI ID, phone, account, or scam link)\n• 12-digit UTR reference number (if money was debited)\n\n🎙️ Send a **Voice Note 🎤**, type your incident ✍️, or upload a **Payment Screenshot 📸** to begin!'
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'init-1',
       role: 'assistant',
-      content: isHi
-        ? '👋 *नमस्ते! मैं समर्थन (Samarthan) AI साइबर अपराध ट्रायज बॉट हूँ।*\n\nमैं 24x7 आपातकालीन साइबर धोखाधड़ी रिपोर्टिंग और 1930 गोल्डन ऑवर फंड फ्रीज में आपकी सहायता करूँगा।\n\n📋 *अगले चरण के लिए आवश्यक बुनियादी जानकारी:*\n• क्या हुआ (फर्जी कॉल, UPI फ्रॉड, निवेश स्कैम, ब्लैकमेल)\n• खोई हुई राशि (₹)\n• धोखेबाज़ की जानकारी (UPI ID, फोन नंबर, खाता)\n• 12-अंकों का UTR संदर्भ नंबर (यदि पैसे कटे हों)\n\n🎙️ आप **वॉइस नोट 🎤**, टेक्स्ट संदेश ✍️, या लेनदेन का **स्क्रीनशॉट 📸** भेज सकते हैं। मैं तुरंत विश्लेषण कर आपकी FIR शिकायत तैयार करूँगा!'
-        : '👋 *Hi, I\'m the Samarthan AI Cybercrime Triage Bot.*\n\nI provide 24x7 automated emergency cybercrime triage and golden-hour fund freeze assistance under the Indian IT Act 2000.\n\n📋 *Basic information needed before the next stage:*\n• What happened (fake bank call, UPI scam, loan app, or investment fraud)\n• Total amount lost in ₹\n• Fraudster details (UPI ID, phone, account, or scam link)\n• 12-digit UTR reference number (if money was debited)\n\n🎙️ Send a **Voice Note 🎤**, type your incident ✍️, or upload a **Payment Screenshot 📸** to begin!',
+      content: initialGreeting,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ])
@@ -83,19 +234,50 @@ export default function WhatsAppSimulatorModal({
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Audio Recording states
+  // Audio Recording & Web Speech Recognition states
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [liveSpeechText, setLiveSpeechText] = useState('')
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const speechRecognitionRef = useRef<any>(null)
+  const liveTranscriptRef = useRef<string>('')
+  const recordedMimeTypeRef = useRef<string>('audio/webm')
 
-  // File input ref for images
+  // Text-To-Speech (Speaker) state
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null)
+
+  // Attachment dropdown state & file input
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Reset session when modal opens fresh so no old test data lingers
+  useEffect(() => {
+    if (isOpen) {
+      const freshSimId = `sim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+      setSimSessionId(freshSimId)
+      setActiveIncidentId(null)
+      setMessages([
+        {
+          id: `init-${Date.now()}`,
+          role: 'assistant',
+          content: initialGreeting,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ])
+      setInput('')
+      setLiveSpeechText('')
+      setShowAttachMenu(false)
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel()
+      }
+    }
+  }, [isOpen])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
+  }, [messages, isTyping, isRecording, liveSpeechText])
 
   useEffect(() => {
     return () => {
@@ -103,12 +285,83 @@ export default function WhatsAppSimulatorModal({
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop()
       }
+      try {
+        speechRecognitionRef.current?.stop?.()
+      } catch {}
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel()
+      }
     }
   }, [])
 
   if (!isOpen) return null
 
-  // Process a text message
+  // Reset entire simulator conversation to start brand new
+  const handleReset = async () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
+    const freshSimId = `sim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+    setSimSessionId(freshSimId)
+    setActiveIncidentId(null)
+    setMessages([
+      {
+        id: `init-${Date.now()}`,
+        role: 'assistant',
+        content: isHi
+          ? '👋 *नई सिम्युलेशन शुरू हुई।*\n\nअपनी घटना का विवरण बोलकर बताएं 🎤, संदेश लिखें ✍️, या भुगतान स्क्रीनशॉट 📸 साझा करें।'
+          : '👋 *Simulation reset. Ready for a new complaint.*\n\nDescribe what happened: record a voice note 🎤, type your incident ✍️, or upload a payment screenshot 📸.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ])
+    setInput('')
+    setLiveSpeechText('')
+    setShowAttachMenu(false)
+
+    // Notify backend to drop any in-memory state for this session
+    try {
+      await fetch('/api/whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: freshSimId,
+          resetSession: true,
+          isSimulator: true,
+        }),
+      })
+    } catch {}
+  }
+
+  // Text-To-Speech (Speaker) Reader
+  const handleSpeakMessage = (msgId: string, text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+
+    if (speakingMsgId === msgId) {
+      window.speechSynthesis.cancel()
+      setSpeakingMsgId(null)
+      return
+    }
+
+    window.speechSynthesis.cancel()
+    // Strip markdown formatting and URLs for natural speech synthesis
+    const cleanText = text
+      .replace(/https?:\/\/[^\s]+/g, 'link to complaint report')
+      .replace(/[*_#`~]/g, '')
+      .replace(/[•👉📌🤖💰🔢👤]/g, '')
+      .trim()
+
+    const utterance = new SpeechSynthesisUtterance(cleanText)
+    utterance.lang = isHi ? 'hi-IN' : 'en-IN'
+    utterance.rate = 1.05
+
+    utterance.onend = () => setSpeakingMsgId(null)
+    utterance.onerror = () => setSpeakingMsgId(null)
+
+    setSpeakingMsgId(msgId)
+    window.speechSynthesis.speak(utterance)
+  }
+
+  // Send a Text Message (or follow-up update in the same window)
   const handleSendText = async (textToSend?: string) => {
     const text = (textToSend || input).trim()
     if (!text || isTyping) return
@@ -130,8 +383,10 @@ export default function WhatsAppSimulatorModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phoneNumber: 'simulator-citizen',
+          phoneNumber: simSessionId,
           message: text,
+          activeIncidentId: activeIncidentId || undefined,
+          isSimulator: true,
         }),
       })
 
@@ -139,13 +394,18 @@ export default function WhatsAppSimulatorModal({
       const botTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
       if (data.reply) {
+        const returnedIncidentId = data.incidentId || data.filedComplaint?.incidentId || activeIncidentId
+        if (returnedIncidentId && !activeIncidentId) {
+          setActiveIncidentId(returnedIncidentId)
+        }
+
         const botMsg: Message = {
           id: `b-${Date.now()}`,
           role: 'assistant',
           content: data.reply,
           timestamp: botTimestamp,
           filedData: data.filedComplaint,
-          incidentId: data.incidentId || data.filedComplaint?.incidentId,
+          incidentId: returnedIncidentId || undefined,
         }
         setMessages((prev) => [...prev, botMsg])
 
@@ -168,13 +428,29 @@ export default function WhatsAppSimulatorModal({
     }
   }
 
-  // Real Audio Voice Note Recording
+  // Real Audio Voice Recording with Live Speech Recognition (Microphone / Speaker)
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
+
+      // Detect best supported MIME type for recording
+      const supportedMime = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/wav',
+      ].find((type) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type)) || ''
+
+      recordedMimeTypeRef.current = supportedMime || 'audio/webm'
+
+      const mediaRecorder = supportedMime
+        ? new MediaRecorder(stream, { mimeType: supportedMime })
+        : new MediaRecorder(stream)
+
       mediaRecorderRef.current = mediaRecorder
       audioChunksRef.current = []
+      liveTranscriptRef.current = ''
+      setLiveSpeechText('')
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data)
@@ -182,13 +458,47 @@ export default function WhatsAppSimulatorModal({
 
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop())
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-        if (audioBlob.size > 500) {
-          await handleSendAudio(audioBlob)
+        const finalBlob = new Blob(audioChunksRef.current, {
+          type: recordedMimeTypeRef.current || 'audio/webm',
+        })
+        const capturedSpeech = liveTranscriptRef.current || liveSpeechText
+        await handleSendAudio(finalBlob, capturedSpeech)
+      }
+
+      // Start Browser Speech Recognition in parallel for real-time live captions & fallback
+      if (typeof window !== 'undefined') {
+        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (SpeechRec) {
+          try {
+            const recognition = new SpeechRec()
+            recognition.continuous = true
+            recognition.interimResults = true
+            recognition.lang = isHi ? 'hi-IN' : 'en-IN'
+
+            recognition.onresult = (event: any) => {
+              let text = ''
+              for (let i = 0; i < event.results.length; i++) {
+                text += event.results[i][0].transcript
+              }
+              if (text.trim()) {
+                setLiveSpeechText(text.trim())
+                liveTranscriptRef.current = text.trim()
+              }
+            }
+
+            recognition.onerror = () => {
+              /* ignore non-fatal speech errors */
+            }
+
+            recognition.start()
+            speechRecognitionRef.current = recognition
+          } catch (srErr) {
+            console.warn('SpeechRecognition init error:', srErr)
+          }
         }
       }
 
-      mediaRecorder.start()
+      mediaRecorder.start(250)
       setIsRecording(true)
       setRecordingSeconds(0)
       timerRef.current = setInterval(() => {
@@ -198,8 +508,8 @@ export default function WhatsAppSimulatorModal({
       console.error('Microphone access denied:', err)
       alert(
         isHi
-          ? 'माइक्रोफ़ोन की अनुमति उपलब्ध नहीं है। कृपया ब्राउज़र सेटिंग्स में माइक्रोफ़ोन की अनुमति दें।'
-          : 'Microphone permission was denied. Please allow microphone access in your browser.'
+          ? 'माइक्रोफ़ोन की अनुमति उपलब्ध नहीं है। कृपया ब्राउज़र में माइक्रोफ़ोन की अनुमति दें।'
+          : 'Microphone permission was not granted. Please allow microphone access in your browser settings.'
       )
     }
   }
@@ -207,6 +517,11 @@ export default function WhatsAppSimulatorModal({
   const stopRecording = () => {
     if (timerRef.current) clearInterval(timerRef.current)
     setIsRecording(false)
+
+    try {
+      speechRecognitionRef.current?.stop?.()
+    } catch {}
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop()
     }
@@ -215,7 +530,14 @@ export default function WhatsAppSimulatorModal({
   const cancelRecording = () => {
     if (timerRef.current) clearInterval(timerRef.current)
     setIsRecording(false)
+    setLiveSpeechText('')
+    liveTranscriptRef.current = ''
     audioChunksRef.current = []
+
+    try {
+      speechRecognitionRef.current?.stop?.()
+    } catch {}
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.ondataavailable = null
       mediaRecorderRef.current.onstop = null
@@ -223,52 +545,60 @@ export default function WhatsAppSimulatorModal({
     }
   }
 
-  const handleSendAudio = async (blob: Blob) => {
+  const handleSendAudio = async (blob: Blob, immediateSpeechTranscript?: string) => {
     const audioUrl = URL.createObjectURL(blob)
     setIsTyping(true)
 
-    // Convert blob to base64
     const reader = new FileReader()
     reader.readAsDataURL(blob)
     reader.onloadend = async () => {
       const base64Data = (reader.result as string).split(',')[1]
 
-      // Transcribe via Whisper chunk API for transcription text
-      let transcriptText = ''
-      try {
-        const fd = new FormData()
-        fd.append('audio', blob, 'voicenote.webm')
-        fd.append('language', language)
-        const trRes = await fetch('/api/transcribe-chunk', { method: 'POST', body: fd })
-        if (trRes.ok) {
-          const trData = await trRes.json()
-          transcriptText = trData.text || ''
+      let transcriptText = (immediateSpeechTranscript || '').trim()
+
+      // If live SpeechRecognition did not yield text, attempt Whisper transcription
+      if (!transcriptText && blob.size > 800) {
+        try {
+          const fd = new FormData()
+          const ext = recordedMimeTypeRef.current.includes('mp4') ? 'mp4' : 'webm'
+          fd.append('audio', blob, `voicenote.${ext}`)
+          fd.append('language', language)
+          const trRes = await fetch('/api/transcribe-chunk', { method: 'POST', body: fd })
+          if (trRes.ok) {
+            const trData = await trRes.json()
+            if (trData.text) transcriptText = trData.text.trim()
+          }
+        } catch (e) {
+          console.warn('Audio transcription preview error:', e)
         }
-      } catch (e) {
-        console.warn('Audio transcription preview error:', e)
       }
 
       const userTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       const userMsg: Message = {
         id: `u-${Date.now()}`,
         role: 'user',
-        content: transcriptText ? `🎤 "${transcriptText}"` : '🎤 Voice Note',
+        content: transcriptText ? `🎤 "${transcriptText}"` : (isHi ? '🎤 वॉयस नोट रिकॉर्डिंग' : '🎤 Voice Note Recording'),
         audioUrl,
-        voiceTranscript: transcriptText,
+        voiceTranscript: transcriptText || undefined,
         timestamp: userTimestamp,
       }
 
       setMessages((prev) => [...prev, userMsg])
+      setLiveSpeechText('')
+      liveTranscriptRef.current = ''
 
       try {
         const res = await fetch('/api/whatsapp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            phoneNumber: 'simulator-citizen',
-            message: transcriptText,
+            phoneNumber: simSessionId,
+            message: transcriptText || (isHi ? 'वॉयस नोट शिकायत विवरण' : 'Voice note complaint details'),
+            voiceTranscript: transcriptText || undefined,
             audioBase64: base64Data,
-            voiceTranscript: transcriptText,
+            audioMimeType: recordedMimeTypeRef.current || 'audio/webm',
+            activeIncidentId: activeIncidentId || undefined,
+            isSimulator: true,
           }),
         })
 
@@ -276,13 +606,18 @@ export default function WhatsAppSimulatorModal({
         const botTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
         if (data.reply) {
+          const returnedIncidentId = data.incidentId || data.filedComplaint?.incidentId || activeIncidentId
+          if (returnedIncidentId && !activeIncidentId) {
+            setActiveIncidentId(returnedIncidentId)
+          }
+
           const botMsg: Message = {
             id: `b-${Date.now()}`,
             role: 'assistant',
             content: data.reply,
             timestamp: botTimestamp,
             filedData: data.filedComplaint,
-            incidentId: data.incidentId || data.filedComplaint?.incidentId,
+            incidentId: returnedIncidentId || undefined,
           }
           setMessages((prev) => [...prev, botMsg])
 
@@ -296,7 +631,7 @@ export default function WhatsAppSimulatorModal({
           role: 'assistant',
           content: isHi
             ? 'वॉयस नोट प्रोसेस करने में समस्या हुई। कृपया दोबारा प्रयास करें।'
-            : 'Error processing voice note. Please try again.',
+            : 'Error processing voice note. Please try again or type your complaint.',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }
         setMessages((prev) => [...prev, botMsg])
@@ -306,87 +641,103 @@ export default function WhatsAppSimulatorModal({
     }
   }
 
-  // Image Upload Handler (Screenshots / UPI Receipts)
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Image Upload Handler (Real file or Sample Canvas Receipt)
+  const processImageBase64 = async (dataUrl: string, captionText?: string) => {
+    setShowAttachMenu(false)
+    const cleanBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl
 
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onloadend = async () => {
-      const dataUrl = reader.result as string
-      const cleanBase64 = dataUrl.replace(/^data:image\/[a-z]+;base64,/, '')
+    const userTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const userMsg: Message = {
+      id: `u-${Date.now()}`,
+      role: 'user',
+      content: captionText || (isHi ? '📸 [लेनदेन का स्क्रीनशॉट/रसीद भेजा]' : '📸 [Payment Receipt / Fraud Screenshot]'),
+      imageUrl: dataUrl,
+      timestamp: userTimestamp,
+    }
 
-      const userTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      const userMsg: Message = {
-        id: `u-${Date.now()}`,
-        role: 'user',
-        content: isHi ? '📸 [लेनदेन का स्क्रीनशॉट/रसीद भेजा]' : '📸 [Screenshot / Payment Receipt]',
-        imageUrl: dataUrl,
-        timestamp: userTimestamp,
-      }
+    setMessages((prev) => [...prev, userMsg])
+    setIsTyping(true)
 
-      setMessages((prev) => [...prev, userMsg])
-      setIsTyping(true)
+    try {
+      const res = await fetch('/api/whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: simSessionId,
+          message: captionText || 'Payment screenshot evidence',
+          imageBase64: cleanBase64,
+          activeIncidentId: activeIncidentId || undefined,
+          isSimulator: true,
+        }),
+      })
 
-      try {
-        const res = await fetch('/api/whatsapp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phoneNumber: 'simulator-citizen',
-            message: 'Screenshot evidence',
-            imageBase64: cleanBase64,
-          }),
-        })
+      const data = await res.json()
+      const botTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-        const data = await res.json()
-        const botTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-        if (data.reply) {
-          const botMsg: Message = {
-            id: `b-${Date.now()}`,
-            role: 'assistant',
-            content: data.reply,
-            timestamp: botTimestamp,
-            filedData: data.filedComplaint,
-            incidentId: data.incidentId || data.filedComplaint?.incidentId,
-          }
-          setMessages((prev) => [...prev, botMsg])
-
-          if (data.filedComplaint) {
-            setTriageResult(data.filedComplaint)
-          }
+      if (data.reply) {
+        const returnedIncidentId = data.incidentId || data.filedComplaint?.incidentId || activeIncidentId
+        if (returnedIncidentId && !activeIncidentId) {
+          setActiveIncidentId(returnedIncidentId)
         }
-      } catch {
+
         const botMsg: Message = {
           id: `b-${Date.now()}`,
           role: 'assistant',
-          content: isHi
-            ? 'स्क्रीनशॉट पढ़ने में त्रुटि हुई। कृपया स्पष्ट रसीद दोबारा भेजें।'
-            : 'Error reading screenshot. Please upload a clear transaction receipt.',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          content: data.reply,
+          timestamp: botTimestamp,
+          filedData: data.filedComplaint,
+          incidentId: returnedIncidentId || undefined,
         }
         setMessages((prev) => [...prev, botMsg])
-      } finally {
-        setIsTyping(false)
-        if (fileInputRef.current) fileInputRef.current.value = ''
+
+        if (data.filedComplaint) {
+          setTriageResult(data.filedComplaint)
+        }
       }
+    } catch {
+      const botMsg: Message = {
+        id: `b-${Date.now()}`,
+        role: 'assistant',
+        content: isHi
+          ? 'स्क्रीनशॉट पढ़ने में त्रुटि हुई। कृपया स्पष्ट रसीद दोबारा भेजें।'
+          : 'Error reading screenshot. Please upload a clear transaction receipt.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages((prev) => [...prev, botMsg])
+    } finally {
+      setIsTyping(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
-  const handleReset = () => {
-    setMessages([
-      {
-        id: `init-${Date.now()}`,
-        role: 'assistant',
-        content: isHi
-          ? '👋 *नमस्ते! मैं समर्थन AI साइबर अपराध ट्रायज बॉट हूँ।*\n\nकृपया अपनी घटना का विवरण लिखकर बताएं, वॉयस नोट 🎤 भेजें, या लेनदेन का स्क्रीनशॉट 📸 साझा करें।'
-          : '👋 *Hello! I am Samarthan AI Cybercrime Triage Bot.*\n\nPlease describe what happened: send a Voice Note 🎤, type a message ✍️, or share a Payment Screenshot 📸.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      },
-    ])
-    setInput('')
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      // Compress and scale down to guarantee <200KB payload
+      const compressedDataUrl = await compressAndResizeImage(file, 1200, 1200, 0.82)
+      await processImageBase64(
+        compressedDataUrl,
+        isHi ? `📸 [अपलोड किया: ${file.name}]` : `📸 [Uploaded: ${file.name}]`
+      )
+    } catch (err) {
+      console.error('Image compression error:', err)
+      alert(isHi ? 'चित्र लोड करने में असमर्थ' : 'Could not process the selected image')
+    }
+  }
+
+  // 1-Click Sample UPI Receipt Generator
+  const handleSampleReceiptClick = async () => {
+    const sampleDataUrl = generateSampleReceiptCanvas()
+    if (sampleDataUrl) {
+      await processImageBase64(
+        sampleDataUrl,
+        isHi
+          ? '📸 [नमूना UPI धोखाधड़ी रसीद: ₹45,000 (electricitybill@ybl)]'
+          : '📸 [Sample UPI Fraud Receipt: ₹45,000 to electricitybill@ybl]'
+      )
+    }
   }
 
   // Format seconds to mm:ss
@@ -452,6 +803,7 @@ export default function WhatsAppSimulatorModal({
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        transition={{ duration: 0.2 }}
         className="w-full max-w-2xl h-[94vh] sm:h-[88vh] max-h-[780px] bg-[#EFEAE2] dark:bg-[#0b141a] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800"
       >
         {/* Hidden File Input for Image Uploads */}
@@ -478,18 +830,24 @@ export default function WhatsAppSimulatorModal({
                 <span className="bg-emerald-500 text-white rounded-full px-1 text-[9px] font-bold">✓</span>
               </div>
               <p className="text-[11px] text-emerald-200 dark:text-emerald-300/80">
-                {isTyping ? 'typing...' : 'National Cybercrime Portal Partner • 24x7 Live'}
+                {isTyping
+                  ? 'typing...'
+                  : activeIncidentId
+                  ? `Active Case: ${activeIncidentId} • Auto-Sync On`
+                  : 'National Cybercrime Portal Partner • 24x7 Live'}
               </p>
             </div>
           </div>
+
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={handleReset}
-              title="Reset conversation"
-              className="p-2 text-emerald-200 hover:text-white hover:bg-emerald-800/40 dark:hover:bg-zinc-700/50 rounded-full transition-colors cursor-pointer"
+              title={isHi ? 'नई सिम्युलेशन शुरू करें (डेटा साफ करें)' : 'Start Fresh Simulation (Clear data)'}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs text-emerald-200 hover:text-white bg-emerald-800/40 hover:bg-emerald-800/80 rounded-lg transition-colors cursor-pointer border border-emerald-500/30"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline font-medium">{isHi ? 'नया केस' : 'Start Fresh'}</span>
             </button>
             <button
               type="button"
@@ -502,11 +860,56 @@ export default function WhatsAppSimulatorModal({
           </div>
         </div>
 
-        {/* Preset Prompt Pills */}
+        {/* Live Active Case Ribbon if complaint filed */}
+        {activeIncidentId && (
+          <div className="bg-emerald-600 text-white px-4 py-1.5 text-xs flex items-center justify-between flex-shrink-0 shadow-inner">
+            <span className="flex items-center gap-1.5 font-medium">
+              <FileCheck className="w-3.5 h-3.5" />
+              <span>
+                {isHi ? 'सक्रिय केस दर्ज: ' : 'Active Case Filed: '}
+                <strong>{activeIncidentId}</strong>
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                router.push(`/dashboard?id=${activeIncidentId}`)
+              }}
+              className="flex items-center gap-1 bg-white text-emerald-800 font-bold px-2.5 py-0.5 rounded-full text-[11px] hover:bg-emerald-50 cursor-pointer shadow-xs"
+            >
+              <span>{isHi ? 'वेबसाइट पर देखें →' : 'View on Website →'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Preset Prompt & Quick Actions Bar */}
         <div className="bg-[#F0F2F5] dark:bg-[#111b21] border-b border-zinc-200 dark:border-zinc-800 px-3 py-2 flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs flex-shrink-0">
           <span className="text-zinc-500 dark:text-zinc-400 font-medium whitespace-nowrap text-[11px]">
-            {isHi ? 'त्वरित उदाहरण:' : 'Try prompt:'}
+            {isHi ? 'त्वरित कार्रवाई:' : 'Quick actions:'}
           </span>
+          <button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`whitespace-nowrap flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer border ${
+              isRecording
+                ? 'bg-red-500 text-white border-red-600 animate-pulse'
+                : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100'
+            }`}
+          >
+            <Mic className="w-3 h-3" />
+            <span>{isRecording ? (isHi ? 'रिकॉर्डिंग रोकें' : 'Stop Speaking') : (isHi ? 'बोलकर बताएं' : 'Speak Complaint')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSampleReceiptClick}
+            className="whitespace-nowrap flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-full text-[11px] font-semibold hover:bg-blue-100 transition-colors cursor-pointer"
+          >
+            <Sparkles className="w-3 h-3 text-blue-500" />
+            <span>{isHi ? '₹45K रसीद जोड़ें' : 'Attach ₹45K Receipt'}</span>
+          </button>
+
           {PRESETS.map((p, idx) => (
             <button
               type="button"
@@ -529,7 +932,7 @@ export default function WhatsAppSimulatorModal({
                 className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[88%] sm:max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-xs ${
+                  className={`max-w-[90%] sm:max-w-[82%] rounded-2xl px-4 py-2.5 text-sm shadow-xs ${
                     isUser
                       ? 'bg-[#D9FDD3] dark:bg-[#005c4b] text-zinc-900 dark:text-zinc-100 rounded-tr-none'
                       : 'bg-white dark:bg-[#202c33] text-zinc-900 dark:text-zinc-100 rounded-tl-none border border-zinc-200/60 dark:border-zinc-700/40'
@@ -537,7 +940,7 @@ export default function WhatsAppSimulatorModal({
                 >
                   {/* Image Attachment Preview if present */}
                   {m.imageUrl && (
-                    <div className="mb-2.5 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 max-w-xs">
+                    <div className="mb-2.5 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 max-w-xs shadow-xs">
                       <img
                         src={m.imageUrl}
                         alt="Evidence Screenshot"
@@ -552,7 +955,7 @@ export default function WhatsAppSimulatorModal({
                       <audio src={m.audioUrl} controls className="w-full h-8" />
                       {m.voiceTranscript && (
                         <p className="text-[11px] text-zinc-600 dark:text-zinc-300 italic px-1">
-                          {m.voiceTranscript}
+                          "{m.voiceTranscript}"
                         </p>
                       )}
                     </div>
@@ -590,9 +993,41 @@ export default function WhatsAppSimulatorModal({
                     </div>
                   )}
 
-                  <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-zinc-400 dark:text-zinc-400">
-                    <span>{m.timestamp}</span>
-                    {isUser && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
+                  <div className="flex items-center justify-between gap-2 mt-1 text-[10px] text-zinc-400 dark:text-zinc-400">
+                    {/* TTS Speaker icon on bot responses */}
+                    {!isUser ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSpeakMessage(m.id, m.content)}
+                        title={
+                          speakingMsgId === m.id
+                            ? (isHi ? 'स्पीकर बंद करें' : 'Stop speaking')
+                            : (isHi ? 'स्पीकर पर सुनें' : 'Listen with speaker')
+                        }
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer ${
+                          speakingMsgId === m.id ? 'text-emerald-600 dark:text-emerald-400 font-bold animate-pulse' : ''
+                        }`}
+                      >
+                        {speakingMsgId === m.id ? (
+                          <>
+                            <VolumeX className="w-3.5 h-3.5" />
+                            <span>{isHi ? 'रोकें' : 'Stop'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>{isHi ? 'सुनें' : 'Listen'}</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+
+                    <div className="flex items-center gap-1">
+                      <span>{m.timestamp}</span>
+                      {isUser && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -611,46 +1046,95 @@ export default function WhatsAppSimulatorModal({
 
         {/* Recording Overlay in Input Bar */}
         {isRecording ? (
-          <div className="bg-[#F0F2F5] dark:bg-[#202c33] px-4 py-3 flex items-center justify-between border-t border-zinc-300 dark:border-zinc-700/60 flex-shrink-0 animate-pulse">
-            <div className="flex items-center gap-3">
-              <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
-              <span className="text-red-600 dark:text-red-400 font-mono font-bold text-sm">
-                🔴 {formatSeconds(recordingSeconds)}
-              </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">
-                {isHi ? 'बोलिए... आपकी आवाज़ रिकॉर्ड हो रही है' : 'Listening... Speak your complaint'}
-              </span>
+          <div className="bg-[#F0F2F5] dark:bg-[#202c33] px-4 py-3 flex flex-col gap-2 border-t border-zinc-300 dark:border-zinc-700/60 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+                <span className="text-red-600 dark:text-red-400 font-mono font-bold text-sm">
+                  🔴 {formatSeconds(recordingSeconds)}
+                </span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+                  {isHi ? 'अपनी शिकायत बोलिए...' : 'Listening... Speak your complaint'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={cancelRecording}
+                  className="px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-300 hover:text-red-600 font-semibold cursor-pointer"
+                >
+                  {isHi ? 'रद्द करें' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="flex items-center gap-1.5 bg-[#075E54] dark:bg-emerald-600 hover:bg-[#064E46] text-white px-4 py-2 rounded-full text-xs font-bold shadow-md cursor-pointer active:scale-95 transition-transform"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isHi ? 'भेजें' : 'Send'}</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={cancelRecording}
-                className="px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-300 hover:text-red-600 font-semibold cursor-pointer"
-              >
-                {isHi ? 'रद्द करें' : 'Cancel'}
-              </button>
-              <button
-                type="button"
-                onClick={stopRecording}
-                className="flex items-center gap-1.5 bg-[#075E54] dark:bg-emerald-600 hover:bg-[#064E46] text-white px-4 py-2 rounded-full text-xs font-bold shadow-md cursor-pointer"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>{isHi ? 'भेजें' : 'Send'}</span>
-              </button>
-            </div>
+            {/* Live speech-to-text transcript ticker */}
+            {liveSpeechText && (
+              <div className="text-xs text-zinc-700 dark:text-zinc-200 bg-white/90 dark:bg-black/40 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 italic truncate">
+                "{liveSpeechText}"
+              </div>
+            )}
           </div>
         ) : (
           /* Normal Input Bar */
-          <div className="bg-[#F0F2F5] dark:bg-[#202c33] px-3 py-2.5 flex items-center gap-2 border-t border-zinc-300 dark:border-zinc-700/60 flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-full transition-colors cursor-pointer"
-              title={isHi ? 'स्क्रीनशॉट या रसीद अपलोड करें' : 'Attach screenshot or receipt'}
-            >
-              <Paperclip className="w-5 h-5" />
-            </button>
+          <div className="relative bg-[#F0F2F5] dark:bg-[#202c33] px-3 py-2.5 flex items-center gap-2 border-t border-zinc-300 dark:border-zinc-700/60 flex-shrink-0">
+            {/* Attachment Dropdown Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowAttachMenu((prev) => !prev)}
+                className={`p-2 rounded-full transition-colors cursor-pointer ${
+                  showAttachMenu
+                    ? 'text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                }`}
+                title={isHi ? 'फ़ाइल या स्क्रीनशॉट जोड़ें' : 'Attach screenshot or evidence'}
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+
+              {showAttachMenu && (
+                <div className="absolute bottom-12 left-0 w-60 bg-white dark:bg-[#202c33] rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700 p-1.5 z-50 flex flex-col gap-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAttachMenu(false)
+                      fileInputRef.current?.click()
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#2a3942] rounded-lg text-left transition-colors cursor-pointer"
+                  >
+                    <ImageIcon className="w-4 h-4 text-purple-500" />
+                    <div>
+                      <div className="font-semibold">{isHi ? 'फ़ोटो या स्क्रीनशॉट चुनें' : 'Upload Screenshot / Photo'}</div>
+                      <div className="text-[10px] text-zinc-400">{isHi ? 'डिवाइस से फ़ाइल अपलोड करें' : 'From phone or computer'}</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSampleReceiptClick}
+                    className="flex items-center gap-2.5 px-3 py-2 text-zinc-800 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg text-left transition-colors cursor-pointer border-t border-zinc-100 dark:border-zinc-800"
+                  >
+                    <Sparkles className="w-4 h-4 text-emerald-500" />
+                    <div>
+                      <div className="font-semibold text-emerald-700 dark:text-emerald-400">
+                        {isHi ? '⚡ नमूना UPI रसीद (₹45,000)' : '⚡ Sample UPI Fraud Receipt'}
+                      </div>
+                      <div className="text-[10px] text-zinc-400">{isHi ? 'एक-क्लिक में रसीद ट्रायज करें' : 'Instant 1-click test receipt'}</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
 
             <input
               type="text"
@@ -662,7 +1146,7 @@ export default function WhatsAppSimulatorModal({
                   handleSendText()
                 }
               }}
-              placeholder={isHi ? 'संदेश लिखें या माइक दबाकर बोलें...' : 'Type a message or tap mic to speak...'}
+              placeholder={isHi ? 'संदेश लिखें या माइक दबाकर बोलें...' : 'Type a message or click mic to speak...'}
               className="flex-1 bg-white dark:bg-[#2a3942] border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-base sm:text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-[#075E54] dark:focus:ring-emerald-500"
             />
 
@@ -679,7 +1163,7 @@ export default function WhatsAppSimulatorModal({
                 type="button"
                 onClick={startRecording}
                 className="p-2.5 bg-[#075E54] dark:bg-emerald-600 hover:bg-[#064E46] dark:hover:bg-emerald-500 text-white rounded-full transition-colors shadow-xs cursor-pointer active:scale-95"
-                title={isHi ? 'बोलने के लिए माइक दबाएं' : 'Click to record voice note'}
+                title={isHi ? 'बोलने के लिए माइक दबाएं' : 'Click to speak complaint (Voice / Microphone)'}
               >
                 <Mic className="w-4 h-4" />
               </button>

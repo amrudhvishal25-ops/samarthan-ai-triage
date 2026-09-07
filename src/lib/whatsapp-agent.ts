@@ -210,7 +210,7 @@ export async function handleStatusQuery(
         if (rows[0]) complaint = rows[0]
       }
 
-      if (!complaint && session.phoneNumber) {
+      if (!complaint && session.phoneNumber && !session.phoneNumber.startsWith('sim')) {
         const phonePattern = `%${session.phoneNumber}%`
         const rows = await sql`
           SELECT * FROM complaints
@@ -309,7 +309,9 @@ export async function processWhatsAppTurn(
   // SKIP this if the session was explicitly reset (user said NEW) — the _skipDbRestore flag is set by the API route
   // ALSO skip while the sticky forceNewComplaint flag is set — otherwise the very next
   // message after "NEW" would resurrect the old incident from the DB and update it.
-  if (!session.incidentId && !session.forceNewComplaint && process.env.DATABASE_URL && !(session as any)._skipDbRestore) {
+  // ALSO skip for simulator sessions (sim-*) so simulations do NOT dredge up historical test cases.
+  const isSimSession = session.phoneNumber.startsWith('sim') || (session as any).isSimulator
+  if (!session.incidentId && !session.forceNewComplaint && !isSimSession && process.env.DATABASE_URL && !(session as any)._skipDbRestore) {
     try {
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(process.env.DATABASE_URL)

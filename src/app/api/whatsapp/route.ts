@@ -64,13 +64,30 @@ export async function POST(req: NextRequest) {
       voiceTranscript = json.voiceTranscript || ''
       imageBase64 = json.imageBase64
       const activeIncidentId = json.activeIncidentId || undefined
-      const isExplicitReset = json.activeIncidentId === null
+      const isExplicitReset = json.activeIncidentId === null || json.resetSession === true
       // Sticky signal from the bot: user is in "NEW complaint" mode and stays there
       // (across every follow-up message) until a fresh complaint is actually filed.
       const forceNew = json.forceNew === true
 
       const session = getOrCreateSession(from)
-      if (forceNew) {
+      if (json.isSimulator) {
+        ;(session as any).isSimulator = true
+      }
+
+      if (isExplicitReset) {
+        // Explicitly clear the incident and session memory
+        session.incidentId = undefined
+        session.stage = 'AWAITING_INCIDENT'
+        session.history = []
+        session.accumulatedText = ''
+        session.extractedData = undefined
+        session.pendingUpdateText = undefined
+        session.pendingMediaUrl = undefined
+        session.pendingVisionEvidence = undefined
+        session.missingFields = []
+        session.forceNewComplaint = true
+        ;(session as any)._skipDbRestore = true
+      } else if (forceNew) {
         // Do NOT clear an in-progress force-new session's accumulated narrative here —
         // only (re)assert the sticky flag and make sure no stale incident is attached.
         session.forceNewComplaint = true
@@ -84,30 +101,21 @@ export async function POST(req: NextRequest) {
       } else if (activeIncidentId) {
         session.incidentId = activeIncidentId
         session.stage = 'FILED'
-      } else if (isExplicitReset) {
-        // Bot explicitly cleared the incident (user said NEW) — reset the server session
-        session.incidentId = undefined
-        session.stage = 'AWAITING_INCIDENT'
-        session.accumulatedText = ''
-        session.extractedData = undefined
-        session.pendingUpdateText = undefined
-        session.pendingMediaUrl = undefined
-        session.pendingVisionEvidence = undefined
-        session.missingFields = []
-        session.forceNewComplaint = true
-        // Mark session so auto-restore from DB is skipped for this turn
-        ;(session as any)._skipDbRestore = true
       }
 
+      const audioMimeType = json.audioMimeType || 'audio/webm'
       if (!voiceTranscript && json.audioBase64) {
         try {
-          const transcribed = await transcribeAudioBase64(json.audioBase64, session.language)
+          const transcribed = await transcribeAudioBase64(json.audioBase64, audioMimeType, session.language)
           if (transcribed) {
             voiceTranscript = transcribed
             body = body ? `${body} (Voice Note: "${transcribed}")` : transcribed
+          } else if (!body) {
+            body = 'Voice note complaint details'
           }
         } catch (e) {
           console.error('[WhatsApp Webhook] Audio base64 transcription error:', e)
+          if (!body) body = 'Voice note audio'
         }
       }
     }
@@ -175,14 +183,25 @@ async function transcribeAudioUrl(audioUrl: string): Promise<string | null> {
   return transcription.text
 }
 
-async function transcribeAudioBase64(base64Data: string, language?: 'en' | 'hi'): Promise<string | null> {
+async function transcribeAudioBase64(
+  base64Data: string,
+  mimeType: string = 'audio/webm',
+  language?: 'en' | 'hi'
+): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
     return 'Maine 45000 rupaye transfer kiye the ek fraudster ko.'
   }
 
   const buffer = Buffer.from(base64Data, 'base64')
-  const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' })
+  let ext = 'webm'
+  const cleanMime = mimeType.split(';')[0].trim() || 'audio/webm'
+  if (cleanMime.includes('mp4') || cleanMime.includes('m4a') || cleanMime.includes('aac')) ext = 'mp4'
+  else if (cleanMime.includes('wav')) ext = 'wav'
+  else if (cleanMime.includes('ogg')) ext = 'ogg'
+  else if (cleanMime.includes('webm')) ext = 'webm'
+
+  const file = await toFile(buffer, `voicenote.${ext}`, { type: cleanMime })
 
   const openai = new OpenAI({ apiKey })
   try {
@@ -195,7 +214,7 @@ async function transcribeAudioBase64(base64Data: string, language?: 'en' | 'hi')
   } catch (err: any) {
     console.warn('[transcribeAudioBase64] Attempting without language constraint:', err?.message)
     try {
-      const fileRetry = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' })
+      const fileRetry = await toFile(buffer, `voicenote.${ext}`, { type: cleanMime })
       const transcription = await openai.audio.transcriptions.create({
         file: fileRetry,
         model: 'whisper-1',
