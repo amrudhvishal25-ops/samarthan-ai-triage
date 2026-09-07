@@ -58,7 +58,7 @@ CRITICAL INSTRUCTIONS:
 {
   "incidentId": "",  // leave this EMPTY — the server assigns the acknowledgement number
   "fraudsterIdentifier": "FRAUDSTER's primary identifier ONLY (name, @handle, UPI ID, domain, seller username, phone). Examples: 'Rithwik', '@rithwik8024', 'random@ybl', 'example.com', 'tech-deals-mumbai'. Use 'Not Identified' ONLY if absolutely none exist.",
-  "complainantName": "The victim / complainant's own name if explicitly stated in the narrative (e.g., 'mera naam X hai', 'my name is X', 'I am X'). If not mentioned and no logged-in user is specified, return 'Citizen Complainant'. NEVER leave as empty string.",
+  "complainantName": "The victim / complainant's own name if explicitly stated in the narrative (e.g., 'mera naam X hai', 'my name is X', 'I am X'). If not mentioned and no logged-in user is specified, return 'Anonymous Complainant'. NEVER leave as empty string.",
   "recommendedChannel": "bank | platform | agency | helpline — see rule 3b. The escalation route this victim should take FIRST.",
   "recommendedChannelTarget": "Who to escalate to: bank name, platform name (Instagram/WhatsApp/…), 'UIDAI', 'Income Tax', 'RBI Sachet', 'National Consumer Helpline', or '1930'.",
   "fraudType": "Classify STRICTLY by incident type: Financial Fraud (UPI/bank money theft, QR scams), Women/Children Related Crime (harassment of minors/women, cyberbullying, fake impersonation profiles), Extortion & Blackmail (adult sextortion, ransom threats), Identity Theft (Aadhaar/PAN misuse), E-Commerce Scams (ordered product never delivered), Investment Scam (money put into a trading/crypto/investment app for promised returns, cannot withdraw), Other Cyber Crime (ransomware, hacking of the victim's own accounts, data theft). DO NOT confuse cyberbullying with extortion—if victim is minor/woman and being harassed/threatened, it's Women/Children Related Crime. DO NOT classify a trading-app deposit scam as E-Commerce — that is Investment Scam.",
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     return {
       incidentId: generateId(),
       fraudsterIdentifier: 'Not Identified',
-      complainantName: 'Citizen Complainant',
+      complainantName: 'Anonymous Complainant',
       fraudType: inferredCategory as any,
       recommendedChannel: mockChannel,
       recommendedChannelTarget: mockChannelTarget,
@@ -287,6 +287,8 @@ export async function POST(req: NextRequest) {
     }
     if (complainantName) {
       customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..."`
+    } else {
+      customPrompt += `\n\nCOMPLAINANT IDENTITY: The complainant is filing anonymously and is NOT signed in — no verified name or address is available. Set "complainantName" to "Anonymous Complainant". The complaintDraft / complaintDraftHi must open like "I am filing this complaint regarding..." (do NOT invent a name, and do NOT write "I, Anonymous Complainant"). Leave the address/city as a blank placeholder: "[Address — to be provided]".`
     }
 
     // 2. Structured legal complaint generation. Safety race well below the
@@ -341,9 +343,9 @@ export async function POST(req: NextRequest) {
     // Resolve complainant name with priority:
     // 1. Explicitly extracted name from user's narrative (e.g. "I am Rajesh", "Mera naam Parichay hai")
     // 2. Logged-in user's identity (e.g. from DigiLocker session)
-    // 3. Standard designation: "Citizen Complainant"
+    // 3. "Anonymous Complainant" — no name given and not signed in
     const rawExtractedName = typeof parsed.complainantName === 'string' ? parsed.complainantName.trim() : ''
-    const isGeneric = !rawExtractedName || /^(not (provided|identified|stated)|citizen complainant|unknown|none|na|n\/a)$/i.test(rawExtractedName)
+    const isGeneric = !rawExtractedName || /^(not (provided|identified|stated)|citizen complainant|anonymous complainant|unknown|none|na|n\/a)$/i.test(rawExtractedName)
 
     const nameMatch = userText.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
     const selfIntroName = nameMatch && nameMatch[1] && !/^(a|an|the|reporting|calling|scammed|victim)$/i.test(nameMatch[1]) ? nameMatch[1].trim() : null
@@ -355,7 +357,7 @@ export async function POST(req: NextRequest) {
     } else if (complainantName && complainantName.trim() && !/^(citizen user|unknown)$/i.test(complainantName.trim())) {
       parsed.complainantName = complainantName.trim()
     } else {
-      parsed.complainantName = 'Citizen Complainant'
+      parsed.complainantName = 'Anonymous Complainant'
     }
 
     if (parsed.complaintDraft) {

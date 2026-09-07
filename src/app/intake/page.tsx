@@ -58,7 +58,7 @@ function IntakeContent() {
       const selfNameMatch = finalTxt.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
       const detectedName = selfNameMatch && selfNameMatch[1] && !/^(a|an|the|reporting|calling|scammed|victim)$/i.test(selfNameMatch[1])
         ? selfNameMatch[1].trim()
-        : (user?.name || 'Citizen Complainant')
+        : (user?.name || 'Anonymous Complainant')
 
       const inferredCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
       const rawAmount = (finalTxt.match(/(?:₹|rs\.?|inr)\s*([\d,]+)/i) || finalTxt.match(/(\d+)\s*(?:rupees|rs)/i))?.[1]

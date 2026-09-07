@@ -559,6 +559,7 @@ async function extractUpdateDetailsWithAI(note: string) {
     fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null),
     accountNumber: accountMatch ? accountMatch[1] : null,
     amount: null,
+    amountIsAdditional: false,
     complainantName: nameMatch ? nameMatch[1].trim() : null,
   }
 
@@ -574,7 +575,14 @@ async function extractUpdateDetailsWithAI(note: string) {
       messages: [
         {
           role: 'system',
-          content: `You are an Indian cybercrime triage assistant. The user is providing an update or correction to an existing cybercrime complaint (e.g. correcting the accused fraudster's name like "his name is not X it's Y", providing a UTR, bank name, amount, UPI ID, account number, or complainant name). Extract all updated/corrected incident details. Return JSON with fields: utr (string|null), bankName (string|null), upiId (string|null), fraudsterIdentifier (string|null), accountNumber (string|null), amount (number|null), complainantName (string|null).`,
+          content: `You are an Indian cybercrime triage assistant. The user is providing an update or correction to an existing cybercrime complaint (e.g. correcting the accused fraudster's name like "his name is not X it's Y", providing a UTR, bank name, amount, UPI ID, account number, or complainant name). Extract all updated/corrected incident details.
+
+For "amount": also decide "amountIsAdditional".
+- true  → the user describes a NEW / SECOND / FURTHER debit or loss on top of what was already reported ("another 15000 was taken", "then 5000 more", "unhone phir 2000 kaat liye"). The value should be ADDED to the existing complaint total.
+- false → the user is CORRECTING the previously stated amount ("the amount was actually 80000, not 60000", "sahi amount 50000 hai"). The value REPLACES the total.
+If no amount is mentioned, amount = null and amountIsAdditional = false.
+
+Return JSON: utr (string|null), bankName (string|null), upiId (string|null), fraudsterIdentifier (string|null), accountNumber (string|null), amount (number|null), amountIsAdditional (boolean), complainantName (string|null).`,
         },
         { role: 'user', content: note },
       ],
@@ -589,10 +597,11 @@ async function extractUpdateDetailsWithAI(note: string) {
       fraudsterIdentifier: parsed.fraudsterIdentifier || fallback.fraudsterIdentifier,
       accountNumber: parsed.accountNumber || fallback.accountNumber,
       amount: typeof parsed.amount === 'number' ? parsed.amount : null,
+      amountIsAdditional: parsed.amountIsAdditional === true,
       complainantName: parsed.complainantName || fallback.complainantName,
     }
   } catch {
-    return fallback
+    return { ...fallback, amountIsAdditional: false }
   }
 }
 
@@ -618,7 +627,13 @@ async function updateExistingComplaint(
   }
 
   const filledItems: string[] = []
-  if (extractedUpdate.amount) filledItems.push(isHi ? `पहचानी गई राशि: ₹${extractedUpdate.amount.toLocaleString('en-IN')}` : `Detected Amount: ₹${extractedUpdate.amount.toLocaleString('en-IN')}`)
+  if (extractedUpdate.amount) {
+    filledItems.push(
+      extractedUpdate.amountIsAdditional
+        ? (isHi ? `अतिरिक्त हानि जोड़ी गई: ₹${extractedUpdate.amount.toLocaleString('en-IN')}` : `Additional loss added: ₹${extractedUpdate.amount.toLocaleString('en-IN')}`)
+        : (isHi ? `सुधारी गई राशि: ₹${extractedUpdate.amount.toLocaleString('en-IN')}` : `Corrected Amount: ₹${extractedUpdate.amount.toLocaleString('en-IN')}`)
+    )
+  }
   if (extractedUpdate.utr) filledItems.push(isHi ? `UTR नंबर: ${extractedUpdate.utr}` : `UTR Number: ${extractedUpdate.utr}`)
   if (extractedUpdate.bankName) filledItems.push(isHi ? `बैंक: ${extractedUpdate.bankName}` : `Bank Name: ${extractedUpdate.bankName}`)
   if (extractedUpdate.upiId) filledItems.push(isHi ? `UPI ID: ${extractedUpdate.upiId}` : `UPI Handle: ${extractedUpdate.upiId}`)
@@ -664,8 +679,13 @@ async function updateExistingComplaint(
         const updatedBank = extractedUpdate.bankName || row.bank_name
         const updatedUpi = extractedUpdate.upiId || row.upi_id
         const updatedAcc = extractedUpdate.accountNumber || row.account_number
-        const updatedAmount = extractedUpdate.amount || row.amount
-        const updatedComplainant = extractedUpdate.complainantName || row.complainant_name || 'Citizen Complainant'
+        // A "second debit of 15000" ADDS to the running total; "the amount was
+        // actually 80000" REPLACES it. If no amount in the note, keep as-is.
+        const prevAmount = Number(row.amount) || 0
+        const updatedAmount = extractedUpdate.amount
+          ? (extractedUpdate.amountIsAdditional ? prevAmount + extractedUpdate.amount : extractedUpdate.amount)
+          : prevAmount
+        const updatedComplainant = extractedUpdate.complainantName || row.complainant_name || 'Anonymous Complainant'
         const updatedFraudster = extractedUpdate.fraudsterIdentifier || row.fraudster_identifier
 
         const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
@@ -773,7 +793,9 @@ async function createAndSaveNewComplaint(
         messages: [
           {
             role: 'system',
-            content: `You are an Indian cybercrime triage officer. Return ONLY JSON matching TriageResult schema. Fields: fraudType (Financial Fraud, Women/Children Related Crime, Extortion & Blackmail, Identity Theft, E-Commerce Scams, Investment Scam, Other Cyber Crime), fraudsterIdentifier, complainantName, amount (number), bankName, accountNumber, upiId, timeline, summary (2 sentences), summaryHi, complaintDraft (formal police complaint), complaintDraftHi, freezeSteps (string[]), applicableLaws (string[]), frauderContact, recommendedChannel ("bank"|"agency"|"platform"|"helpline"), recommendedChannelTarget.`,
+            content: `You are an Indian cybercrime triage officer. Return ONLY JSON matching TriageResult schema. Fields: fraudType (Financial Fraud, Women/Children Related Crime, Extortion & Blackmail, Identity Theft, E-Commerce Scams, Investment Scam, Other Cyber Crime), fraudsterIdentifier, complainantName, amount (number), bankName, accountNumber, upiId, timeline, summary (2 sentences), summaryHi, complaintDraft (formal police complaint), complaintDraftHi, freezeSteps (string[]), applicableLaws (string[]), frauderContact, recommendedChannel ("bank"|"agency"|"platform"|"helpline"), recommendedChannelTarget.
+
+COMPLAINANT: This report comes via WhatsApp with NO verified identity. Only set "complainantName" to a real name if the person explicitly states it in the narrative ("my name is X", "mera naam X hai"). Otherwise set it to "Anonymous Complainant", open complaintDraft with "I am filing this complaint regarding..." (never "I, Anonymous Complainant"), and leave the address/city as "[Address / city — to be provided]".`,
           },
           { role: 'user', content: incidentText },
         ],
@@ -790,7 +812,7 @@ async function createAndSaveNewComplaint(
       const rawComplainant = (parsed.complainantName && typeof parsed.complainantName === 'string' && parsed.complainantName.trim()) || (nameMatch ? nameMatch[1].trim() : '')
       const finalComplainant = rawComplainant && !['not identified', 'not provided', 'unknown', 'n/a', 'none'].includes(rawComplainant.toLowerCase())
         ? rawComplainant
-        : 'Citizen Complainant'
+        : 'Anonymous Complainant'
 
       const freezeSteps = Array.isArray(parsed.freezeSteps) && parsed.freezeSteps.length > 0 && typeof parsed.freezeSteps[0] === 'object'
         ? parsed.freezeSteps
@@ -953,7 +975,11 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
   const amount = ext.amount || 45000
   const fraudster = ext.upi || ext.phone || 'Fraudulent Entity'
   const nameMatch = text.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-  const complainantName = nameMatch ? nameMatch[1].trim() : 'Citizen Complainant'
+  const namedComplainant = nameMatch ? nameMatch[1].trim() : null
+  const complainantName = namedComplainant || 'Anonymous Complainant'
+  // Anonymous filers get an impersonal opener; a named filer gets "I, <name>,".
+  const draftOpenerEn = namedComplainant ? `I, ${namedComplainant}, am` : 'I am'
+  const draftOpenerHi = namedComplainant ? `\u092E\u0948\u0902, ${namedComplainant},` : '\u092E\u0948\u0902'
 
   return {
     incidentId,
@@ -965,9 +991,9 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
     summary: `Unauthorized financial debit of ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.`,
     summaryHi: `व्हाट्सएप बॉट के माध्यम से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी दर्ज की गई।`,
     complaintDraft: `To The Station House Officer / Cyber Crime Cell,
-I, ${complainantName}, am filing a formal complaint regarding an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from my account. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.`,
+${draftOpenerEn} filing a formal complaint regarding an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from my account. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.${namedComplainant ? '' : '\n\n[Complainant address / city — to be provided]'}`,
     complaintDraftHi: `थाना प्रभारी / साइबर अपराध शाखा,
-मैं, ${complainantName}, अपने खाते से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत दर्ज कर रहा हूँ। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।`,
+${draftOpenerHi} अपने खाते से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत दर्ज कर रहा हूँ। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।${namedComplainant ? '' : '\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]'}`,
     frauderContact: ext.utr ? `Ref UTR: ${ext.utr}; Contact: ${ext.phone || 'Not Provided'}` : (ext.phone || 'Not Provided'),
     bankName: 'Bank Nodal Desk',
     accountNumber: 'Not Provided',
