@@ -92,8 +92,8 @@ export default function WhatsAppChoiceModal({
               </div>
               <p className="text-xs text-emerald-100/90 mt-1 leading-relaxed">
                 {isHi
-                  ? 'चुनें कि आप समर्थन AI के साथ कैसे बातचीत करना चाहते हैं'
-                  : 'Choose how you would like to test or chat with our 24x7 companion'}
+                  ? 'Aevy TV × OpenAI हैकथॉन प्रोटोटाइप सिमुलेशन • कोई आधिकारिक सरकारी वेबसाइट नहीं'
+                  : 'Aevy TV × OpenAI Hackathon Prototype Simulation • Not an Official Government Website'}
               </p>
             </div>
           </div>

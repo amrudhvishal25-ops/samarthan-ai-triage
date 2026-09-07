@@ -43,7 +43,22 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
         onSuccess={() => setUser(getUser())}
       />
 
-      <header className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-50 transition-all">
+      {/* Aevy TV × OpenAI Hackathon Simulation Disclaimer Banner */}
+      <div className="bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-[11px] sm:text-xs py-1.5 px-4 text-center font-medium sticky top-0 z-50 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex items-center justify-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1 font-bold text-amber-800 dark:text-amber-300">
+            🏆 Aevy TV × OpenAI Hackathon Project
+          </span>
+          <span className="text-amber-600/60 dark:text-amber-400/60 hidden sm:inline">•</span>
+          <span>
+            {hi
+              ? '⚠️ यह केवल एक सिमुलेशन प्रोटोटाइप है, कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक पोर्टल: cybercrime.gov.in)।'
+              : '⚠️ Prototype Simulation Only — Not an Official Government Website (Official Portal: cybercrime.gov.in)'}
+          </span>
+        </div>
+      </div>
+
+      <header className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-md sticky top-[29px] sm:top-[31px] z-40 transition-all">
         <div className="max-w-6xl mx-auto px-6 h-[74px] flex items-center justify-between">
 
           {/* Logo */}

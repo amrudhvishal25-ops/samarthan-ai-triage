@@ -93,10 +93,13 @@ export default function FooterSection({ language }: FooterSectionProps) {
             </div>
           </div>
 
-          <div className="mt-12 pt-6 border-t border-border text-xs text-zinc-400">
-            {hi
-              ? 'सिम्युलेटेड डेमो: कोई वास्तविक बैंक या पुलिस एकीकरण नहीं। कानूनी सलाह नहीं।'
-              : 'Simulated demo: no real bank or police integration. Not legal advice.'}
+          <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="max-w-3xl leading-relaxed">
+              🏆 <strong>Aevy TV × OpenAI Hackathon Project</strong> • ⚠️ <em>{hi ? 'अस्वीकरण: यह वेबसाइट Aevy TV × OpenAI हैकथॉन के लिए बनाया गया एक AI सिमुलेशन और प्रोटोटाइप है। यह कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय साइबर अपराध पोर्टल cybercrime.gov.in है)।' : 'Disclaimer: This platform is an AI simulation & prototype developed for the Aevy TV × OpenAI Hackathon. It is NOT an official government website (the official government portal is cybercrime.gov.in). For real emergency cybercrime assistance, immediately dial 1930.'}</em>
+            </p>
+            <p className="whitespace-nowrap font-medium text-zinc-400">
+              Made with ❤️ for India
+            </p>
           </div>
         </div>
       </footer>

@@ -193,7 +193,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
             </span>
             <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
-              {hi ? '1930 NCRP राष्ट्रीय प्रोटोकॉल • 60-सेकंड AI ट्रायज' : '1930 NCRP Golden Hour Protocol • 60-Second AI Triage'}
+              {hi ? '🏆 Aevy TV × OpenAI हैकथॉन प्रोटोटाइप • AI ट्रायज सिमुलेशन' : '🏆 Built for Aevy TV × OpenAI Hackathon • AI Simulation Prototype'}
             </span>
           </div>
 
@@ -250,6 +250,13 @@ export default function HeroSection({ language }: HeroSectionProps) {
               {hi ? 'गोल्डन ऑवर 1930 हैंडऑफ़' : '1930 NCRP Handoff'}
             </span>
           </div>
+
+          {/* Explicit simulation disclaimer notice */}
+          <p className="mt-4 text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
+            {hi
+              ? '⚠️ यह Aevy TV × OpenAI हैकथॉन के लिए बनाया गया एक सिमुलेशन प्रोटोटाइप है, कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय पोर्टल: cybercrime.gov.in)।'
+              : '⚠️ This is a hackathon simulation and prototype created for the Aevy TV × OpenAI Hackathon. It is NOT an official government website (official portal: cybercrime.gov.in).'}
+          </p>
         </div>
 
         {/* Right: 21st-Century Studio Window Terminal */}
