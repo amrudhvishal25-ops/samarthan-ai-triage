@@ -21,14 +21,14 @@ const EN = {
   secondary: 'See how it works',
   demoHint: 'Try us out: tap the mic and say your report',
   demoHintDone: 'Report captured: review details or see full report',
-  continueCta: 'See your report',
+  continueCta: 'Proceed to Formal Filing (Form NCRP-1930) →',
   orWhatsApp: 'Or check it out on WhatsApp →',
   reRecord: 'Say it again',
-  youSaid: 'What you said:',
-  resultTitle: 'What Samarthan heard',
-  fType: 'Fraud type',
-  fLaw: 'Likely IT Act section',
-  fAction: 'Your immediate move',
+  youSaid: 'Citizen Statement:',
+  resultTitle: 'Preliminary Incident Dossier (Form NCRP-1930)',
+  fType: 'Fraud Classification',
+  fLaw: 'Applicable Statutory Section',
+  fAction: 'Immediate Golden Hour Action',
 }
 
 const HI = {
@@ -39,14 +39,14 @@ const HI = {
   secondary: 'यह कैसे काम करता है',
   demoHint: 'अभी आज़माएं: माइक दबाएं और अपनी शिकायत बोलें',
   demoHintDone: 'शिकायत दर्ज: विवरण जांचें या पूरी रिपोर्ट देखें',
-  continueCta: 'अपनी रिपोर्ट देखें',
+  continueCta: 'औपचारिक शिकायत दर्ज करें (प्रारूप NCRP-1930) →',
   orWhatsApp: 'या सीधे व्हाट्सएप पर देखें →',
   reRecord: 'फिर से बोलें',
-  youSaid: 'आपने कहा:',
-  resultTitle: 'समर्थन ने क्या सुना',
-  fType: 'धोखाधड़ी प्रकार',
-  fLaw: 'संभावित IT एक्ट धारा',
-  fAction: 'आपका अगला कदम',
+  youSaid: 'नागरिक का बयान:',
+  resultTitle: 'प्राथमिक घटना डोजियर (प्रारूप NCRP-1930)',
+  fType: 'धोखाधड़ी का वर्गीकरण',
+  fLaw: 'लागू वैधानिक धारा',
+  fAction: 'गोल्डन ऑवर त्वरित कार्रवाई',
 }
 
 // Lightweight keyword pass so the hero result card feels alive without a
@@ -137,7 +137,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
             </span>
             <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
-              {hi ? '🏆 Aevy TV × OpenAI हैकथॉन प्रोटोटाइप • AI ट्रायज सिमुलेशन' : '🏆 Built for Aevy TV × OpenAI Hackathon • AI Simulation Prototype'}
+              {hi ? 'राष्ट्रीय साइबर अपराध रिपोर्टिंग फ्रेमवर्क (NCRP 1930) • प्रोटोटाइप' : 'National Cybercrime Reporting Framework (NCRP 1930) • Prototype'}
             </span>
           </div>
 
@@ -168,18 +168,18 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </div>
 
           {/* Micro trust indicators */}
-          <div className="mt-8 pt-6 border-t border-zinc-200/70 dark:border-zinc-800/80 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+          <div className="mt-8 pt-6 border-t border-zinc-200/70 dark:border-zinc-800/80 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-500 dark:text-zinc-400 font-medium font-mono">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               {hi ? 'डिजीलॉकर प्रमाणित पहचान' : 'DigiLocker Verified'}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              {hi ? 'ऑटो IT एक्ट व BNS धाराएं' : 'Auto IT Act & BNS'}
+              {hi ? 'IT एक्ट व BNS वैधानिक मैपिंग' : 'IT Act & BNS Statutory Routing'}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              {hi ? 'गोल्डन ऑवर 1930 हैंडऑफ़' : '1930 NCRP Handoff'}
+              {hi ? '1930 NCRP गोल्डन ऑवर मानक' : '1930 NCRP Golden Hour Protocol'}
             </span>
           </div>
 
@@ -202,12 +202,12 @@ export default function HeroSection({ language }: HeroSectionProps) {
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
                 <span className="ml-2 text-[11px] font-mono font-medium text-zinc-500 dark:text-zinc-400">
-                  {hi ? 'लाइव वॉयस इनटेक स्टूडियो' : 'Live Voice Intake Studio'}
+                  {hi ? 'नागरिक त्वरित इनटेक टर्मिनल (प्रारूप NCRP-1930)' : 'Citizen Rapid Intake Terminal (Form NCRP-1930)'}
                 </span>
               </div>
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {hi ? 'सक्रिय' : 'Live'}
+                {hi ? 'सक्रिय टर्मिनल' : 'NCRP Active'}
               </span>
             </div>
 
@@ -274,18 +274,26 @@ export default function HeroSection({ language }: HeroSectionProps) {
               {result && !isTranscribing && (
                 <div className="mt-4">
                   <div className="rounded-lg bg-surface border border-zinc-200 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                        {c.resultTitle}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleResetRecord}
-                        className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        <span>{c.reRecord}</span>
-                      </button>
+                    <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <p className="text-[10px] font-mono font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                          {c.resultTitle}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+                          {hi ? 'डिजीलॉकर प्रमाणित' : 'DIGILOCKER VERIFIED'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleResetRecord}
+                          className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>{c.reRecord}</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="mb-3.5 p-3 rounded-md bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">

@@ -163,6 +163,13 @@ export default function TrustStrip({ language }: TrustStripProps) {
             <ExternalLink className="w-4 h-4 text-zinc-400 shrink-0" />
           </div>
         </div>
+
+        {/* Institutional Data Attribution */}
+        <p className="text-[11px] text-zinc-500 font-mono text-center mt-8">
+          {isHi
+            ? 'स्रोत: राष्ट्रीय अपराध रिकॉर्ड ब्यूरो (NCRB) एवं राष्ट्रीय साइबर अपराध रिपोर्टिंग पोर्टल (1930 हेल्पलाइन) वार्षिक डेटा'
+            : 'Source: National Crime Records Bureau (NCRB) & National Cybercrime Reporting Portal (1930 Helpline) Annual Data'}
+        </p>
       </div>
     </section>
   )

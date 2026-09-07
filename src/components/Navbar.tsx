@@ -43,8 +43,11 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
         onSuccess={() => setUser(getUser())}
       />
 
+      {/* Subtle National Tricolor Ribbon */}
+      <div className="h-[3px] w-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] sticky top-0 z-55" />
+
       {/* Aevy TV × OpenAI Hackathon Simulation Disclaimer Banner */}
-      <div className="bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-[11px] sm:text-xs py-1.5 px-4 text-center font-medium sticky top-0 z-50 backdrop-blur-md">
+      <div className="bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-[11px] sm:text-xs py-1.5 px-4 text-center font-medium sticky top-[3px] z-50 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1 font-bold text-amber-800 dark:text-amber-300">
             🏆 Aevy TV × OpenAI Hackathon Project
@@ -52,24 +55,56 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
           <span className="text-amber-600/60 dark:text-amber-400/60 hidden sm:inline">•</span>
           <span>
             {hi
-              ? '⚠️ यह केवल एक सिमुलेशन प्रोटोटाइप है, कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक पोर्टल: cybercrime.gov.in)।'
-              : '⚠️ Prototype Simulation Only — Not an Official Government Website (Official Portal: cybercrime.gov.in)'}
+              ? '⚠️ यह केवल एक सिमुलेशन प्रोटोटाइप है, कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय पोर्टल: cybercrime.gov.in)।'
+              : '⚠️ Prototype Simulation Only — Not an Official Government Website (Official National Portal: cybercrime.gov.in)'}
           </span>
         </div>
       </div>
 
-      <header className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-md sticky top-[29px] sm:top-[31px] z-40 transition-all">
+      {/* National Emergency Helpline Strip */}
+      <div className="bg-zinc-900 text-white border-b border-zinc-800 text-[11px] py-1.5 px-4 sticky top-[32px] sm:top-[34px] z-45">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 font-semibold text-red-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {hi ? 'राष्ट्रीय साइबर अपराध हेल्पलाइन:' : 'National Cyber Crime Helpline:'}
+            </span>
+            <a href="tel:1930" className="font-mono font-bold text-white hover:text-amber-300 underline underline-offset-2">
+              1930 (Toll-Free 24x7)
+            </a>
+            <span className="text-zinc-600 hidden md:inline">|</span>
+            <span className="text-zinc-400 hidden md:inline text-[10px] font-mono">
+              {hi ? 'MHA I4C NCRP गोल्डन ऑवर मानक' : 'MHA I4C NCRP Golden Hour Protocol'}
+            </span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-zinc-400 font-mono text-[10px]">
+            <span>{hi ? 'आधिकारिक संदर्भ:' : 'Official Reference:'}</span>
+            <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" className="hover:text-white underline">
+              cybercrime.gov.in
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <header className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-md sticky top-[57px] sm:top-[61px] z-40 transition-all">
         <div className="max-w-6xl mx-auto px-6 h-[74px] flex items-center justify-between">
 
           {/* Logo */}
-          <button onClick={() => router.push('/')} className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center text-white group-hover:bg-primary-hover transition-colors">
-              <BotMessageSquareIcon size={21} />
+          <button onClick={() => router.push('/')} className="flex items-center gap-3 group text-left">
+            <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-white group-hover:bg-primary-hover transition-colors shadow-xs">
+              <BotMessageSquareIcon size={22} />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-zinc-950 text-base md:text-lg tracking-tight">Samarthan</span>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary-tint border border-primary/20 px-2 py-0.5 rounded">
-                AI Triage
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-zinc-950 dark:text-white text-base md:text-lg tracking-tight">
+                  {hi ? 'समर्थन' : 'Samarthan'}
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary-tint dark:bg-blue-950/60 border border-primary/20 dark:border-blue-800/60 px-1.5 py-0.5 rounded font-mono">
+                  {hi ? 'नागरिक सहायता' : 'Citizen Helpdesk'}
+                </span>
+              </div>
+              <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 -mt-0.5 hidden sm:block">
+                {hi ? 'राष्ट्रीय साइबर अपराध त्वरित ट्रायज प्रणाली' : 'National Cybercrime Rapid Triage System'}
               </span>
             </div>
           </button>

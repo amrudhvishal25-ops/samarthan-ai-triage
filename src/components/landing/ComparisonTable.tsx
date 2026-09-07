@@ -12,12 +12,12 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
 
   const samarthanPoints = [
     {
-      en: "Triage & formal complaint ready in under 60 seconds",
+      en: "Triage and formal complaint ready in under 60 seconds",
       hi: "60 सेकंड के भीतर औपचारिक शिकायत और कानूनी ट्रायज तैयार"
     },
     {
-      en: "Zero typing required — conversational Hindi & English voice intake",
-      hi: "बिना टाइप किए बोलकर शिकायत — हिंदी और अंग्रेजी वॉइस इनटेक"
+      en: "Zero typing required, conversational Hindi & English voice intake",
+      hi: "बिना टाइप किए बोलकर शिकायत, हिंदी और अंग्रेजी वॉइस इनटेक"
     },
     {
       en: "1-click identity verification with DigiLocker (Aadhaar/PAN)",
@@ -52,7 +52,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
     },
     {
       en: "Text-only forms with zero voice or regional language accessibility",
-      hi: "केवल टेक्स्ट फॉर्म — कोई वॉयस या क्षेत्रीय भाषा सहायता नहीं"
+      hi: "केवल टेक्स्ट फॉर्म, कोई वॉयस या क्षेत्रीय भाषा सहायता नहीं"
     },
     {
       en: "Manual name/ID entry with no verified authentication proof",
@@ -60,19 +60,19 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
     },
     {
       en: "Helpline phone lines frequently busy with zero digital context",
-      hi: "व्यस्त हेल्पलाइन लाइन्स — ऑपरेटर को कोई पूर्व केस डेटा नहीं मिलता"
+      hi: "व्यस्त हेल्पलाइन लाइन्स, ऑपरेटर को कोई पूर्व केस डेटा नहीं मिलता"
     },
     {
       en: "Victims left alone to locate bank nodal officers & freeze accounts",
       hi: "बैंक खाता फ्रीज कराने के लिए पीड़ित को खुद भागदौड़ करनी पड़ती है"
     },
     {
-      en: "No legal section detection — victims struggle with police IPC/BNS",
-      hi: "कानूनी धाराओं की कोई पहचान नहीं — पुलिस में FIR कराने में असमर्थ"
+      en: "No legal section detection, victims struggle with police IPC/BNS",
+      hi: "कानूनी धाराओं की कोई पहचान नहीं, पुलिस में FIR कराने में असमर्थ"
     },
     {
       en: "Messy email attachments with no chain-of-custody preservation",
-      hi: "अव्यवस्थित ईमेल अटैचमेंट — कोर्ट में सबूतों की वैधता पर सवाल"
+      hi: "अव्यवस्थित ईमेल अटैचमेंट, कोर्ट में सबूतों की वैधता पर सवाल"
     },
     {
       en: "Static manual portal lookups with no proactive notifications",
