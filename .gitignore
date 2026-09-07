@@ -10,4 +10,6 @@ out/
 .whatsapp_live_state.json
 .whatsapp_bot.pid
 *.tsbuildinfo
+.whatsapp_session_base64.txt
+.whatsapp_sessions.json
 

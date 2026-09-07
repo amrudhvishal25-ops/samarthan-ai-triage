@@ -64,6 +64,7 @@ const startTime = Date.now()
 let currentSocket = null
 let reconnectTimer = null
 let isStarting = false
+let reconnectAttempts = 0
 
 // Write PID
 fs.writeFileSync(PID_FILE, process.pid.toString(), 'utf-8')
@@ -140,6 +141,25 @@ async function startWhatsAppBot() {
   console.log(`[Init] Using auth directory: ${AUTH_DIR}`)
   console.log(`[Init] Forwarding triage calls to: ${NEXT_API_URL}`)
 
+  // Auto-unpack session bundle if running in a fresh cloud container (e.g. Railway/Render)
+  if (process.env.WHATSAPP_SESSION_BUNDLE_BASE64) {
+    const credsFile = path.join(AUTH_DIR, 'creds.json')
+    if (!fs.existsSync(credsFile)) {
+      try {
+        console.log('[Init] Restoring WhatsApp session from WHATSAPP_SESSION_BUNDLE_BASE64...')
+        const buf = Buffer.from(process.env.WHATSAPP_SESSION_BUNDLE_BASE64.trim(), 'base64')
+        const tmpTar = path.resolve(process.cwd(), '.whatsapp_auth_bundle.tar.gz')
+        fs.writeFileSync(tmpTar, buf)
+        const { execSync } = await import('node:child_process')
+        execSync(`tar -xzf "${tmpTar}" -C "${process.cwd()}"`)
+        try { fs.unlinkSync(tmpTar) } catch {}
+        console.log('[Init] ✅ Successfully restored authenticated WhatsApp session from environment!')
+      } catch (unpackErr) {
+        console.error('[Init] Error unpacking WHATSAPP_SESSION_BUNDLE_BASE64:', unpackErr.message)
+      }
+    }
+  }
+
   let state, saveCreds
   try {
     const auth = await useMultiFileAuthState(AUTH_DIR)
@@ -166,6 +186,9 @@ async function startWhatsAppBot() {
     printQRInTerminal: true,
     browser: ['Samarthan Cyber Triage', 'Chrome', '1.0.0'],
     generateHighQualityLinkPreview: true,
+    keepAliveIntervalMs: 25000,
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 60000,
   })
 
   currentSocket = sock
@@ -200,6 +223,7 @@ async function startWhatsAppBot() {
     }
 
     if (connection === 'open') {
+      reconnectAttempts = 0
       const rawUser = sock.user?.id || ''
       const cleanPhone = rawUser.split(':')[0].replace(/[^0-9]/g, '')
       const formattedPhone = cleanPhone ? `+${cleanPhone}` : 'Unknown'
@@ -242,12 +266,15 @@ async function startWhatsAppBot() {
         return
       }
 
-      // Standard reconnect
+      // Standard reconnect with progressive backoff to prevent fast retry loops
+      reconnectAttempts++
+      const delayMs = Math.min(3000 * Math.pow(1.3, reconnectAttempts - 1), 20000)
+      console.log(`[Reconnecting] Attempt ${reconnectAttempts} in ${Math.round(delayMs / 1000)}s...`)
       updateState({ status: 'INITIALIZING' })
       if (reconnectTimer) clearTimeout(reconnectTimer)
       reconnectTimer = setTimeout(() => {
         startWhatsAppBot().catch(console.error)
-      }, 3000)
+      }, delayMs)
     }
   })
 
