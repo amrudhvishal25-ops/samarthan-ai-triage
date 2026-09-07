@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import React from 'react'
 import { ShieldCheck, Check, X, ArrowRight } from 'lucide-react'
 
 interface ComparisonTableProps {
@@ -101,52 +101,28 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
       <div className="max-w-5xl mx-auto px-6">
         {/* Top Centered Pill Badge */}
         <div className="flex justify-center mb-5">
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-zinc-200 rounded-md shadow-xs text-xs font-semibold text-zinc-800 tracking-tight"
-          >
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-zinc-200 rounded-md shadow-xs text-xs font-semibold text-zinc-800 tracking-tight">
             <ShieldCheck className="w-3.5 h-3.5 text-zinc-900" />
             <span>{isHi ? "समर्थन क्यों?" : "Why Samarthan"}</span>
-          </motion.div>
+          </div>
         </div>
 
         {/* Headline & Subheadline */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <motion.h2
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.35, delay: 0.1 }}
-            className="text-4xl md:text-5xl font-extrabold text-zinc-950 tracking-tight leading-tight"
-          >
+          <h2 className="text-4xl md:text-5xl font-extrabold text-zinc-950 tracking-tight leading-tight">
             {isHi ? "पहले दिन से अलग, उद्देश्यपूर्ण।" : "Built differently, on purpose"}
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.35, delay: 0.15 }}
-            className="text-zinc-500 text-sm md:text-base mt-4 leading-relaxed"
-          >
+          </h2>
+          <p className="text-zinc-500 text-sm md:text-base mt-4 leading-relaxed">
             {isHi
               ? "हमने उन महत्वपूर्ण 'गोल्डन ऑवर' विवरणों पर ध्यान केंद्रित किया जिन्हें पारंपरिक पोर्टल अनदेखा कर देते हैं। जानिए इसका साइबर पीड़ितों के लिए क्या मतलब है।"
               : "We obsessed over the critical golden hour details legacy systems ignore. Here is what that means for victims every single second."}
-          </motion.p>
+          </p>
         </div>
 
         {/* Two-Column Side-by-Side Cards (Us vs. Them) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           {/* LEFT CARD: Samarthan (Recommended / Hero) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="bg-white border-2 border-primary rounded-lg p-7 md:p-8 flex flex-col justify-between shadow-sm relative transition-colors"
-          >
+          <div className="bg-white border-2 border-primary rounded-lg p-7 md:p-8 flex flex-col justify-between shadow-sm relative transition-colors">
             <div>
               {/* Header */}
               <div className="flex items-center gap-3">
@@ -191,16 +167,10 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
-          </motion.div>
+          </div>
 
           {/* RIGHT CARD: The others (Traditional Portals) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.25 }}
-            className="bg-zinc-50/70 border border-zinc-200 rounded-lg p-7 md:p-8 flex flex-col justify-between"
-          >
+          <div className="bg-zinc-50/70 border border-zinc-200 rounded-lg p-7 md:p-8 flex flex-col justify-between">
             <div>
               {/* Header */}
               <div>
@@ -242,7 +212,7 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

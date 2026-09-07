@@ -1,6 +1,4 @@
-'use client'
-
-import { motion } from 'framer-motion'
+import React from 'react'
 
 interface HowItWorksProps {
   language: 'en' | 'hi'
@@ -69,12 +67,8 @@ export default function HowItWorks({ language }: HowItWorksProps) {
 
         <div className="space-y-20">
           {c.steps.map((step, i) => (
-            <motion.div
+            <div
               key={step.n}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.5 }}
               className={`grid md:grid-cols-2 gap-10 items-center ${i % 2 === 1 ? 'md:[&>*:first-child]:order-2' : ''}`}
             >
               <div>
@@ -86,7 +80,7 @@ export default function HowItWorks({ language }: HowItWorksProps) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={step.shot} alt={step.title} className="w-full h-auto max-h-[420px] object-cover object-top" />
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, ArrowDown, ShieldCheck, Scale, Wallet, Building2, Loader2, RotateCcw, MessageCircle } from 'lucide-react'
 import AudioRecorder from '@/components/AudioRecorder'
 import { useTriage } from '@/context/TriageContext'
 import { RadialBackground } from '@/components/ui/light-theme-tailwind-css-background-snippet'
-import { createTimeline, stagger } from 'animejs'
 import WhatsAppChoiceModal from '@/components/WhatsAppChoiceModal'
 import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
 
@@ -126,59 +124,6 @@ export default function HeroSection({ language }: HeroSectionProps) {
     router.push(`/intake?category=auto${q}`)
   }
 
-  useEffect(() => {
-    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReducedMotion) return
-
-    const tl = createTimeline({
-      defaults: {
-        ease: 'outExpo',
-      },
-    })
-
-    tl.add('.hero-eyebrow-pill', {
-      y: [-14, 0],
-      opacity: [0, 1],
-      duration: 600,
-      ease: 'outCubic',
-    })
-    tl.add('.hero-title-word', {
-      y: ['115%', '0%'],
-      opacity: [0, 1],
-      rotateZ: [-1.5, 0],
-      duration: 900,
-      delay: stagger(55),
-      ease: 'outElastic(1, .85)',
-    }, '-=350')
-    tl.add('.hero-highlight-word', {
-      y: ['115%', '0%'],
-      opacity: [0, 1],
-      duration: 950,
-      delay: stagger(65),
-      ease: 'outElastic(1, .85)',
-    }, '-=600')
-    tl.add('.hero-sub-text', {
-      y: [15, 0],
-      opacity: [0, 1],
-      duration: 700,
-      ease: 'outCubic',
-    }, '-=650')
-    tl.add('.hero-cta-btn', {
-      y: [15, 0],
-      opacity: [0, 1],
-      duration: 650,
-      delay: stagger(70),
-      ease: 'outCubic',
-    }, '-=550')
-    tl.add('.hero-trust-tag', {
-      y: [10, 0],
-      opacity: [0, 1],
-      duration: 550,
-      delay: stagger(50),
-      ease: 'outCubic',
-    }, '-=500')
-  }, [language])
-
   return (
     <section className="relative w-full pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden isolate">
       <RadialBackground />
@@ -187,9 +132,8 @@ export default function HeroSection({ language }: HeroSectionProps) {
         {/* Left: copy */}
         <div>
           {/* Eyebrow Pill */}
-          <div className="hero-eyebrow-pill inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-6 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-6 backdrop-blur-sm">
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
             </span>
             <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
@@ -198,37 +142,25 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.08]">
-            <span className="block overflow-hidden py-0.5">
-              {c.headline.split(' ').map((word, idx) => (
-                <span key={idx} className="hero-title-word inline-block mr-2.5 will-change-transform">
-                  {word}
-                </span>
-              ))}
-            </span>
-            <span className="block overflow-hidden text-primary mt-1 py-0.5">
-              {c.headlineHighlight.split(' ').map((word, idx) => (
-                <span key={idx} className="hero-highlight-word inline-block mr-2.5 will-change-transform">
-                  {word}
-                </span>
-              ))}
-            </span>
+            <span className="block py-0.5">{c.headline}</span>
+            <span className="block text-primary mt-1 py-0.5">{c.headlineHighlight}</span>
           </h1>
 
-          <p className="hero-sub-text mt-5 text-base sm:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg leading-relaxed">
+          <p className="mt-5 text-base sm:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg leading-relaxed">
             {c.sub}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3.5">
             <button
               onClick={goToIntake}
-              className="hero-cta-btn inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-all shadow-sm hover:scale-[1.01] active:scale-[0.98]"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm"
             >
               {c.primary}
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#how-it-works"
-              className="hero-cta-btn inline-flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-6 py-3.5 text-sm font-medium transition-all shadow-2xs"
+              className="inline-flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-6 py-3.5 text-sm font-medium transition-colors shadow-2xs"
             >
               {c.secondary}
               <ArrowDown className="w-4 h-4 text-zinc-400" />
@@ -237,15 +169,15 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
           {/* Micro trust indicators */}
           <div className="mt-8 pt-6 border-t border-zinc-200/70 dark:border-zinc-800/80 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            <span className="hero-trust-tag flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               {hi ? 'डिजीलॉकर प्रमाणित पहचान' : 'DigiLocker Verified'}
             </span>
-            <span className="hero-trust-tag flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               {hi ? 'ऑटो IT एक्ट व BNS धाराएं' : 'Auto IT Act & BNS'}
             </span>
-            <span className="hero-trust-tag flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               {hi ? 'गोल्डन ऑवर 1930 हैंडऑफ़' : '1930 NCRP Handoff'}
             </span>
@@ -259,13 +191,8 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </p>
         </div>
 
-        {/* Right: 21st-Century Studio Window Terminal */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative"
-        >
+        {/* Right: Studio Window Terminal */}
+        <div className="relative">
           {/* Outer window frame container */}
           <div className="rounded-lg border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/90 backdrop-blur-md shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
             {/* Terminal Window Top Bar */}
@@ -344,73 +271,66 @@ export default function HeroSection({ language }: HeroSectionProps) {
                 </div>
               )}
 
-              <AnimatePresence>
-                {result && !isTranscribing && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 overflow-hidden"
-                  >
-                    <div className="rounded-lg bg-surface border border-zinc-200 p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                          {c.resultTitle}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={handleResetRecord}
-                          className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>{c.reRecord}</span>
-                        </button>
-                      </div>
-
-                      <div className="mb-3.5 p-3 rounded-md bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
-                        <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">{c.youSaid}</span>
-                        &ldquo;{committed}&rdquo;
-                      </div>
-
-                      <div className="space-y-2.5 text-sm">
-                        <Row label={c.fType} value={
-                          <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
-                            <result.Icon className="w-3.5 h-3.5 text-blue-600" />
-                            {result.type}
-                          </span>
-                        } />
-                        <Row label={c.fLaw} value={<span className="font-mono text-xs text-zinc-700">{result.law}</span>} />
-                        <Row label={c.fAction} value={<span className="text-zinc-700">{result.action}</span>} />
-                      </div>
-
+              {result && !isTranscribing && (
+                <div className="mt-4">
+                  <div className="rounded-lg bg-surface border border-zinc-200 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                        {c.resultTitle}
+                      </p>
                       <button
-                        onClick={goToIntake}
-                        className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
+                        type="button"
+                        onClick={handleResetRecord}
+                        className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
                       >
-                        <span>{c.continueCta}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <RotateCcw className="w-3 h-3" />
+                        <span>{c.reRecord}</span>
                       </button>
-
-                      <div className="mt-2.5 flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setChoicePrefilledText(committed || '')
-                            setIsChoiceModalOpen(true)
-                          }}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline transition-colors py-1 cursor-pointer"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600 dark:fill-emerald-500 dark:text-emerald-500" />
-                          <span>{c.orWhatsApp}</span>
-                        </button>
-                      </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+
+                    <div className="mb-3.5 p-3 rounded-md bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">{c.youSaid}</span>
+                      &ldquo;{committed}&rdquo;
+                    </div>
+
+                    <div className="space-y-2.5 text-sm">
+                      <Row label={c.fType} value={
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                          <result.Icon className="w-3.5 h-3.5 text-blue-600" />
+                          {result.type}
+                        </span>
+                      } />
+                      <Row label={c.fLaw} value={<span className="font-mono text-xs text-zinc-700">{result.law}</span>} />
+                      <Row label={c.fAction} value={<span className="text-zinc-700">{result.action}</span>} />
+                    </div>
+
+                    <button
+                      onClick={goToIntake}
+                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
+                    >
+                      <span>{c.continueCta}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    <div className="mt-2.5 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChoicePrefilledText(committed || '')
+                          setIsChoiceModalOpen(true)
+                        }}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline transition-colors py-1 cursor-pointer"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600 dark:fill-emerald-500 dark:text-emerald-500" />
+                        <span>{c.orWhatsApp}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       <WhatsAppChoiceModal

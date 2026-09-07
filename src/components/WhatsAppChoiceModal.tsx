@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
   MessageCircle,
@@ -69,12 +68,7 @@ export default function WhatsAppChoiceModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="w-full max-w-xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden"
-      >
+      <div className="w-full max-w-xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
         {/* Header */}
         <div className="bg-[#075E54] dark:bg-[#064e46] text-white p-5 sm:p-6 flex items-start justify-between">
           <div className="flex items-center gap-3.5">
@@ -233,7 +227,7 @@ export default function WhatsAppChoiceModal({
             {isHi ? 'बंद करें' : 'Close'}
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>,
     document.body
   )

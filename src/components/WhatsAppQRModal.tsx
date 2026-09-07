@@ -223,7 +223,7 @@ export default function WhatsAppQRModal({
               <div className="space-y-5">
                 <div className="text-center">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     {hi ? 'लाइव QR कोड तैयार है' : 'Live QR Ready to Scan'}
                   </span>
                 </div>

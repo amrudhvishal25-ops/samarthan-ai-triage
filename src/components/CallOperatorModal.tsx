@@ -125,7 +125,7 @@ export default function CallOperatorModal({
                   {updates.length > 0 && (
                     <div className="pt-2 space-y-1.5">
                       <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                         {hi ? 'नई जानकारी / पूरक विवरण:' : 'Fresh Information & Updates:'}
                       </p>
                       {updates.map((u, i) => (

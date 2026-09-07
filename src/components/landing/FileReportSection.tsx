@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useTriage } from '@/context/TriageContext'
 import {
@@ -105,19 +104,14 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
   return (
     <section id="file-report" className="py-24 bg-surface border-t border-zinc-200">
       <div className="max-w-4xl mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-10"
-        >
+        <div className="mb-10">
           <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">
             {hi ? 'शुरू करें' : 'Get started'}
           </p>
           <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
             {hi ? 'कैसे रिपोर्ट करना चाहते हैं?' : 'How do you want to report?'}
           </h2>
-        </motion.div>
+        </div>
 
         {/* Channel tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -155,7 +149,6 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
             <div className="relative w-14 h-14 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
               <MessageCircle className="w-7 h-7" />
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
               </span>
             </div>
@@ -183,7 +176,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
             </div>
 
             <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span>{hi ? 'लाइव एजेंट 24x7 सक्रिय (+91 63038 07967)' : 'Agent Live & Active: +91 63038 07967 (24x7)'}</span>
             </div>
           </div>
@@ -241,20 +234,16 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
               {hi ? 'या श्रेणी चुनें' : 'Or pick a category'}
             </p>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categories.map((cat, idx) => (
-                <motion.button
+              {categories.map((cat) => (
+                <button
                   key={cat.title}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.04 }}
                   onClick={() => handleCategory(cat.title)}
-                  className="flex flex-col items-start p-5 rounded-lg bg-white border border-zinc-200/90 hover:border-blue-500/50 hover:shadow-xs transition-all text-left"
+                  className="flex flex-col items-start p-5 rounded-lg bg-white border border-zinc-200/90 hover:border-blue-500/50 hover:shadow-xs transition-all text-left cursor-pointer"
                 >
                   <div className={`p-2.5 rounded-md mb-3 ${cat.iconBg}`}>{cat.icon}</div>
                   <h3 className="text-sm font-bold text-foreground mb-1">{hi ? cat.titleHi : cat.title}</h3>
                   <p className="text-xs text-zinc-500">{hi ? cat.descHi : cat.desc}</p>
-                </motion.button>
+                </button>
               ))}
             </div>
           </>

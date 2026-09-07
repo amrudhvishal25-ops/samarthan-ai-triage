@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { motion } from 'framer-motion'
 import {
   X,
   Send,
@@ -1043,7 +1042,7 @@ export default function WhatsAppSimulatorModal({
           <div className="bg-[#F0F2F5] dark:bg-[#202c33] px-4 py-3 flex flex-col gap-2 border-t border-zinc-300 dark:border-zinc-700/60 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
                 <span className="text-red-600 dark:text-red-400 font-mono font-bold text-sm">
                   🔴 {formatSeconds(recordingSeconds)}
                 </span>
