@@ -64,6 +64,35 @@ function setActiveIncident(phone, incidentId) {
   }
 }
 
+// "NEW complaint" mode. Once a user says NEW, EVERY subsequent message is forced
+// down the new-complaint path (never an update to the old case) until a fresh
+// complaint is actually filed. Persisted alongside the active-incident map.
+const NEW_MODE_FILE = SESSIONS_FILE.replace(/\.json$/, '') + '.newmode.json'
+
+function isNewMode(phone) {
+  try {
+    if (fs.existsSync(NEW_MODE_FILE)) {
+      const data = JSON.parse(fs.readFileSync(NEW_MODE_FILE, 'utf-8'))
+      return data[phone] === true
+    }
+  } catch {}
+  return false
+}
+
+function setNewMode(phone, on) {
+  try {
+    let data = {}
+    if (fs.existsSync(NEW_MODE_FILE)) {
+      try { data = JSON.parse(fs.readFileSync(NEW_MODE_FILE, 'utf-8')) } catch {}
+    }
+    if (on) data[phone] = true
+    else delete data[phone]
+    fs.writeFileSync(NEW_MODE_FILE, JSON.stringify(data, null, 2), 'utf-8')
+  } catch (e) {
+    console.error('[New Mode Save Error]:', e.message)
+  }
+}
+
 const startTime = Date.now()
 let currentSocket = null
 let reconnectTimer = null
@@ -420,9 +449,13 @@ async function startWhatsAppBot() {
 
         if (isExplicitNew) {
           setActiveIncident(senderPhone, null)
+          setNewMode(senderPhone, true)
         }
 
-        const activeIncidentId = getActiveIncident(senderPhone)
+        // While in NEW mode, force every message down the new-complaint path and
+        // never send a stale active incident id.
+        const newMode = isNewMode(senderPhone)
+        const activeIncidentId = newMode ? null : getActiveIncident(senderPhone)
 
         const res = await fetch(NEXT_API_URL, {
           method: 'POST',
@@ -430,6 +463,7 @@ async function startWhatsAppBot() {
           body: JSON.stringify({
             phoneNumber: senderPhone,
             activeIncidentId,
+            forceNew: newMode,
             message: text,
             audioBase64,
             voiceTranscript,
@@ -443,6 +477,11 @@ async function startWhatsAppBot() {
 
         const data = await res.json()
         const replyText = data.reply || 'Your report was received. Our team is processing.'
+
+        // A new complaint was actually filed — NEW mode has served its purpose.
+        if (data.filedComplaint || (newMode && data.incidentId)) {
+          setNewMode(senderPhone, false)
+        }
 
         if (data.incidentId) {
           setActiveIncident(senderPhone, data.incidentId)

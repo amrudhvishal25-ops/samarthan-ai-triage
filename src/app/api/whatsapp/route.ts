@@ -65,9 +65,23 @@ export async function POST(req: NextRequest) {
       imageBase64 = json.imageBase64
       const activeIncidentId = json.activeIncidentId || undefined
       const isExplicitReset = json.activeIncidentId === null
+      // Sticky signal from the bot: user is in "NEW complaint" mode and stays there
+      // (across every follow-up message) until a fresh complaint is actually filed.
+      const forceNew = json.forceNew === true
 
       const session = getOrCreateSession(from)
-      if (activeIncidentId) {
+      if (forceNew) {
+        // Do NOT clear an in-progress force-new session's accumulated narrative here —
+        // only (re)assert the sticky flag and make sure no stale incident is attached.
+        session.forceNewComplaint = true
+        session.incidentId = undefined
+        if (session.stage === 'FILED' || session.stage === 'SELECT_LANGUAGE') {
+          session.stage = 'AWAITING_INCIDENT'
+        }
+        session.pendingUpdateText = undefined
+        session.pendingVisionEvidence = undefined
+        ;(session as any)._skipDbRestore = true
+      } else if (activeIncidentId) {
         session.incidentId = activeIncidentId
         session.stage = 'FILED'
       } else if (isExplicitReset) {
@@ -80,6 +94,7 @@ export async function POST(req: NextRequest) {
         session.pendingMediaUrl = undefined
         session.pendingVisionEvidence = undefined
         session.missingFields = []
+        session.forceNewComplaint = true
         // Mark session so auto-restore from DB is skipped for this turn
         ;(session as any)._skipDbRestore = true
       }

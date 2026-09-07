@@ -32,6 +32,11 @@ export interface WhatsAppSession {
   pendingUpdateText?: string
   pendingMediaUrl?: string
   pendingVisionEvidence?: ExtractedVisionEvidence
+  // Sticky flag: user asked for a brand-new complaint. Stays true across turns
+  // (unlike the per-turn _skipDbRestore) until a new complaint is actually filed.
+  // While true: skip DB auto-restore, skip the active-complaint update path,
+  // and route every message to createAndSaveNewComplaint.
+  forceNewComplaint?: boolean
 }
 
 // In-memory session store (keyed by phone number) with 2-hour TTL
@@ -294,7 +299,9 @@ export async function processWhatsAppTurn(
 
   // Auto-restore previous incident from Neon DB if server restarted and memory was cleared
   // SKIP this if the session was explicitly reset (user said NEW) — the _skipDbRestore flag is set by the API route
-  if (!session.incidentId && process.env.DATABASE_URL && !(session as any)._skipDbRestore) {
+  // ALSO skip while the sticky forceNewComplaint flag is set — otherwise the very next
+  // message after "NEW" would resurrect the old incident from the DB and update it.
+  if (!session.incidentId && !session.forceNewComplaint && process.env.DATABASE_URL && !(session as any)._skipDbRestore) {
     try {
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(process.env.DATABASE_URL)
@@ -343,7 +350,7 @@ export async function processWhatsAppTurn(
     console.log(`[WhatsApp Agent] Running GPT-4o Vision on screenshot from +${session.phoneNumber}...`)
     const visionEvidence = await analyzeScreenshotWithVision(imageBase64)
     if (visionEvidence) {
-      if (session.stage === 'FILED' || session.incidentId) {
+      if (!session.forceNewComplaint && (session.stage === 'FILED' || session.incidentId)) {
         session.pendingVisionEvidence = visionEvidence
         const autoUpdateText = [
           visionEvidence.summary,
@@ -395,6 +402,7 @@ export async function processWhatsAppTurn(
     session.extractedData = undefined
     session.pendingUpdateText = undefined
     session.pendingMediaUrl = undefined
+    session.forceNewComplaint = false
 
     const welcomeMsg = `👋 *Hi, I'm the Samarthan AI Cybercrime Triage Bot.*
 नमस्ते! मैं समर्थन (Samarthan) AI साइबर अपराध ट्रायज बॉट हूँ।
@@ -433,7 +441,8 @@ You can send a **Voice Note 🎤**, type your message ✍️, or share a **Scree
   // ACTIVE COMPLAINT FLOW:
   // When citizen ALREADY has an active complaint on file, any message sent should automatically
   // update their existing complaint (unless they ask for status, greeting, or explicit new complaint).
-  if (session.incidentId && (session.stage === 'FILED' || session.stage === 'AWAITING_UPDATE_OR_NEW')) {
+  // Suppressed entirely while forceNewComplaint is set — the user is mid-way through filing a fresh case.
+  if (!session.forceNewComplaint && session.incidentId && (session.stage === 'FILED' || session.stage === 'AWAITING_UPDATE_OR_NEW')) {
     const isHi = session.language === 'hi'
     const noteText = (voiceTranscript || userInput).trim()
 
@@ -469,6 +478,8 @@ Any additional message, UTR number, bank details, voice note 🎤, or payment sc
       session.extractedData = undefined
       session.pendingUpdateText = undefined
       session.pendingMediaUrl = undefined
+      session.pendingVisionEvidence = undefined
+      session.forceNewComplaint = true
 
       const promptMsg = isHi
         ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*
@@ -482,6 +493,36 @@ Please describe your new incident: send a **Voice Note 🎤** or type what happe
 
     // 3. ANY OTHER MESSAGE (UTR, Bank Name, narrative, voice note) -> AUTOMATICALLY READ & UPDATE ACTIVE COMPLAINT!
     return await updateExistingComplaint(session, session.incidentId, noteText)
+  }
+
+  // FORCED NEW COMPLAINT FLOW:
+  // User said "NEW" (sticky flag set). We've already passed the status/greeting/reset guards
+  // above. Any substantive message now = the narrative for the brand-new complaint.
+  // Route straight to createAndSaveNewComplaint; the flag is cleared there on success.
+  if (session.forceNewComplaint) {
+    const newText = (voiceTranscript || trimmed).trim()
+    const isJustNewCommand = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test(newText)
+    const looksSubstantive = Boolean(
+      voiceTranscript || mediaUrl || imageBase64 ||
+      (newText.length >= 25 && !isJustNewCommand) ||
+      quickExtract(newText).amount || quickExtract(newText).upi || quickExtract(newText).phone
+    )
+    // Bare "NEW" (or anything too thin to triage) — acknowledge and wait for the story.
+    if (!looksSubstantive) {
+      const isHi = session.language === 'hi'
+      const askMsg = isHi
+        ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*\nकृपया अपनी नई घटना का विवरण दें — एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
+        : `🆕 *Starting a NEW complaint.*\nPlease describe your new incident — send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
+      session.stage = 'AWAITING_INCIDENT'
+      session.accumulatedText = ''
+      session.history.push({ role: 'assistant', content: askMsg, timestamp })
+      return { reply: askMsg }
+    }
+    session.language = detectLanguage(newText || voiceTranscript || '') === 'hi' ? 'hi' : 'en'
+    session.stage = 'AWAITING_INCIDENT'
+    const narrative = [session.accumulatedText, newText].filter(Boolean).join(' ').trim()
+    session.accumulatedText = narrative
+    return await createAndSaveNewComplaint(session, narrative || newText, mediaUrl, voiceTranscript)
   }
 
   // Direct Incident Prompt Handler (for users without an active complaint, or after starting fresh):
@@ -936,6 +977,8 @@ COMPLAINANT: This report comes via WhatsApp with NO verified identity. Only set 
   session.incidentId = triageResult.incidentId
   session.extractedData = triageResult
   session.accumulatedText = incidentText
+  // New complaint is filed — the sticky "NEW" flag has done its job.
+  session.forceNewComplaint = false
 
   const trackingLink = `${APP_URL}/dashboard?id=${triageResult.incidentId}`
 

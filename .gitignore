@@ -12,4 +12,5 @@ out/
 *.tsbuildinfo
 .whatsapp_session_base64.txt
 .whatsapp_sessions.json
+.whatsapp_sessions.newmode.json
 
