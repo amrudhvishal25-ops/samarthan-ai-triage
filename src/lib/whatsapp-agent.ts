@@ -380,7 +380,12 @@ export async function processWhatsAppTurn(
 
   const isResetCommand = /^(reset|\/reset|restart|\/restart|clear)$/i.test(trimmed)
   const isInitialGreeting = /^(hi|hello|hey|namaste|help|madad|pranam|hlo|hii|hi samarthan[a-z0-9\s,.]*)$/i.test(trimmed)
-  const isWebsiteDefaultMsg = trimmed.toLowerCase().includes('i want to report a cybercrime incident')
+  const isWebsiteDefaultMsg =
+    trimmed.toLowerCase().includes('i want to report a cybercrime incident') ||
+    trimmed.toLowerCase().includes('i want to report a cyber incident') ||
+    trimmed.includes('साइबर अपराध घटना की रिपोर्ट') ||
+    trimmed.includes('साइबर धोखाधड़ी की रिपोर्ट') ||
+    /^(hi samarthan|hello samarthan|namaste samarthan)/i.test(trimmed)
 
   const sendLanguageGreeting = () => {
     session.stage = 'SELECT_LANGUAGE'
@@ -391,21 +396,37 @@ export async function processWhatsAppTurn(
     session.pendingUpdateText = undefined
     session.pendingMediaUrl = undefined
 
-    const welcomeMsg = `👋 *Hi, I'm the Cyber Crime Helpline AI Assistant.*
-Contact me 24x7 to report cyber fraud, online scams, or financial theft.
+    const welcomeMsg = `👋 *Hi, I'm the Samarthan AI Cybercrime Triage Bot.*
+नमस्ते! मैं समर्थन (Samarthan) AI साइबर अपराध ट्रायज बॉट हूँ।
 
-🌐 *Please select your language / कृपया भाषा चुनें:*
-1️⃣ English
-2️⃣ हिन्दी (Hindi)
+I provide 24x7 automated emergency cybercrime triage, golden-hour recovery assistance, and official police FIR complaint drafting under the Indian IT Act 2000.
 
-👉 Reply *1* for English or *2* for Hindi.`
+🛡️ *What I do for you / मैं आपकी क्या मदद कर सकता हूँ:*
+1️⃣ *Emergency Action:* Guide you to dial 1930 & freeze stolen funds via bank nodal officers.
+2️⃣ *AI FIR Drafting:* Automatically analyze your incident and draft an official police complaint in English and Hindi.
+3️⃣ *Live Case Tracking:* Provide a live portal tracking link to follow your case updates in real time.
+
+📋 *Basic information needed before the next stage / अगले चरण के लिए आवश्यक बुनियादी जानकारी:*
+• *What happened:* Scam summary (e.g. fake bank call, UPI fraud, investment scam, blackmail)
+• *Amount lost:* Total money lost in ₹ (if financial)
+• *Fraudster details:* UPI ID, mobile number, bank account, or scam link
+• *Payment reference:* 12-digit UTR number (from your payment app SMS or receipt)
+
+🎙️ *How to send details:*
+You can send a **Voice Note 🎤**, type your message ✍️, or share a **Screenshot / Receipt 📸**.
+
+🌐 *Please select your language to begin / कृपया भाषा चुनें:*
+1️⃣ Reply *1* for English
+2️⃣ Reply *2* for हिन्दी (Hindi)
+
+👉 _Or simply send a voice note or describe what happened right now to proceed directly!_`
 
     session.history.push({ role: 'assistant', content: welcomeMsg, timestamp })
     return { reply: welcomeMsg }
   }
 
-  // Hard reset
-  if (isResetCommand) {
+  // Hard reset or fresh website link click -> Always reset to brand new greeting
+  if (isResetCommand || isWebsiteDefaultMsg) {
     return sendLanguageGreeting()
   }
 

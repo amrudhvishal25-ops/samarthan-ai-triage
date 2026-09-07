@@ -47,8 +47,8 @@ export default function WhatsAppSimulatorModal({ isOpen, onClose, language = 'en
       id: 'init-1',
       role: 'assistant',
       content: isHi
-        ? 'नमस्ते! मैं समर्थन राष्ट्रीय साइबर अपराध AI सहायक हूँ।\n\nकृपया अपनी समस्या बताएं (जैसे: अनधिकृत पैसे कटना, ऑनलाइन ब्लैकमेल, या फर्जी निवेश)। आप वॉइस नोट, टेक्स्ट, या स्क्रीनशॉट भेज सकते हैं। 60 सेकंड में आपकी शिकायत दर्ज होगी।'
-        : 'Hello! I am Samarthan AI Cybercrime Triage Assistant.\n\nPlease describe what happened (e.g. money debited, online blackmail, or fake investment). I will extract details, assess urgency, and file your formal complaint in 60 seconds.',
+        ? '👋 नमस्ते! मैं समर्थन (Samarthan) AI साइबर अपराध ट्रायज बॉट हूँ।\n\nमैं 24x7 आपातकालीन साइबर धोखाधड़ी रिपोर्टिंग और 1930 गोल्डन ऑवर फंड फ्रीज में आपकी सहायता करूँगा।\n\n📋 अगले चरण के लिए आवश्यक बुनियादी जानकारी:\n• क्या हुआ (फर्जी कॉल, UPI फ्रॉड, निवेश स्कैम, ब्लैकमेल)\n• खोई हुई राशि (₹)\n• धोखेबाज़ की जानकारी (UPI ID, फोन नंबर, खाता)\n• 12-अंकों का UTR संदर्भ नंबर (यदि उपलब्ध हो)\n\n🎙️ आप वॉइस नोट 🎤, टेक्स्ट संदेश ✍️, या लेनदेन का स्क्रीनशॉट 📸 भेज सकते हैं। मैं तुरंत विश्लेषण कर आपकी FIR शिकायत तैयार करूँगा!'
+        : '👋 Hi, I\'m the Samarthan AI Cybercrime Triage Bot.\n\nI provide 24x7 automated emergency cybercrime triage and golden-hour fund freeze assistance under the Indian IT Act 2000.\n\n📋 Basic information needed before the next stage:\n• What happened (fake bank call, UPI scam, loan app, or investment fraud)\n• Total amount lost in ₹\n• Fraudster details (UPI ID, phone, account, or scam link)\n• 12-digit UTR reference number (if money was debited)\n\n🎙️ Send a Voice Note 🎤, type your incident ✍️, or upload a Payment Screenshot 📸 to begin!',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ])

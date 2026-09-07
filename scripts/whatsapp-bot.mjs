@@ -411,7 +411,13 @@ async function startWhatsAppBot() {
       } catch {}
 
       try {
-        const isExplicitNew = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test((text || '').trim())
+        const isExplicitNew =
+          /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test((text || '').trim()) ||
+          /i want to report a cybercrime incident/i.test(text || '') ||
+          /i want to report a cyber incident/i.test(text || '') ||
+          /साइबर अपराध|साइबर धोखाधड़ी/i.test(text || '') ||
+          /^(hi samarthan|hello samarthan|namaste samarthan)/i.test((text || '').trim())
+
         if (isExplicitNew) {
           setActiveIncident(senderPhone, null)
         }
