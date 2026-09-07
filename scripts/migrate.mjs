@@ -36,6 +36,21 @@ try {
 
   await sql`create index if not exists complaints_saved_at_idx on complaints (saved_at desc)`
 
+  // Single-row table the Railway-hosted WhatsApp bot writes its live status +
+  // QR data-URL into, so the Vercel site can show connection state / QR without
+  // the bot and Next.js sharing a filesystem.
+  await sql`
+  create table if not exists bot_state (
+    id text primary key default 'whatsapp',
+    status text not null default 'DISCONNECTED',
+    qr_data_url text,
+    user_phone text,
+    started_at bigint,
+    last_ping bigint not null default 0,
+    updated_at timestamptz not null default now()
+  )`
+  await sql`insert into bot_state (id) values ('whatsapp') on conflict (id) do nothing`
+
   // Additive migrations for pre-existing tables
   await sql`alter table complaints add column if not exists recommended_channel text not null default 'helpline'`
   await sql`alter table complaints add column if not exists recommended_channel_target text not null default '1930'`

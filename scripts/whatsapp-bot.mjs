@@ -10,6 +10,7 @@ import QRCode from 'qrcode'
 import fs from 'node:fs'
 import path from 'node:path'
 import OpenAI, { toFile } from 'openai'
+import { neon } from '@neondatabase/serverless'
 
 // Load .env.local if not already in environment
 try {
@@ -65,23 +66,39 @@ let currentSocket = null
 let reconnectTimer = null
 let isStarting = false
 let reconnectAttempts = 0
+let latestState = {}
+
+// DB handle — used so a cloud-hosted bot (Railway) can publish its status +
+// QR to the same Postgres the Vercel site reads. Optional: falls back to the
+// local state file if DATABASE_URL is unset (pure local dev).
+const sqlDb = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null
 
 // Write PID
 fs.writeFileSync(PID_FILE, process.pid.toString(), 'utf-8')
 
-function updateState(partial) {
+async function writeStateToDb(s) {
+  if (!sqlDb) return
   try {
-    let current = {}
-    if (fs.existsSync(STATE_FILE)) {
-      try {
-        current = JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'))
-      } catch {
-        current = {}
-      }
-    }
+    await sqlDb`
+      update bot_state set
+        status = ${s.status || 'INITIALIZING'},
+        qr_data_url = ${s.qrDataUrl || null},
+        user_phone = ${s.userPhone || null},
+        started_at = ${s.startedAt || startTime},
+        last_ping = ${Date.now()},
+        updated_at = now()
+      where id = 'whatsapp'
+    `
+  } catch (err) {
+    console.error('[DB State Write Error]:', err.message)
+  }
+}
+
+function updateState(partial) {
+  latestState = { ...latestState, ...partial }
+  try {
     const merged = {
-      ...current,
-      ...partial,
+      ...latestState,
       lastPing: Date.now(),
       pid: process.pid,
     }
@@ -89,6 +106,8 @@ function updateState(partial) {
   } catch (err) {
     console.error('[State Write Error]:', err.message)
   }
+  // Fire-and-forget DB publish
+  writeStateToDb(latestState)
 }
 
 // Initial state
@@ -206,7 +225,7 @@ async function startWhatsAppBot() {
           width: 340,
           margin: 2,
           color: {
-            dark: '#1A3A6B',
+            dark: '#3b6ff6',
             light: '#FFFFFF',
           },
         })
@@ -437,4 +456,28 @@ async function startWhatsAppBot() {
 startWhatsAppBot().catch((err) => {
   console.error('[Fatal Bot Startup Error]:', err)
   updateState({ status: 'ERROR', error: err.message })
+})
+
+// ── Tiny HTTP server ──────────────────────────────────────────────
+// Railway health checks want a listening port. This also serves the live
+// QR as a scannable page so you can link WhatsApp without digging through
+// deploy logs: open  https://<your-railway-domain>/  and scan it.
+const PORT = process.env.PORT || 8080
+import('node:http').then(({ createServer }) => {
+  createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/healthz') {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, status: latestState.status || 'INITIALIZING' }))
+      return
+    }
+    // Root: human page showing status / QR
+    const s = latestState
+    const body = s.status === 'CONNECTED'
+      ? `<h1>✅ Connected</h1><p>Linked account: <b>${s.userPhone || 'unknown'}</b></p>`
+      : s.qrDataUrl
+        ? `<h1>Scan to link WhatsApp</h1><img src="${s.qrDataUrl}" width="340" height="340" alt="QR"/><p>WhatsApp → Linked devices → Link a device</p>`
+        : `<h1>Status: ${s.status || 'starting…'}</h1><p>Waiting for a QR code. Refresh in a few seconds.</p>`
+    res.writeHead(200, { 'content-type': 'text/html' })
+    res.end(`<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="5"><title>Samarthan WhatsApp Bot</title><body style="font-family:system-ui;text-align:center;padding:40px">${body}</body>`)
+  }).listen(PORT, () => console.log(`[HTTP] Health + QR page on :${PORT}`))
 })

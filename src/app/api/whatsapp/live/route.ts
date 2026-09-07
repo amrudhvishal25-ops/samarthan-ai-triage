@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
+import { neon } from '@neondatabase/serverless'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,6 +10,36 @@ const STATE_FILE = path.resolve(process.cwd(), '.whatsapp_live_state.json')
 const PID_FILE = path.resolve(process.cwd(), '.whatsapp_bot.pid')
 const AUTH_DIR = path.resolve(process.cwd(), '.whatsapp_auth')
 const SCRIPT_PATH = path.resolve(process.cwd(), 'scripts/whatsapp-bot.mjs')
+
+// In production the bot runs on Railway (separate filesystem) and publishes
+// its status + QR to Postgres. Read that first; fall back to the local state
+// file only for same-machine local dev.
+async function getStateFromDb() {
+  const url = process.env.DATABASE_URL
+  if (!url) return null
+  try {
+    const sql = neon(url)
+    const rows = await sql`select status, qr_data_url, user_phone, started_at, last_ping from bot_state where id = 'whatsapp'`
+    if (!rows.length) return null
+    const r = rows[0] as {
+      status: string; qr_data_url: string | null; user_phone: string | null
+      started_at: number | null; last_ping: number | null
+    }
+    const isRecent = r.last_ping != null && Date.now() - Number(r.last_ping) < 20000
+    if (!isRecent) {
+      return { isRunning: false, status: 'DISCONNECTED', qrDataUrl: null, userPhone: null, wasActive: r.status }
+    }
+    return {
+      isRunning: true,
+      status: r.status || 'INITIALIZING',
+      qrDataUrl: r.qr_data_url || null,
+      userPhone: r.user_phone || null,
+      startedAt: r.started_at ? Number(r.started_at) : null,
+    }
+  } catch {
+    return null
+  }
+}
 
 function isProcessAlive(pid: number): boolean {
   try {
@@ -64,8 +95,15 @@ function spawnBotProcess() {
 }
 
 export async function GET() {
-  const state = getLiveState()
-  return NextResponse.json(state)
+  // Prefer a fresh same-machine state file (local dev); otherwise the DB row
+  // the Railway-hosted bot publishes.
+  const local = getLiveState()
+  if (local.isRunning) return NextResponse.json(local)
+
+  const remote = await getStateFromDb()
+  if (remote) return NextResponse.json(remote)
+
+  return NextResponse.json(local)
 }
 
 export async function POST(req: NextRequest) {
