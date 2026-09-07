@@ -23,12 +23,12 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-zinc-200 p-6 shadow-sm">
-      <h3 className="text-sm font-bold text-zinc-900 mb-6 uppercase tracking-wide">
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+      <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-6 uppercase tracking-wider">
         {hi ? 'शिकायत स्थिति ट्रैकर' : 'Complaint Status Tracker'}
       </h3>
 
-      <div className="relative border-l-2 border-zinc-100 ml-3 space-y-6">
+      <div className="relative border-l-2 border-zinc-200 dark:border-zinc-800 ml-3 space-y-6">
         {COMPLAINT_STATUSES.map((s, idx) => {
           const label = COMPLAINT_STATUS_LABELS[s]
           const isCompleted = idx < currentIdx
@@ -37,17 +37,29 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
 
           return (
             <div key={s} className="relative pl-6">
-              <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 bg-white ${
-                isCompleted ? 'border-green-500 bg-green-500' :
-                isCurrent ? 'border-blue-500 bg-blue-500 animate-pulse' :
-                'border-zinc-300'
-              }`} />
+              <div
+                className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 transition-all ${
+                  isCompleted
+                    ? 'border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400 shadow-xs'
+                    : isCurrent
+                    ? 'border-primary bg-primary dark:border-blue-400 dark:bg-blue-400 ring-4 ring-blue-500/20 animate-pulse'
+                    : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950'
+                }`}
+              />
 
-              <div className={isPending ? 'opacity-50' : ''}>
-                <h4 className={`text-sm font-bold flex items-center gap-1.5 ${isCompleted ? 'text-green-700' : isCurrent ? 'text-blue-700' : 'text-zinc-500'}`}>
-                  {hi ? label.hi : label.en}
+              <div className={isPending ? 'opacity-40' : ''}>
+                <h4
+                  className={`text-sm font-semibold flex items-center gap-2 ${
+                    isCompleted
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : isCurrent
+                      ? 'text-primary dark:text-blue-400 font-bold'
+                      : 'text-zinc-500 dark:text-zinc-400'
+                  }`}
+                >
+                  <span>{hi ? label.hi : label.en}</span>
                   {label.simulated && (
-                    <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-blue-600 bg-blue-50 border border-blue-200 rounded-sm px-1.5 py-0.5">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-800/80 rounded-full px-2 py-0.5">
                       {hi ? 'सक्रिय' : 'Live'}
                     </span>
                   )}
@@ -58,19 +70,20 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
         })}
       </div>
 
-      <div className="mt-6 pt-5 border-t border-dashed border-zinc-200">
-        <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+      <div className="mt-6 pt-5 border-t border-dashed border-zinc-200 dark:border-zinc-800">
+        <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2.5">
           {hi ? 'डेमो नियंत्रण' : 'Demo Controls'}
         </p>
         <button
+          type="button"
           onClick={handleAdvance}
           disabled={advancing || isFinal}
-          className="w-full flex items-center justify-center gap-2 rounded-md border border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-700 text-xs font-semibold py-2.5 transition-all"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700/80 hover:border-zinc-400 dark:hover:border-zinc-500 bg-zinc-50/50 hover:bg-zinc-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-700 dark:text-zinc-200 text-xs font-semibold py-2.5 transition-all shadow-xs"
         >
           {advancing ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
           ) : (
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400" />
           )}
           {isFinal
             ? (hi ? 'शिकायत का समाधान हो गया' : 'Complaint resolved')

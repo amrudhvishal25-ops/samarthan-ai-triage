@@ -132,22 +132,32 @@ body {
   background-color: #27272a !important;
 }
 
-.dark .text-zinc-950 {
+.dark .text-zinc-950,
+.dark .text-gray-950 {
   color: #ffffff !important;
 }
 
 .dark .text-zinc-900,
-.dark .text-zinc-800 {
+.dark .text-zinc-800,
+.dark .text-gray-900,
+.dark .text-gray-800 {
   color: #f4f4f5 !important;
 }
 
 .dark .text-zinc-700,
-.dark .text-zinc-600 {
+.dark .text-zinc-600,
+.dark .text-gray-700,
+.dark .text-gray-600 {
   color: #d4d4d8 !important;
 }
 
-.dark .text-zinc-500 {
+.dark .text-zinc-500,
+.dark .text-gray-500 {
   color: #a1a1aa !important;
+}
+
+.dark .text-zinc-50 {
+  color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .dark .border-zinc-200,
@@ -156,7 +166,10 @@ body {
 .dark .border-zinc-200\/90,
 .dark .border-zinc-100,
 .dark .border-border,
-.dark .border-zinc-300 {
+.dark .border-zinc-300,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
   border-color: #27272a !important;
 }
 

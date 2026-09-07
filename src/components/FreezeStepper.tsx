@@ -32,68 +32,81 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: idx * 0.1 }}
-          className="flex gap-4"
+          className="flex gap-3 sm:gap-4"
         >
-          {/* Step number + connector */}
-          <div className="flex flex-col items-center">
-            <div className={clsx(
-              'w-9 h-9 rounded-md flex items-center justify-center text-white font-bold text-sm flex-shrink-0',
-              step.step === 1 ? 'bg-red-500' : 'bg-civic-blue'
-            )}>
+          {/* Step number + vertical connector */}
+          <div className="flex flex-col items-center flex-shrink-0">
+            <div
+              className={clsx(
+                'w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-xs transition-colors',
+                step.step === 1 ? 'bg-red-500 dark:bg-red-600' : 'bg-primary'
+              )}
+            >
               {step.step}
             </div>
             {idx < safeSteps.length - 1 && (
-              <div className="w-0.5 flex-1 bg-gray-200 mt-2 mb-0" />
+              <div className="w-0.5 flex-1 bg-zinc-200 dark:bg-zinc-800 my-1.5" />
             )}
           </div>
 
-          {/* Content */}
-          <div className={clsx(
-            'flex-1 rounded-lg border p-4 mb-4',
-            step.step === 1 ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'
-          )}>
-            <div className="flex items-start justify-between gap-2">
-              <h4 className={clsx(
-                'font-semibold text-sm leading-snug',
-                step.step === 1 ? 'text-red-700' : 'text-gray-900'
-              )}>
+          {/* Step card */}
+          <div
+            className={clsx(
+              'flex-1 rounded-2xl border p-4 sm:p-5 mb-2 transition-all shadow-xs',
+              step.step === 1
+                ? 'border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20'
+                : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <h4
+                className={clsx(
+                  'font-semibold text-sm sm:text-[15px] leading-snug',
+                  step.step === 1
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-zinc-900 dark:text-zinc-100'
+                )}
+              >
                 {hi ? step.actionHi : step.action}
               </h4>
               <button
+                type="button"
                 onClick={() => handleCopy(step, idx)}
-                className="flex-shrink-0 p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 aria-label="Copy step"
               >
-                {copied === idx
-                  ? <CheckCheck className="w-4 h-4 text-green-500" />
-                  : <Copy className="w-4 h-4" />
-                }
+                {copied === idx ? (
+                  <CheckCheck className="w-4 h-4 text-emerald-500" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
               </button>
             </div>
 
-            <p className="text-gray-600 text-sm mt-1 leading-relaxed">
+            <p className="text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
               {hi ? step.detailHi : step.detail}
             </p>
 
             {/* Action buttons */}
             {(step.hotline || step.url) && (
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-3.5">
                 {step.hotline && (
                   onHotlineClick ? (
                     <button
+                      type="button"
                       onClick={() => onHotlineClick(step.hotline!)}
-                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-md hover:bg-civic-blueMid transition-colors min-h-[44px]"
+                      className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
                     >
                       <Phone className="w-3.5 h-3.5" />
-                      {step.hotline}
+                      <span>{step.hotline}</span>
                     </button>
                   ) : (
                     <a
                       href={`tel:${step.hotline}`}
-                      className="inline-flex items-center gap-1.5 bg-civic-blue text-white text-xs font-semibold px-3 py-2 rounded-md hover:bg-civic-blueMid transition-colors min-h-[44px]"
+                      className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-xs"
                     >
                       <Phone className="w-3.5 h-3.5" />
-                      {step.hotline}
+                      <span>{step.hotline}</span>
                     </a>
                   )
                 )}
@@ -102,10 +115,10 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
                     href={step.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-2 rounded-md hover:bg-gray-50 transition-colors min-h-[44px]"
+                    className="inline-flex items-center gap-1.5 border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 text-zinc-700 dark:text-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-xs"
                   >
+                    <span>{hi ? 'पोर्टल खोलें' : 'Open Portal'}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
-                    {hi ? 'खोलें' : 'Open'}
                   </a>
                 )}
               </div>
