@@ -1,5 +1,5 @@
 import React from 'react'
-import { Clock } from 'lucide-react'
+import { Clock, MessageSquare, Mic, FileImage, ShieldCheck, Scale, Phone, Building2, RefreshCw } from 'lucide-react'
 
 interface HowItWorksProps {
   language: 'en' | 'hi'
@@ -7,127 +7,121 @@ interface HowItWorksProps {
 
 interface StepItem {
   n: string
-  timeWindow: string
+  duration: string
   title: string
   body: string
-  chips: string[]
+  points: { icon: React.ReactNode; text: string }[]
   shot: string
 }
 
-const EN = {
-  eyebrow: 'How it works',
-  title: 'Three steps. Sixty seconds.',
-  subtitle: 'How Samarthan compresses 45 minutes of tedious administrative runaround into 60 seconds — powered by Web intake, 24x7 WhatsApp AI triage, and real-time database sync.',
-  steps: [
-    {
-      n: '01',
-      timeWindow: '00:00 – 00:15s',
-      title: 'Zero-Form Intake on Web or WhatsApp',
-      body: 'Report your incident in your own words in conversational Hindi or English. Speak into the mic, drop a voice note, or upload a transaction screenshot. Connect directly via our 24x7 WhatsApp Bot (+91 63038 07967), the zero-download In-App WhatsApp Simulator, or the Web portal with 1-click DigiLocker identity verification. No 15-field questionnaires.',
-      chips: [
-        '💬 24x7 WhatsApp Bot (+91 63038 07967)',
-        '📱 In-App WhatsApp Simulator',
-        '🎙️ Bilingual Voice Notes (Hindi/English)',
-        '📸 Scam Receipt & Payment Screenshot OCR',
-        '🔒 1-Click DigiLocker Identity Verification',
-      ],
-      shot: '/landing/shot-intake.jpg',
-    },
-    {
-      n: '02',
-      timeWindow: '00:15 – 00:35s',
-      title: 'Automated Forensic Triage & IT Act Mapping',
-      body: 'The AI classifies the cybercrime category (UPI fraud, investment scam, sextortion, fake profile), extracts critical forensics — 12-digit UTR, fraudster UPI ID, beneficiary bank account, and scam phone numbers — and cites the exact statutory sections under the IT Act (66C, 66D, 66E) and Bharatiya Nyaya Sanhita (BNS). It generates a formal FIR-ready complaint in Hindi and English.',
-      chips: [
-        '⚖️ Auto IT Act (66C/66D/66E) & BNS Sections',
-        '🔍 Automated Forensic Extraction (UTR, UPI, A/C)',
-        '📄 Bilingual FIR-Ready Complaint Draft',
-        '🛡️ Cryptographic Evidence Vault Recording',
-      ],
-      shot: '/landing/shot-dashboard.jpg',
-    },
-    {
-      n: '03',
-      timeWindow: '00:35 – 00:60s',
-      title: 'Golden-Hour Fund Freeze & Continuous Live Sync',
-      body: 'Act immediately within the golden hour with pre-filled 1930 Helpline operator scripts, 1-click bank nodal officer freeze advisories, and official NCRP submission. Ongoing updates — such as subsequent fraud messages, bank SMS, or new UTRs sent on WhatsApp or the Web — automatically append to your active Neon DB dossier in the same thread without restarting.',
-      chips: [
-        '📞 1930 Helpline Operator Script Hand-off',
-        '🏦 Bank Nodal Officer Account Freeze Advisory',
-        '🔄 Continuous WhatsApp Auto-Updates (Neon DB Sync)',
-        '🌐 Live Status Tracking & PDF Formal Dossier',
-      ],
-      shot: '/landing/shot-complaints.png',
-    },
-  ] as StepItem[],
-}
-
-const HI = {
-  eyebrow: 'यह कैसे काम करता है',
-  title: 'तीन कदम। साठ सेकंड।',
-  subtitle: 'समर्थन कैसे 45 मिनट की जटिल कागजी कार्रवाई को 60 सेकंड में बदलता है — वेब इनटेक, 24x7 व्हाट्सएप AI ट्रायज और रियल-टाइम डेटाबेस सिंक द्वारा संचालित।',
-  steps: [
-    {
-      n: '01',
-      timeWindow: '00:00 – 00:15s',
-      title: 'वेब या व्हाट्सएप पर बिना फॉर्म इनटेक',
-      body: 'अपनी स्वाभाविक भाषा (हिंदी या अंग्रेजी) में बोलें, वॉयस नोट भेजें या लेनदेन का स्क्रीनशॉट अपलोड करें। हमारे 24x7 व्हाट्सएप बॉट (+91 63038 07967), सीधे इन-ऐप व्हाट्सएप सिम्युलेटर, या डिजीलॉकर पहचान सत्यापन के साथ वेब पोर्टल पर रिपोर्ट करें। कोई 15-फील्ड जटिल फॉर्म नहीं।',
-      chips: [
-        '💬 24x7 व्हाट्सएप बॉट (+91 63038 07967)',
-        '📱 इन-ऐप व्हाट्सएप सिम्युलेटर',
-        '🎙️ द्विभाषी वॉयस नोट्स (हिंदी/अंग्रेजी)',
-        '📸 पेमेंट स्क्रीनशॉट व रसीद OCR',
-        '🔒 1-क्लिक डिजीलॉकर पहचान सत्यापन',
-      ],
-      shot: '/landing/shot-intake.jpg',
-    },
-    {
-      n: '02',
-      timeWindow: '00:15 – 00:35s',
-      title: 'ऑटोमेटेड फॉरेंसिक ट्रायज और कानूनी मैपिंग',
-      body: 'हमारा AI तुरंत साइबर अपराध की श्रेणी (UPI फ्रॉड, निवेश स्कैम, जबरन वसूली, फर्जी प्रोफाइल) वर्गीकृत करता है, 12-अंकों का UTR, बैंक खाता, धोखेबाज़ का UPI ID और फोन नंबर निकालता है, और IT एक्ट (धारा 66C, 66D, 66E) तथा भारतीय न्याय संहिता (BNS) की धाराएं जोड़ता है। हिंदी और अंग्रेजी दोनों में आधिकारिक FIR शिकायत तैयार होती है।',
-      chips: [
-        '⚖️ स्वचालित IT एक्ट (66C/66D) व BNS धाराएं',
-        '🔍 फॉरेंसिक डेटा निष्कर्षण (UTR, खाता, UPI)',
-        '📄 हिंदी-अंग्रेजी आधिकारिक FIR शिकायत ड्राफ्ट',
-        '🛡️ अखंडता प्रमाण के साथ एविडेंस वॉल्ट',
-      ],
-      shot: '/landing/shot-dashboard.jpg',
-    },
-    {
-      n: '03',
-      timeWindow: '00:35 – 00:60s',
-      title: 'गोल्डन ऑवर खाता फ्रीज और निरंतर लाइव सिंक',
-      body: 'महत्वपूर्ण गोल्डन ऑवर में सीधे 1930 हेल्पलाइन ऑपरेटर स्क्रिप्ट, बैंक नोडल अधिकारी खाता फ्रीज ड्राफ्ट और आधिकारिक NCRP सबमिशन के साथ तुरंत कार्रवाई करें। निरंतर केस अपडेट — जैसे व्हाट्सएप या वेब पर भेजा गया नया UTR, बैंक SMS या अतिरिक्त सबूत — बिना नया फॉर्म भरे सीधे आपकी Neon DB फाइल में स्वतः जुड़ते हैं।',
-      chips: [
-        '📞 1930 ऑपरेटर हैंड-ऑफ स्क्रिप्ट',
-        '🏦 बैंक नोडल अधिकारी खाता फ्रीज ड्राफ्ट',
-        '🔄 निरंतर व्हाट्सएप ऑटो-अपडेट (Neon DB सिंक)',
-        '🌐 लाइव स्थिति ट्रैकिंग और PDF FIR डॉसियर',
-      ],
-      shot: '/landing/shot-complaints.png',
-    },
-  ] as StepItem[],
-}
-
 export default function HowItWorks({ language }: HowItWorksProps) {
-  const c = language === 'hi' ? HI : EN
+  const isHi = language === 'hi'
+
+  const steps: StepItem[] = isHi
+    ? [
+        {
+          n: '01',
+          duration: 'लगभग 15 सेकंड',
+          title: 'अपनी बात सीधे बताएं, कोई लंबा फॉर्म नहीं',
+          body: 'अपनी सामान्य भाषा में बोलें, संदेश लिखें या बैंक से आया मैसेज और स्क्रीनशॉट भेजें। आप वेबसाइट के ज़रिए रिपोर्ट कर सकते हैं, हमारे व्हाट्सएप नंबर (+91 63038 07967) पर भेज सकते हैं, या ब्राउज़र में सीधे व्हाट्सएप सिम्युलेटर आज़मा सकते हैं। पहचान के लिए डिजीलॉकर से तुरंत सत्यापन की सुविधा भी है।',
+          points: [
+            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'व्हाट्सएप बॉट (+91 63038 07967) व सिम्युलेटर' },
+            { icon: <Mic className="w-3.5 h-3.5 text-blue-600" />, text: 'हिंदी और अंग्रेजी में बोलकर शिकायत' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'लेनदेन रसीद और स्क्रीनशॉट से ऑटो-रीडिंग' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'डिजीलॉकर से सुरक्षित आधार/पैन सत्यापन' },
+          ],
+          shot: '/landing/shot-intake.jpg',
+        },
+        {
+          n: '02',
+          duration: 'लगभग 20 सेकंड',
+          title: 'मामले की जांच और कानूनी धाराओं की पहचान',
+          body: 'सिस्टम अपराध के प्रकार को समझकर धोखेबाज़ की UPI आईडी, बैंक खाता, 12 अंकों का UTR नंबर और फोन नंबर अलग से दर्ज कर लेता है। इसके बाद मामले के अनुसार IT एक्ट और भारतीय न्याय संहिता की सही धाराएं जोड़कर हिंदी और अंग्रेजी में पुलिस शिकायत पत्र तैयार कर देता है।',
+          points: [
+            { icon: <Scale className="w-3.5 h-3.5 text-primary" />, text: 'IT एक्ट और BNS की जरूरी कानूनी धाराएं' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-blue-600" />, text: 'धोखेबाज़ का खाता, UPI और UTR नंबर की पहचान' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />, text: 'हिंदी और अंग्रेजी में तैयार पुलिस शिकायत' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600" />, text: 'सुरक्षित डिजिटल एविडेंस रिकॉर्ड' },
+          ],
+          shot: '/landing/shot-dashboard.jpg',
+        },
+        {
+          n: '03',
+          duration: 'लगभग 25 सेकंड',
+          title: 'खाता फ्रीज करने की तैयारी और केस अपडेट',
+          body: 'गोल्डन ऑवर में पैसे को आगे ट्रांसफर होने से रोकने के लिए 1930 हेल्पलाइन पर बोलने योग्य जरूरी बातें और बैंक नोडल अधिकारी के लिए खाता फ्रीज ईमेल तैयार मिलता है। अगर बाद में धोखेबाज़ का नया मैसेज या कोई और UTR मिले, तो बस व्हाट्सएप या वेबसाइट पर भेज दें। वह बिना नया फॉर्म भरे पुरानी शिकायत में ही जुड़ जाएगा।',
+          points: [
+            { icon: <Phone className="w-3.5 h-3.5 text-red-600" />, text: '1930 हेल्पलाइन ऑपरेटर को बताने के मुख्य बिंदु' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-blue-600" />, text: 'बैंक नोडल अधिकारी को खाता फ्रीज अनुरोध' },
+            { icon: <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />, text: 'व्हाट्सएप से नई जानकारी स्वतः शिकायत में दर्ज' },
+            { icon: <Clock className="w-3.5 h-3.5 text-primary" />, text: 'लाइव केस स्टेटस ट्रैकिंग और PDF डाउनलोड' },
+          ],
+          shot: '/landing/shot-complaints.png',
+        },
+      ]
+    : [
+        {
+          n: '01',
+          duration: 'Takes ~15 seconds',
+          title: 'Explain what happened in plain words, without forms',
+          body: 'Describe the incident naturally using voice, text, or a screenshot of the scam transaction. You can use the web portal, message our WhatsApp assistant at +91 63038 07967, or try the in-browser simulator. DigiLocker is available for quick citizen identity verification.',
+          points: [
+            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'WhatsApp assistant (+91 63038 07967) and web simulator' },
+            { icon: <Mic className="w-3.5 h-3.5 text-blue-600" />, text: 'Spoken voice reporting in Hindi or English' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'Automatic details from payment receipts and screenshots' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'Official DigiLocker identity confirmation' },
+          ],
+          shot: '/landing/shot-intake.jpg',
+        },
+        {
+          n: '02',
+          duration: 'Takes ~20 seconds',
+          title: 'Incident review and applicable legal sections',
+          body: 'The system identifies the type of fraud and extracts actionable details like the 12-digit UTR, suspect UPI handle, destination bank account, and phone numbers. It matches applicable provisions under the IT Act and BNS, then formats an official FIR complaint in English and Hindi.',
+          points: [
+            { icon: <Scale className="w-3.5 h-3.5 text-primary" />, text: 'Mapped IT Act and BNS criminal sections' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-blue-600" />, text: 'Extracted UTR, recipient account, and UPI details' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />, text: 'FIR-ready complaint in Hindi and English' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600" />, text: 'Chain-of-custody evidence preservation' },
+          ],
+          shot: '/landing/shot-dashboard.jpg',
+        },
+        {
+          n: '03',
+          duration: 'Takes ~25 seconds',
+          title: 'Emergency account freeze and continuous updates',
+          body: 'During the golden hour, victims receive a clear script for the 1930 helpline and an account freeze notice addressed to the bank nodal officer. Any new information received later, such as follow-up bank SMS or extra transaction IDs sent on WhatsApp, is automatically added to the existing record.',
+          points: [
+            { icon: <Phone className="w-3.5 h-3.5 text-red-600" />, text: 'Prepared talking points for 1930 helpline staff' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-blue-600" />, text: 'Draft notice for bank nodal officers to freeze accounts' },
+            { icon: <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />, text: 'New WhatsApp messages update the active case automatically' },
+            { icon: <Clock className="w-3.5 h-3.5 text-primary" />, text: 'Live tracking portal and printable PDF dossier' },
+          ],
+          shot: '/landing/shot-complaints.png',
+        },
+      ]
 
   return (
     <section id="how-it-works" className="py-24 bg-surface border-t border-zinc-200/80">
       <div className="max-w-6xl mx-auto px-6">
         {/* Section Header */}
         <div className="mb-16">
-          <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-2.5">{c.eyebrow}</p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{c.title}</h2>
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-2.5">
+            {isHi ? 'प्रक्रिया' : 'Process'}
+          </p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
+            {isHi ? 'तीन सरल कदम। एक मिनट में समाधान।' : 'Three clear steps. Finished in under a minute.'}
+          </h2>
           <p className="mt-3 text-base text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
-            {c.subtitle}
+            {isHi
+              ? 'बिना किसी जटिल कानूनी फॉर्म के साइबर धोखाधड़ी की शिकायत दर्ज करें, सही धाराएं प्राप्त करें और बैंक खाता फ्रीज कराने की प्रक्रिया शुरू करें।'
+              : 'File cybercrime complaints, obtain applicable legal sections, and initiate bank freeze steps without navigating complicated bureaucratic questionnaires.'}
           </p>
         </div>
 
         {/* 3 Step Cards */}
         <div className="space-y-20">
-          {c.steps.map((step, i) => (
+          {steps.map((step, i) => (
             <div
               key={step.n}
               className={`grid md:grid-cols-2 gap-10 lg:gap-14 items-center ${i % 2 === 1 ? 'md:[&>*:first-child]:order-2' : ''}`}
@@ -138,24 +132,25 @@ export default function HowItWorks({ language }: HowItWorksProps) {
                   <span className="text-sm font-mono font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2.5 py-1 rounded-md">
                     {step.n}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 px-2.5 py-1 rounded-md">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 px-2.5 py-1 rounded-md">
                     <Clock className="w-3.5 h-3.5 text-blue-600" />
-                    {step.timeWindow}
+                    {step.duration}
                   </span>
                 </div>
 
                 <h3 className="text-2xl font-bold text-foreground tracking-tight">{step.title}</h3>
                 <p className="mt-4 text-zinc-600 dark:text-zinc-300 leading-relaxed text-[15px]">{step.body}</p>
 
-                {/* Feature Chips */}
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {step.chips.map((chip, chipIdx) => (
-                    <span
-                      key={chipIdx}
-                      className="text-xs font-medium px-2.5 py-1 rounded-md bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 shadow-2xs"
+                {/* Grounded feature point list */}
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {step.points.map((point, ptIdx) => (
+                    <div
+                      key={ptIdx}
+                      className="flex items-start gap-2 p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-2xs"
                     >
-                      {chip}
-                    </span>
+                      <span className="shrink-0 mt-0.5">{point.icon}</span>
+                      <span className="leading-snug">{point.text}</span>
+                    </div>
                   ))}
                 </div>
               </div>
