@@ -104,12 +104,18 @@ body {
   background-color: rgba(9, 9, 11, 0.95) !important;
 }
 
+.dark .bg-white\/90 {
+  background-color: rgba(18, 18, 22, 0.9) !important;
+}
+
 .dark .bg-white\/80 {
-  background-color: rgba(9, 9, 11, 0.8) !important;
+  background-color: rgba(18, 18, 22, 0.8) !important;
 }
 
 .dark .bg-zinc-50,
 .dark .bg-zinc-50\/50,
+.dark .bg-zinc-50\/70,
+.dark .bg-zinc-50\/80,
 .dark .bg-\[\#FAFAFA\] {
   background-color: #000000 !important;
 }
@@ -119,11 +125,17 @@ body {
   background-color: #18181b !important;
 }
 
-.dark .bg-zinc-200 {
+.dark .bg-zinc-200,
+.dark .bg-zinc-200\/70,
+.dark .bg-zinc-200\/80,
+.dark .bg-zinc-200\/90 {
   background-color: #27272a !important;
 }
 
-.dark .text-zinc-950,
+.dark .text-zinc-950 {
+  color: #ffffff !important;
+}
+
 .dark .text-zinc-900,
 .dark .text-zinc-800 {
   color: #f4f4f5 !important;
@@ -139,11 +151,74 @@ body {
 }
 
 .dark .border-zinc-200,
+.dark .border-zinc-200\/70,
 .dark .border-zinc-200\/80,
+.dark .border-zinc-200\/90,
 .dark .border-zinc-100,
 .dark .border-border,
 .dark .border-zinc-300 {
   border-color: #27272a !important;
+}
+
+/* Category pills and alert tints in dark mode */
+.dark .bg-blue-50,
+.dark .bg-blue-50\/70,
+.dark .bg-blue-50\/80 {
+  background-color: rgba(30, 58, 138, 0.3) !important;
+}
+
+.dark .border-blue-100,
+.dark .border-blue-200,
+.dark .border-blue-200\/60,
+.dark .border-blue-200\/80 {
+  border-color: rgba(59, 111, 246, 0.35) !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.3) !important;
+}
+
+.dark .border-emerald-100,
+.dark .border-emerald-200,
+.dark .border-emerald-200\/60 {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+.dark .text-emerald-700,
+.dark .text-emerald-800 {
+  color: #34d399 !important;
+}
+
+.dark .bg-pink-50 {
+  background-color: rgba(131, 24, 67, 0.3) !important;
+}
+
+.dark .border-pink-200 {
+  border-color: rgba(236, 72, 153, 0.35) !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.3) !important;
+}
+
+.dark .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: rgba(88, 28, 135, 0.3) !important;
+}
+
+.dark .border-purple-200 {
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(120, 53, 15, 0.3) !important;
+}
+
+.dark .border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.35) !important;
 }
 
 .dark input:not([type="checkbox"]):not([type="radio"]),

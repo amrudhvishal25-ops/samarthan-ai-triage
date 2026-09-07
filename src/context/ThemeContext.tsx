@@ -20,18 +20,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light')
 
   useEffect(() => {
-    // Read persisted theme or system preference
+    // Default to white (light mode) on load unless explicitly saved as dark
     const saved = localStorage.getItem('samarthan_theme') as Theme | null
-    if (saved === 'dark' || saved === 'light') {
-      setThemeState(saved)
-      if (saved === 'dark') {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    if (saved === 'dark') {
       setThemeState('dark')
       document.documentElement.classList.add('dark')
+    } else {
+      setThemeState('light')
+      document.documentElement.classList.remove('dark')
     }
   }, [])
 
