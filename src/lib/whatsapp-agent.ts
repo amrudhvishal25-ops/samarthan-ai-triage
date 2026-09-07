@@ -2,7 +2,8 @@ import OpenAI from 'openai'
 import { generateId, TriageResult, FreezeStep, ApplicableLaw, IT_ACT_SECTIONS } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://samarthan-ai.vercel.app').replace(/\/$/, '')
+const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://samarthan-ai-parichay-s-projects.vercel.app')
+const APP_URL = (rawAppUrl.includes('samarthan-ai.vercel.app') ? 'https://samarthan-ai-parichay-s-projects.vercel.app' : rawAppUrl).replace(/\/$/, '')
 
 export type WhatsAppStage = 'SELECT_LANGUAGE' | 'AWAITING_INCIDENT' | 'FILED' | 'AWAITING_UPDATE_OR_NEW'
 

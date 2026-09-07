@@ -1,6 +1,6 @@
 # Samarthan Test Prompts — Fraud Triage Validation
 
-Test these prompts on **https://samarthan-ai.vercel.app** to validate AI extraction, urgency classification, and complaint drafting across all 6 cyber crime categories.
+Test these prompts on **https://samarthan-ai-parichay-s-projects.vercel.app** to validate AI extraction, urgency classification, and complaint drafting across all 6 cyber crime categories.
 
 ---
 
@@ -131,7 +131,7 @@ I received a call from someone claiming to be "Inspector Verma from Mumbai Cyber
 
 ## How to Test
 
-1. Go to **https://samarthan-ai.vercel.app**
+1. Go to **https://samarthan-ai-parichay-s-projects.vercel.app**
 2. Click **"Say anything..."** or select a **Sandbox scenario** if available
 3. **Copy one prompt above** into the textarea (or record voice if audio works)
 4. Click **"Analyze with AI"** or **"Run AI Triage"**
@@ -165,7 +165,7 @@ I received a call from someone claiming to be "Inspector Verma from Mumbai Cyber
 Hit `/api/triage` route 11+ times rapidly to verify rate limiter (should 429 after 10 requests/min).
 
 ```bash
-for i in {1..12}; do curl -X POST https://samarthan-ai.vercel.app/api/triage \
+for i in {1..12}; do curl -X POST https://samarthan-ai-parichay-s-projects.vercel.app/api/triage \
   -F "text=test" 2>&1 | grep -o "error\|ok"; done
 ```
 
@@ -183,4 +183,4 @@ Expected: First 10 = success, 11th+ = 429 error.
 ---
 
 **Deadline:** Aug 28, 2026 8:00 PM IST  
-**Demo Ready:** ✅ https://samarthan-ai.vercel.app
+**Demo Ready:** ✅ https://samarthan-ai-parichay-s-projects.vercel.app

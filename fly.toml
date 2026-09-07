@@ -1,7 +1,7 @@
 # Fly.io — Samarthan WhatsApp bot worker.
 # Deploy:  fly launch --no-deploy   (creates the app, pick a name/region)
 # then:    fly volume create wa_auth --size 1 --region <same region>
-# then:    fly secrets set DATABASE_URL=... OPENAI_API_KEY=... NEXT_PUBLIC_APP_URL=https://samarthan-ai.vercel.app
+# then:    fly secrets set DATABASE_URL=... OPENAI_API_KEY=... NEXT_PUBLIC_APP_URL=https://samarthan-ai-parichay-s-projects.vercel.app
 # then:    fly deploy
 
 app = "samarthan-whatsapp-bot"

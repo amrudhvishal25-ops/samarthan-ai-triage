@@ -30,9 +30,12 @@ const AUTH_DIR = path.resolve(process.cwd(), '.whatsapp_auth')
 const STATE_FILE = path.resolve(process.cwd(), '.whatsapp_live_state.json')
 const PID_FILE = path.resolve(process.cwd(), '.whatsapp_bot.pid')
 const SESSIONS_FILE = path.resolve(process.cwd(), '.whatsapp_sessions.json')
-const NEXT_API_URL = process.env.NEXT_PUBLIC_APP_URL
+const rawApiUrl = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/api/whatsapp`
   : 'https://samarthan-ai-parichay-s-projects.vercel.app/api/whatsapp'
+const NEXT_API_URL = rawApiUrl.includes('samarthan-ai.vercel.app')
+  ? 'https://samarthan-ai-parichay-s-projects.vercel.app/api/whatsapp'
+  : rawApiUrl
 
 function getActiveIncident(phone) {
   try {

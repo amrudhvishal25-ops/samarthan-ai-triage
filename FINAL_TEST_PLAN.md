@@ -1,6 +1,6 @@
 # Samarthan Final Test Plan — Complete Validation
 
-**Live URL:** https://samarthan-ai.vercel.app  
+**Live URL:** https://samarthan-ai-parichay-s-projects.vercel.app  
 **Status:** Public, no auth required  
 **Deadline:** Aug 28, 2026 8:00 PM IST  
 
@@ -8,7 +8,7 @@
 
 ## Pre-Test Checklist
 
-- [ ] Open https://samarthan-ai.vercel.app in browser (no password prompt)
+- [ ] Open https://samarthan-ai-parichay-s-projects.vercel.app in browser (no password prompt)
 - [ ] Landing page loads with 6 fraud category cards
 - [ ] "Say anything..." textarea is visible
 - [ ] Language toggle (EN/HI) works in navbar
@@ -46,7 +46,7 @@ I was selling my old laptop on OLX yesterday. A buyer contacted me via WhatsApp 
 
 **Steps:**
 1. Copy prompt above
-2. Paste into textarea on https://samarthan-ai.vercel.app
+2. Paste into textarea on https://samarthan-ai-parichay-s-projects.vercel.app
 3. Click "Analyze with AI"
 4. **Wait 6s** for breathing animation
 5. **Verify dashboard:**
@@ -78,7 +78,7 @@ My 16-year-old daughter received explicit messages from an unknown account @cree
 ```
 
 **Steps:**
-1. Go to https://samarthan-ai.vercel.app (new complaint)
+1. Go to https://samarthan-ai-parichay-s-projects.vercel.app (new complaint)
 2. Paste prompt
 3. Click "Analyze with AI"
 4. **Verify dashboard:**
@@ -108,7 +108,7 @@ I received a WhatsApp message from +91 9999999999 saying "We have your private v
 ```
 
 **Steps:**
-1. Go to https://samarthan-ai.vercel.app
+1. Go to https://samarthan-ai-parichay-s-projects.vercel.app
 2. Paste prompt
 3. Click "Analyze with AI"
 4. **Verify dashboard:**
@@ -138,7 +138,7 @@ I received a letter from Bajaj Finance saying I applied for a ₹5 lakh personal
 ```
 
 **Steps:**
-1. Go to https://samarthan-ai.vercel.app
+1. Go to https://samarthan-ai-parichay-s-projects.vercel.app
 2. Paste prompt
 3. Click "Analyze with AI"
 4. **Verify dashboard:**
@@ -168,7 +168,7 @@ I bought an iPhone 15 Pro from a seller on OLX named tech-deals-mumbai for ₹70
 ```
 
 **Steps:**
-1. Go to https://samarthan-ai.vercel.app
+1. Go to https://samarthan-ai-parichay-s-projects.vercel.app
 2. Paste prompt
 3. Click "Analyze with AI"
 4. **Verify dashboard:**
@@ -199,7 +199,7 @@ My laptop got infected with ransomware yesterday. A message appeared saying "You
 ```
 
 **Steps:**
-1. Go to https://samarthan-ai.vercel.app
+1. Go to https://samarthan-ai-parichay-s-projects.vercel.app
 2. Paste prompt
 3. Click "Analyze with AI"
 4. **Verify dashboard:**
@@ -230,7 +230,7 @@ I received a call from someone claiming to be "Inspector Verma from Mumbai Cyber
 ```
 
 **Steps:**
-1. Go to https://samarthan-ai.vercel.app
+1. Go to https://samarthan-ai-parichay-s-projects.vercel.app
 2. Paste prompt
 3. Click "Analyze with AI"
 4. **Verify dashboard:**
@@ -356,7 +356,7 @@ I received a call from someone claiming to be "Inspector Verma from Mumbai Cyber
 - [ ] Rate limiter verified (429 on 11th request)
 - [ ] "SYNTHETIC DEMO DATA" disclaimer present (hackathon rule)
 - [ ] No auth barrier (public access confirmed)
-- [ ] Live URL working: https://samarthan-ai.vercel.app
+- [ ] Live URL working: https://samarthan-ai-parichay-s-projects.vercel.app
 
 ---
 
@@ -375,7 +375,7 @@ I received a call from someone claiming to be "Inspector Verma from Mumbai Cyber
 
 ## Demo Flow (for Judges)
 
-1. Open https://samarthan-ai.vercel.app
+1. Open https://samarthan-ai-parichay-s-projects.vercel.app
 2. Select **"Financial Fraud"** category (UPI test above)
 3. Paste Test 1 prompt → Click "Analyze with AI"
 4. Watch breathing animation (~6s)
@@ -390,5 +390,5 @@ I received a call from someone claiming to be "Inspector Verma from Mumbai Cyber
 ---
 
 **Status:** Ready for Aug 28 hackathon submission  
-**Live:** https://samarthan-ai.vercel.app  
+**Live:** https://samarthan-ai-parichay-s-projects.vercel.app  
 **Repo:** https://github.com/paripprabhu/samarthan-ai-triage

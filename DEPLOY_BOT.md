@@ -38,7 +38,7 @@ it at `/app/.whatsapp_auth`.
 fly secrets set \
   DATABASE_URL='<same Neon pooled URL as Vercel>' \
   OPENAI_API_KEY='<same key as Vercel>' \
-  NEXT_PUBLIC_APP_URL='https://samarthan-ai.vercel.app'
+  NEXT_PUBLIC_APP_URL='https://samarthan-ai-parichay-s-projects.vercel.app'
 ```
 `PORT` comes from `fly.toml` (`8080`) — don't set it as a secret.
 
@@ -60,7 +60,7 @@ DATABASE_URL='<neon url>' node scripts/migrate.mjs
    It auto-refreshes and shows the QR ~15 s after boot.
 3. Phone → WhatsApp → **Linked devices** → **Link a device** → scan.
 4. Page flips to **✅ Connected · +91…**. `bot_state` updates and
-   `samarthan-ai.vercel.app` reflects the live status.
+   `samarthan-ai-parichay-s-projects.vercel.app` reflects the live status.
 
 Or scan the ASCII QR from `fly logs`.
 
