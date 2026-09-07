@@ -8,6 +8,8 @@ import {
   DollarSign, User, ShieldAlert, Fingerprint, ShoppingCart, Briefcase,
   Plus, ArrowUp, Mic, Phone, MessageCircle, Globe, ExternalLink,
 } from 'lucide-react'
+import WhatsAppChoiceModal from '@/components/WhatsAppChoiceModal'
+import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
 
 interface FileReportSectionProps {
   language: 'en' | 'hi'
@@ -22,6 +24,8 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
 
   const [inputText, setInputText] = useState('')
   const [channel, setChannel] = useState<Channel>('web')
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false)
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false)
   const [liveState, setLiveState] = useState<{ isRunning: boolean; status: string; userPhone: string | null }>({
     isRunning: false,
     status: 'DISCONNECTED',
@@ -167,20 +171,15 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
             </p>
 
             <div className="flex items-center justify-center">
-              <a
-                href={`https://wa.me/916303807967?text=${encodeURIComponent(
-                  hi
-                    ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।'
-                    : 'Hi Samarthan, I want to report a cybercrime incident.'
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-md px-8 py-4 text-base font-bold transition-all shadow-md hover:shadow-lg"
+              <button
+                type="button"
+                onClick={() => setIsChoiceModalOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-xl px-8 py-4 text-base font-bold transition-all shadow-md hover:shadow-lg cursor-pointer"
               >
                 <MessageCircle className="w-5 h-5 fill-white" />
                 <span>{hi ? 'व्हाट्सएप एजेंट से बात करें' : 'Visit the Agent on WhatsApp'}</span>
                 <ExternalLink className="w-4 h-4 opacity-80" />
-              </a>
+              </button>
             </div>
 
             <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-800">
@@ -261,6 +260,20 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
           </>
         )}
       </div>
+
+      <WhatsAppChoiceModal
+        isOpen={isChoiceModalOpen}
+        onClose={() => setIsChoiceModalOpen(false)}
+        onOpenSimulator={() => setIsSimulatorOpen(true)}
+        language={language}
+        prefilledText={inputText}
+      />
+
+      <WhatsAppSimulatorModal
+        isOpen={isSimulatorOpen}
+        onClose={() => setIsSimulatorOpen(false)}
+        language={language}
+      />
     </section>
   )
 }

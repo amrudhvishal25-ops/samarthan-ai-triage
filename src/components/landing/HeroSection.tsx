@@ -8,6 +8,8 @@ import AudioRecorder from '@/components/AudioRecorder'
 import { useTriage } from '@/context/TriageContext'
 import { RadialBackground } from '@/components/ui/light-theme-tailwind-css-background-snippet'
 import { createTimeline, stagger } from 'animejs'
+import WhatsAppChoiceModal from '@/components/WhatsAppChoiceModal'
+import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
 
 interface HeroSectionProps {
   language: 'en' | 'hi'
@@ -73,6 +75,9 @@ export default function HeroSection({ language }: HeroSectionProps) {
   const [transcript, setTranscript] = useState('')
   const [committed, setCommitted] = useState('')
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false)
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false)
+  const [choicePrefilledText, setChoicePrefilledText] = useState('')
 
   const result = committed ? quickRead(committed, hi) : null
 
@@ -318,15 +323,17 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
               {!result && !isTranscribing && (
                 <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-center">
-                  <a
-                    href="https://wa.me/916303807967?text=Hi%20Samarthan,%20I%20want%20to%20report%20a%20cybercrime%20incident."
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChoicePrefilledText(committed || '')
+                      setIsChoiceModalOpen(true)
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline transition-colors cursor-pointer"
                   >
-                    <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                    <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600 dark:fill-emerald-500 dark:text-emerald-500" />
                     <span>{c.orWhatsApp}</span>
-                  </a>
+                  </button>
                 </div>
               )}
 
@@ -378,17 +385,17 @@ export default function HeroSection({ language }: HeroSectionProps) {
                       </button>
 
                       <div className="mt-2.5 flex items-center justify-center">
-                        <a
-                          href={`https://wa.me/916303807967?text=${encodeURIComponent(
-                            committed || (hi ? 'नमस्ते समर्थन, मुझे एक साइबर धोखाधड़ी की रिपोर्ट करनी है।' : 'Hi Samarthan, I want to report a cybercrime incident.')
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors py-1"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setChoicePrefilledText(committed || '')
+                            setIsChoiceModalOpen(true)
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline transition-colors py-1 cursor-pointer"
                         >
-                          <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                          <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600 dark:fill-emerald-500 dark:text-emerald-500" />
                           <span>{c.orWhatsApp}</span>
-                        </a>
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -398,6 +405,20 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </div>
         </motion.div>
       </div>
+
+      <WhatsAppChoiceModal
+        isOpen={isChoiceModalOpen}
+        onClose={() => setIsChoiceModalOpen(false)}
+        onOpenSimulator={() => setIsSimulatorOpen(true)}
+        language={language}
+        prefilledText={choicePrefilledText}
+      />
+
+      <WhatsAppSimulatorModal
+        isOpen={isSimulatorOpen}
+        onClose={() => setIsSimulatorOpen(false)}
+        language={language}
+      />
     </section>
   )
 }
