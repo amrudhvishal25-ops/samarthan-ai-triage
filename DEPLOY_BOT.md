@@ -1,64 +1,92 @@
-# Deploy the WhatsApp bot to Railway
+# Deploy the WhatsApp bot (Fly.io — free tier)
 
-The bot (`scripts/whatsapp-bot.mjs`) runs as its own always-on Railway
-service. It links a WhatsApp account via Baileys, forwards every inbound
-message to the Vercel `/api/whatsapp` triage endpoint, and publishes its
-status + QR code to the `bot_state` row in Neon Postgres so the website
-can show connection state.
+The bot (`scripts/whatsapp-bot.mjs`) runs as one always-on Fly machine.
+It links a WhatsApp account (Baileys), forwards every inbound message to
+the Vercel `/api/whatsapp` triage endpoint, and publishes its status + QR
+to the `bot_state` row in Neon Postgres so the website shows live state.
+
+Fly's free allowance covers a `shared-cpu-1x` / 256 MB machine plus a
+small volume. A card is required on the account but nothing is charged
+within the allowance.
 
 ## One-time setup
 
-### 1. Create the service
-- railway.com → **New Project** → **Deploy from GitHub repo** → pick this repo.
-- Railway reads `railway.json`: it installs deps (no Next build) and starts
-  `node scripts/whatsapp-bot.mjs`.
+### 1. Install flyctl + log in
+```
+brew install flyctl        # or: curl -L https://fly.io/install.sh | sh
+fly auth signup            # or  fly auth login
+```
 
-### 2. Environment variables (service → Variables)
-| Key | Value |
-|---|---|
-| `DATABASE_URL` | same Neon pooled URL as Vercel (`postgresql://…-pooler.…/neondb?sslmode=require`) |
-| `OPENAI_API_KEY` | same key as Vercel — used for local Whisper transcription of voice notes |
-| `NEXT_PUBLIC_APP_URL` | `https://samarthan-ai.vercel.app` (no trailing slash) — where the bot POSTs triage calls |
+### 2. Create the app (don't deploy yet)
+```
+cd "open ai hackaton"
+fly launch --no-deploy --copy-config --name samarthan-whatsapp-bot
+```
+- It reads `fly.toml` + `Dockerfile`.
+- Pick a region (default `sin` = Singapore, closest to India).
+- Say **no** to Postgres/Redis add-ons.
 
-`PORT` is injected by Railway automatically — don't set it.
+### 3. Persistent volume (keeps WhatsApp linked across deploys)
+```
+fly volume create wa_auth --size 1 --region sin
+```
+Region must match `primary_region` in fly.toml. `fly.toml` already mounts
+it at `/app/.whatsapp_auth`.
 
-### 3. Persistent volume (keeps WhatsApp linked across redeploys)
-- Service → **Settings** → **Volumes** → **New Volume**
-- Mount path: **`/app/.whatsapp_auth`**
-- Size: 1 GB is plenty.
+### 4. Secrets
+```
+fly secrets set \
+  DATABASE_URL='<same Neon pooled URL as Vercel>' \
+  OPENAI_API_KEY='<same key as Vercel>' \
+  NEXT_PUBLIC_APP_URL='https://samarthan-ai.vercel.app'
+```
+`PORT` comes from `fly.toml` (`8080`) — don't set it as a secret.
 
-Without the volume the session is wiped on every redeploy and you have to
-re-scan the QR each time.
+### 5. Deploy
+```
+fly deploy
+```
 
-### 4. Run the DB migration once (adds `bot_state`)
-Already run against prod on 2026-09-07. If you rebuild the DB:
+### 6. DB migration (adds `bot_state`) — run once
+Already applied to prod on 2026-09-07. If you rebuild the DB:
 ```
 DATABASE_URL='<neon url>' node scripts/migrate.mjs
 ```
 
 ## Linking WhatsApp (first deploy)
 
-1. Deploy. Wait for the service to be healthy.
-2. Service → **Settings** → **Networking** → **Generate Domain**.
-3. Open `https://<that-domain>/` in a browser — it auto-refreshes and shows
-   the QR once Baileys emits one (usually within ~15 s of boot).
-4. WhatsApp on the phone → **Linked devices** → **Link a device** → scan.
-5. Page flips to **✅ Connected · +91…**. The `bot_state` row updates and
-   `samarthan-ai.vercel.app` now reflects the live status.
+1. `fly deploy` finishes → machine boots.
+2. Open the app URL: `https://samarthan-whatsapp-bot.fly.dev/`
+   It auto-refreshes and shows the QR ~15 s after boot.
+3. Phone → WhatsApp → **Linked devices** → **Link a device** → scan.
+4. Page flips to **✅ Connected · +91…**. `bot_state` updates and
+   `samarthan-ai.vercel.app` reflects the live status.
 
-You can also scan the ASCII QR straight from the Railway **deploy logs**.
+Or scan the ASCII QR from `fly logs`.
 
-## Re-linking later
-Restart the service (or `railway redeploy`). If the volume is mounted it
-reconnects with the saved session. To force a fresh QR, clear the volume
-(Settings → Volumes → the volume → wipe) and redeploy.
+## Day-to-day
 
-## Health
-- `GET /health` → `{"ok":true,"status":"CONNECTED"}` — Railway healthcheck.
-- `GET /` → human status / QR page.
-- Neon: `select status, user_phone, updated_at from bot_state;`
+| Task | Command |
+|---|---|
+| Logs | `fly logs` |
+| Restart | `fly apps restart samarthan-whatsapp-bot` |
+| Status | `fly status` |
+| Health | `curl https://samarthan-whatsapp-bot.fly.dev/health` |
+| Re-link (fresh QR) | `fly volume destroy wa_auth` → recreate → `fly deploy` |
+| DB check | `select status, user_phone, updated_at from bot_state;` |
+
+With the volume mounted, a restart reconnects using the saved session —
+no re-scan.
 
 ## Cost
-One Railway service + a 1 GB volume sits comfortably in the Hobby plan's
-monthly credit. The bot is light — a long-lived socket plus occasional
-OpenAI calls.
+
+One `shared-cpu-1x` 256 MB machine + a 1 GB volume sits inside Fly's free
+allowance. The bot is light: a long-lived socket plus occasional OpenAI
+calls for voice-note transcription.
+
+---
+
+### (Old) Railway notes
+Railway removed its free tier — Hobby is $5/mo. `railway.json` +
+`nixpacks.toml` are kept in the repo in case you switch back, but Fly is
+the free path.

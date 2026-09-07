@@ -479,5 +479,5 @@ import('node:http').then(({ createServer }) => {
         : `<h1>Status: ${s.status || 'starting…'}</h1><p>Waiting for a QR code. Refresh in a few seconds.</p>`
     res.writeHead(200, { 'content-type': 'text/html' })
     res.end(`<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="5"><title>Samarthan WhatsApp Bot</title><body style="font-family:system-ui;text-align:center;padding:40px">${body}</body>`)
-  }).listen(PORT, () => console.log(`[HTTP] Health + QR page on :${PORT}`))
+  }).listen(PORT, '0.0.0.0', () => console.log(`[HTTP] Health + QR page on :${PORT}`))
 })
