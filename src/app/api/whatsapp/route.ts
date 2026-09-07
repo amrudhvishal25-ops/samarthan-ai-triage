@@ -64,11 +64,24 @@ export async function POST(req: NextRequest) {
       voiceTranscript = json.voiceTranscript || ''
       imageBase64 = json.imageBase64
       const activeIncidentId = json.activeIncidentId || undefined
+      const isExplicitReset = json.activeIncidentId === null
 
       const session = getOrCreateSession(from)
       if (activeIncidentId) {
         session.incidentId = activeIncidentId
         session.stage = 'FILED'
+      } else if (isExplicitReset) {
+        // Bot explicitly cleared the incident (user said NEW) — reset the server session
+        session.incidentId = undefined
+        session.stage = 'AWAITING_INCIDENT'
+        session.accumulatedText = ''
+        session.extractedData = undefined
+        session.pendingUpdateText = undefined
+        session.pendingMediaUrl = undefined
+        session.pendingVisionEvidence = undefined
+        session.missingFields = []
+        // Mark session so auto-restore from DB is skipped for this turn
+        ;(session as any)._skipDbRestore = true
       }
 
       if (!voiceTranscript && json.audioBase64) {

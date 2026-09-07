@@ -293,7 +293,8 @@ export async function processWhatsAppTurn(
   session.history.push({ role: 'user', content: voiceTranscript ? `[Voice Note] ${voiceTranscript}` : userInput, timestamp })
 
   // Auto-restore previous incident from Neon DB if server restarted and memory was cleared
-  if (!session.incidentId && process.env.DATABASE_URL) {
+  // SKIP this if the session was explicitly reset (user said NEW) — the _skipDbRestore flag is set by the API route
+  if (!session.incidentId && process.env.DATABASE_URL && !(session as any)._skipDbRestore) {
     try {
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(process.env.DATABASE_URL)
@@ -323,6 +324,8 @@ export async function processWhatsAppTurn(
       console.error('[WhatsApp Agent] DB lookup error:', e)
     }
   }
+  // Clear the skip flag after this turn so future turns can auto-restore if needed
+  delete (session as any)._skipDbRestore
 
   // Case Status Check Intent
   const isStatusQuery =
