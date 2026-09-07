@@ -127,24 +127,24 @@ export default function HeroSection({ language }: HeroSectionProps) {
   return (
     <section className="relative w-full pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden isolate">
       <RadialBackground />
-      <div className="relative z-10 max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-14 items-center">
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
+        {/* Eyebrow Pill */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-8 backdrop-blur-sm">
+          <span className="flex h-2 w-2 relative">
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+          </span>
+          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
+            {hi ? 'राष्ट्रीय साइबर अपराध रिपोर्टिंग फ्रेमवर्क (NCRP 1930) • प्रोटोटाइप' : 'National Cybercrime Reporting Framework (NCRP 1930) • Prototype'}
+          </span>
+        </div>
 
-        {/* Left: copy */}
-        <div>
-          {/* Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-6 backdrop-blur-sm">
-            <span className="flex h-2 w-2 relative">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-            </span>
-            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
-              {hi ? 'राष्ट्रीय साइबर अपराध रिपोर्टिंग फ्रेमवर्क (NCRP 1930) • प्रोटोटाइप' : 'National Cybercrime Reporting Framework (NCRP 1930) • Prototype'}
-            </span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.08]">
-            <span className="block py-0.5">{c.headline}</span>
-            <span className="block text-primary mt-1 py-0.5">{c.headlineHighlight}</span>
-          </h1>
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-14 items-start">
+          {/* Left: copy */}
+          <div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.08]">
+              <span className="block py-0.5">{c.headline}</span>
+              <span className="block text-primary mt-1 py-0.5">{c.headlineHighlight}</span>
+            </h1>
 
           <p className="mt-5 text-base sm:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg leading-relaxed">
             {c.sub}
@@ -340,6 +340,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </div>
         </div>
       </div>
+    </div>
 
       <WhatsAppChoiceModal
         isOpen={isChoiceModalOpen}

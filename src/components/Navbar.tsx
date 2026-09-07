@@ -61,32 +61,7 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
         </div>
       </div>
 
-      {/* National Emergency Helpline Strip */}
-      <div className="bg-zinc-900 text-white border-b border-zinc-800 text-[11px] py-1.5 px-4 sticky top-[32px] sm:top-[34px] z-45">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 font-semibold text-red-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-              {hi ? 'राष्ट्रीय साइबर अपराध हेल्पलाइन:' : 'National Cyber Crime Helpline:'}
-            </span>
-            <a href="tel:1930" className="font-mono font-bold text-white hover:text-amber-300 underline underline-offset-2">
-              1930 (Toll-Free 24x7)
-            </a>
-            <span className="text-zinc-600 hidden md:inline">|</span>
-            <span className="text-zinc-400 hidden md:inline text-[10px] font-mono">
-              {hi ? 'MHA I4C NCRP गोल्डन ऑवर मानक' : 'MHA I4C NCRP Golden Hour Protocol'}
-            </span>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-zinc-400 font-mono text-[10px]">
-            <span>{hi ? 'आधिकारिक संदर्भ:' : 'Official Reference:'}</span>
-            <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" className="hover:text-white underline">
-              cybercrime.gov.in
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <header className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-md sticky top-[57px] sm:top-[61px] z-40 transition-all">
+      <header className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-md sticky top-[31px] sm:top-[33px] z-40 transition-all">
         <div className="max-w-6xl mx-auto px-6 h-[74px] flex items-center justify-between">
 
           {/* Logo */}
