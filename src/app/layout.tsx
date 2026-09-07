@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { TriageProvider } from '@/context/TriageContext'
+import { ThemeProvider } from '@/context/ThemeContext'
 import SmoothScroll from '@/components/SmoothScroll'
 
 export const metadata: Metadata = {
@@ -27,17 +28,35 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var t = localStorage.getItem('samarthan_theme');
+                  if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
-        <TriageProvider>
-          <SmoothScroll>
-            {children}
-          </SmoothScroll>
-        </TriageProvider>
+        <ThemeProvider>
+          <TriageProvider>
+            <SmoothScroll>
+              {children}
+            </SmoothScroll>
+          </TriageProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Globe, FileText, LogOut, User, ChevronDown, Zap } from 'lucide-react'
+import { Globe, FileText, LogOut, User, ChevronDown, Zap, Sun, Moon } from 'lucide-react'
 import { useAuth, DigiLockerUser } from '@/hooks/useAuth'
+import { useTheme } from '@/context/ThemeContext'
 import DigiLockerModal from './DigiLockerModal'
 import { BotMessageSquareIcon } from './BotMessageSquareIcon'
 
@@ -15,6 +16,7 @@ interface NavbarProps {
 export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
   const router = useRouter()
   const { getUser, signIn, signOut } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [user, setUser] = useState<DigiLockerUser | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -77,6 +79,20 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
             >
               <Globe className="w-4 h-4 text-zinc-500" />
               <span>{language === 'en' ? 'हिन्दी' : 'English'}</span>
+            </button>
+
+            {/* 3. Theme Toggle (Light / Dark Mode) */}
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? (hi ? 'लाइट मोड' : 'Switch to Light Mode') : (hi ? 'डार्क मोड' : 'Switch to Dark Mode')}
+              className="inline-flex items-center justify-center text-zinc-700 hover:text-zinc-950 border border-border hover:bg-zinc-100/80 rounded-md w-10 h-10 transition-colors"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-zinc-600" />
+              )}
             </button>
 
             {/* 3. Auth button / Login */}
