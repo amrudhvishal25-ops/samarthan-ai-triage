@@ -2,6 +2,8 @@ import OpenAI from 'openai'
 import { generateId, TriageResult, FreezeStep, ApplicableLaw, IT_ACT_SECTIONS } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
 
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://samarthan-ai.vercel.app').replace(/\/$/, '')
+
 export type WhatsAppStage = 'SELECT_LANGUAGE' | 'AWAITING_INCIDENT' | 'FILED' | 'AWAITING_UPDATE_OR_NEW'
 
 export interface ExtractedVisionEvidence {
@@ -236,7 +238,7 @@ export async function handleStatusQuery(
   const updatesList = Array.isArray(complaint.updates) ? complaint.updates : []
   const latestUpdate = updatesList.length > 0 ? updatesList[updatesList.length - 1] : null
 
-  const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${id}`
+  const trackingLink = `${APP_URL}/dashboard?id=${id}`
 
   const statusCard = isHi
     ? `📊 *शिकायत स्थिति रिपोर्ट (CASE STATUS)*
@@ -699,7 +701,7 @@ async function updateExistingComplaint(
     }
   }
 
-  const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${incidentId}`
+  const trackingLink = `${APP_URL}/dashboard?id=${incidentId}`
   let reply = ''
 
   if (filledItems.length > 0) {
@@ -888,7 +890,7 @@ async function createAndSaveNewComplaint(
   session.extractedData = triageResult
   session.accumulatedText = incidentText
 
-  const trackingLink = `https://samarthan-ai-parichay-s-projects.vercel.app/dashboard?id=${triageResult.incidentId}`
+  const trackingLink = `${APP_URL}/dashboard?id=${triageResult.incidentId}`
 
   const lawsList = triageResult.applicableLaws
     .map((l: any) => (typeof l === 'string' ? l : (l.section || l.title || 'IT Act')))
