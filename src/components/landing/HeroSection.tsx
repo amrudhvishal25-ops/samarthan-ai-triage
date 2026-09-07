@@ -125,11 +125,11 @@ export default function HeroSection({ language }: HeroSectionProps) {
   }
 
   return (
-    <section className="relative w-full pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden isolate">
+    <section className="relative w-full pt-6 pb-16 md:pt-10 md:pb-24 overflow-hidden isolate">
       <RadialBackground />
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-8 backdrop-blur-sm">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-6 backdrop-blur-sm">
           <span className="flex h-2 w-2 relative">
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
           </span>
