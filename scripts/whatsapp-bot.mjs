@@ -138,6 +138,12 @@ function cleanupAndExit() {
 
 process.on('SIGINT', cleanupAndExit)
 process.on('SIGTERM', cleanupAndExit)
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]:', err?.message || err)
+})
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]:', reason?.message || reason)
+})
 
 async function startWhatsAppBot() {
   if (isStarting) return
@@ -441,9 +447,11 @@ async function startWhatsAppBot() {
         }
       } catch (err) {
         console.error(`[Processing Error for +${senderPhone}]:`, err.message)
-        await sock.sendMessage(remoteJid, {
-          text: '⚠️ Samarthan AI Assistant: Your message was received. Our triage engine is briefly syncing with the portal. If this is an emergency, please call 1930 immediately.',
-        })
+        try {
+          await sock.sendMessage(remoteJid, {
+            text: '⚠️ Samarthan AI Assistant: Your message was received. Our triage engine is briefly syncing with the portal. If this is an emergency, please call 1930 immediately.',
+          })
+        } catch {}
       } finally {
         try {
           await sock.sendPresenceUpdate('paused', remoteJid)
