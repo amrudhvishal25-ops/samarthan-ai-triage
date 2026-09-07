@@ -61,8 +61,6 @@ export default function SmartActions({
   }
 
   const handlePlatformOrAgencyReport = () => {
-    // Simulated: draft a report body and copy it. Live version has the AI
-    // pre-fill and submit the actual platform / agency report.
     const target = recommendedChannelTarget || 'the platform'
     const offender = fraudsterIdentifier && fraudsterIdentifier !== 'Not Identified' ? fraudsterIdentifier : 'the reported account'
     const draft = [
@@ -91,11 +89,11 @@ export default function SmartActions({
 
   const kind = ch.kind
   const primaryIcon = primaryDone
-    ? <CheckCircle2 className="w-5 h-5 text-green-600" />
-    : kind === 'bank' ? <Mail className="w-5 h-5 text-blue-600" />
-    : kind === 'platform' ? <Instagram className="w-5 h-5 text-pink-600" />
-    : kind === 'agency' ? <Landmark className="w-5 h-5 text-indigo-600" />
-    : <Phone className="w-5 h-5 text-blue-600" />
+    ? <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+    : kind === 'bank' ? <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+    : kind === 'platform' ? <Instagram className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+    : kind === 'agency' ? <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+    : <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
 
   const primaryAction = kind === 'bank' ? handleBankEmail : handlePlatformOrAgencyReport
   const primaryDoneText = kind === 'bank'
@@ -103,33 +101,43 @@ export default function SmartActions({
     : (hi ? 'रिपोर्ट का मसौदा तैयार — क्लिपबोर्ड पर कॉपी (डेमो)' : 'Report drafted & copied to clipboard (demo)')
 
   return (
-    <div className="bg-white rounded-lg border border-zinc-200 p-6 shadow-sm">
-      <h3 className="text-sm font-bold text-zinc-900 mb-1 uppercase tracking-wide">
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+      <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1 uppercase tracking-wide">
         {hi ? 'स्मार्ट कार्रवाई' : 'Smart Escalation'}
       </h3>
-      <p className="text-xs text-zinc-500 mb-4">{hi ? ch.descHi : ch.desc}</p>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">{hi ? ch.descHi : ch.desc}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Primary channel-driven action */}
         <button
           onClick={primaryDone ? undefined : primaryAction}
           disabled={primaryDone}
-          className={`flex flex-col items-start gap-3 p-4 rounded-lg border transition-all text-left ${primaryDone ? 'border-green-300 bg-green-50' : 'border-zinc-200 hover:border-blue-300 hover:bg-blue-50/50'}`}
+          className={`flex flex-col items-start gap-3 p-4 rounded-lg border transition-all text-left ${
+            primaryDone
+              ? 'border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-950/30'
+              : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/40 dark:hover:bg-blue-950/20'
+          }`}
         >
-          <div className={`w-10 h-10 rounded-md flex items-center justify-center ${primaryDone ? 'bg-green-100' : kind === 'platform' ? 'bg-pink-100' : kind === 'agency' ? 'bg-indigo-100' : 'bg-blue-100'}`}>
+          <div className={`w-10 h-10 rounded-md flex items-center justify-center ${
+            primaryDone
+              ? 'bg-green-100 dark:bg-green-950/60'
+              : kind === 'platform' ? 'bg-pink-100 dark:bg-pink-950/60'
+              : kind === 'agency' ? 'bg-indigo-100 dark:bg-indigo-950/60'
+              : 'bg-blue-100 dark:bg-blue-950/60'
+          }`}>
             {primaryIcon}
           </div>
           <div>
-            <h4 className="font-semibold text-zinc-900 text-sm mb-1 flex items-center gap-1.5">
+            <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm mb-1 flex items-center gap-1.5">
               {hi ? ch.titleHi : ch.title}
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-sm px-1.5 py-0.5">
+              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/60 rounded-sm px-1.5 py-0.5">
                 {hi ? 'डेमो' : 'Simulated'}
               </span>
             </h4>
             {primaryDone ? (
-              <p className="text-xs text-green-700 font-medium">{primaryDoneText}</p>
+              <p className="text-xs text-green-700 dark:text-green-400 font-medium">{primaryDoneText}</p>
             ) : (
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {kind === 'bank'
                   ? (hi ? `${bankName} के नोडल अधिकारी को ड्राफ्ट ईमेल खोलें (डेमो पता)` : `Opens a drafted email to a demo nodal-officer address for ${bankName}`)
                   : (hi ? `${recommendedChannelTarget || 'प्लेटफ़ॉर्म'} के लिए रिपोर्ट का मसौदा तैयार करें` : `Drafts a takedown report for ${recommendedChannelTarget || 'the platform'}`)}
@@ -138,28 +146,42 @@ export default function SmartActions({
           </div>
         </button>
 
-        {/* Route to Police — always available */}
+        {/* Route to Police — Beautiful in both Light and Dark Mode */}
         <button
           onClick={policeStation ? undefined : handleRoutePolice}
           disabled={locating || !!policeStation}
-          className={`flex flex-col items-start gap-3 p-4 rounded-lg border transition-all text-left ${policeStation ? 'border-green-300 bg-green-50' : 'border-zinc-200 hover:border-saffron hover:bg-orange-50/50'}`}
+          className={`flex flex-col items-start gap-3 p-4 rounded-lg border transition-all text-left ${
+            policeStation
+              ? 'border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-950/30'
+              : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-amber-500 dark:hover:border-amber-500 hover:bg-amber-50/40 dark:hover:bg-amber-950/20'
+          }`}
         >
-          <div className={`w-10 h-10 rounded-md flex items-center justify-center ${policeStation ? 'bg-green-100' : 'bg-orange-100'}`}>
-            {locating ? <Loader2 className="w-5 h-5 text-saffron animate-spin" /> : policeStation ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Navigation className="w-5 h-5 text-saffron" />}
+          <div className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors ${
+            policeStation
+              ? 'bg-green-100 dark:bg-green-950/60'
+              : 'bg-amber-100 dark:bg-amber-950/80'
+          }`}>
+            {locating ? (
+              <Loader2 className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-spin" />
+            ) : policeStation ? (
+              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+            ) : (
+              <Navigation className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            )}
           </div>
           <div>
-            <h4 className="font-semibold text-zinc-900 text-sm mb-1 flex items-center gap-1.5">
+            <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm mb-1 flex items-center gap-1.5">
               {hi ? 'पुलिस स्टेशन भेजें' : 'Route to Police'}
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 rounded-sm px-1.5 py-0.5">
+              <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/60 rounded-sm px-1.5 py-0.5">
                 {hi ? 'डेमो' : 'Simulated'}
               </span>
             </h4>
             {locating ? (
-              <p className="text-xs text-zinc-500">{hi ? 'लोकेशन ट्रैक कर रहा है (डेमो)...' : 'Fetching GPS location (demo)...'}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{hi ? 'लोकेशन ट्रैक कर रहा है (डेमो)...' : 'Fetching GPS location (demo)...'}</p>
             ) : policeStation ? (
-              <p className="text-xs text-green-700 font-medium">Routed to: {policeStation} (demo)</p>
+              <p className="text-xs text-green-700 dark:text-green-400 font-medium">Routed to: {policeStation} (demo)</p>
             ) : (
-              <p className="text-xs text-zinc-500">{hi ? 'नजदीकी साइबर सेल को रिपोर्ट भेजें (डेमो)' : 'Simulates finding the nearest Cyber Cell'}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{hi ? 'नजदीकी साइबर सेल को रिपोर्ट भेजें (डेमो)' : 'Simulates finding the nearest Cyber Cell'}</p>
             )}
           </div>
         </button>
@@ -167,24 +189,24 @@ export default function SmartActions({
 
       {/* Real helpline numbers + portal for this route */}
       {(ch.hotline || ch.portalUrl) && (
-        <div className="mt-4 pt-4 border-t border-dashed border-zinc-200 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 mr-1">
+        <div className="mt-4 pt-4 border-t border-dashed border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mr-1">
             {hi ? 'असली संपर्क' : 'Real contacts'}
           </span>
           {ch.hotline && (
-            <a href={`tel:${ch.hotline}`} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors">
+            <a href={`tel:${ch.hotline}`} className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors shadow-xs">
               <Phone className="w-3.5 h-3.5" />
               {hi ? ch.hotlineLabelHi : ch.hotlineLabel}
             </a>
           )}
           {ch.hotline2 && (
-            <a href={`tel:${ch.hotline2}`} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors">
+            <a href={`tel:${ch.hotline2}`} className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors shadow-xs">
               <Phone className="w-3.5 h-3.5" />
               {hi ? ch.hotline2LabelHi : ch.hotline2Label}
             </a>
           )}
           {ch.portalUrl && (
-            <a href={ch.portalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 border border-zinc-300 text-zinc-700 text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-zinc-50 transition-colors">
+            <a href={ch.portalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
               <ExternalLink className="w-3.5 h-3.5" />
               {hi ? ch.portalLabelHi : ch.portalLabel}
             </a>
