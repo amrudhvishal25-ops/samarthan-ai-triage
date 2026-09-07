@@ -91,6 +91,14 @@ export function isDetailedIncidentPrompt(text: string, voiceTranscript?: string)
     return false
   }
 
+  // Disqualify language switch requests (e.g. "hindi mai bat karo", "talk in hindi") unless accompanied by financial crime details
+  if (/(?:hindi|english|हिन्दी|हिंदी)\s*(?:mai|me|mein)?\s*(?:baat|bat|bolo|bol|batao|karo|kijiye)|(?:talk|speak|chat)\s*(?:in\s+)?(?:hindi|english)/i.test(full)) {
+    const ext = quickExtract(full)
+    if (!ext.amount && !ext.utr && !ext.upi && full.length < 70) {
+      return false
+    }
+  }
+
   // Disqualify corrections or update notes (e.g. "his name is not X it's Y", "update:", "correction:")
   if (/^(his name is not|his name is|not [a-z0-9\s]+ (?:it's|its|it is)|its not|it is not|correction|actually|update|ye galat hai|naam galat hai|change name|correct name)\b/i.test(full)) {
     return false
@@ -436,6 +444,96 @@ You can send a **Voice Note 🎤**, type your message ✍️, or share a **Scree
   // Hard reset or fresh website link click -> Always reset to brand new greeting
   if (isResetCommand || isWebsiteDefaultMsg) {
     return sendLanguageGreeting()
+  }
+
+  // Natural Language & Conversational Language Switch Intent (e.g. "hindi mai bat karo", "talk in hindi", "english please", etc.)
+  const isHindiSwitchRequest =
+    /^(2|2\.|2️⃣)$/.test(trimmed) ||
+    /^(?:hindi|हिन्दी|हिंदी)(?:\s+(?:please|plz|bhasha|language))?$/i.test(trimmed) ||
+    /(?:hindi|हिन्दी|हिंदी)\s*(?:mai|me|mein|pe)?\s*(?:baat|bat|bolo|bol|batao|karo|kijiye|help|support|me)/i.test(trimmed) ||
+    /(?:baat|bat|bolo|bol)\s*(?:in\s+)?(?:hindi|हिन्दी|हिंदी)/i.test(trimmed) ||
+    /(?:talk|speak|converse|reply|chat)\s*(?:in\s+)?(?:hindi|हिन्दी|हिंदी)/i.test(trimmed) ||
+    /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:hindi|हिंदी|हिन्दी)/i.test(trimmed) ||
+    /(?:hindi|हिंदी|हिन्दी)\s*(?:chahiye|chuna|select)/i.test(trimmed)
+
+  const isEnglishSwitchRequest =
+    /^(1|1\.|1️⃣)$/.test(trimmed) ||
+    /^(?:english|angrezi|angreji)(?:\s+(?:please|plz|language))?$/i.test(trimmed) ||
+    /(?:talk|speak|converse|reply|chat)\s*(?:in\s+)?(?:english|angrezi|angreji)/i.test(trimmed) ||
+    /(?:english|angrezi|angreji)\s*(?:mai|me|mein)?\s*(?:baat|bat|bolo|bol|batao|karo|kijiye)/i.test(trimmed) ||
+    /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:english)/i.test(trimmed)
+
+  if (isHindiSwitchRequest) {
+    session.language = 'hi'
+    if (session.stage === 'SELECT_LANGUAGE') {
+      session.stage = 'AWAITING_INCIDENT'
+    }
+
+    // Check if user also provided incident details along with language switch
+    const ext = quickExtract(trimmed)
+    const hasIncidentDetails = Boolean(voiceTranscript || ext.amount || ext.upi || ext.phone || trimmed.length > 55)
+    if (hasIncidentDetails) {
+      session.stage = 'AWAITING_INCIDENT'
+      session.accumulatedText = (voiceTranscript || trimmed).trim()
+      return await createAndSaveNewComplaint(session, session.accumulatedText, mediaUrl, voiceTranscript)
+    }
+
+    const reply = (!session.forceNewComplaint && session.incidentId)
+      ? `✅ *भाषा बदलकर हिन्दी (Hindi) कर दी गई है।*
+
+नमस्ते! अब आपके सभी अपडेट और केस रिपोर्ट हिन्दी में प्रोसेस होंगे।
+📌 *सक्रिय घटना आईडी:* ${session.incidentId}
+
+🤖 आप नया विवरण, UTR नंबर, बैंक का नाम, या वॉयस नोट 🎤 भेजें — AI इसे स्वतः आपकी शिकायत में जोड़ देगा।
+👉 नई शिकायत शुरू करने के लिए *NEW* लिखकर भेजें।`
+      : `✅ *भाषा बदलकर हिन्दी (Hindi) कर दी गई है।*
+
+नमस्ते! अब हम हिन्दी में बात करेंगे। कृपया अपनी घटना का विवरण दें:
+• क्या हुआ? (जैसे: फर्जी बैंक कॉल, UPI धोखाधड़ी, निवेश घोटाला, ब्लैकमेल)
+• खोई हुई राशि (₹)
+• धोखेबाज़ का UPI ID, फोन नंबर, या बैंक खाता
+• 12-अंकों का UTR नंबर (यदि पैसे कटे हों)
+
+🎙️ आप एक **वॉयस नोट 🎤** भेज सकते हैं, लिखकर बता सकते हैं ✍️, या सीधे लेनदेन का **स्क्रीनशॉट 📸** भेज सकते हैं!`
+
+    session.history.push({ role: 'assistant', content: reply, timestamp })
+    return { reply, incidentId: session.incidentId }
+  }
+
+  if (isEnglishSwitchRequest) {
+    session.language = 'en'
+    if (session.stage === 'SELECT_LANGUAGE') {
+      session.stage = 'AWAITING_INCIDENT'
+    }
+
+    const ext = quickExtract(trimmed)
+    const hasIncidentDetails = Boolean(voiceTranscript || ext.amount || ext.upi || ext.phone || trimmed.length > 55)
+    if (hasIncidentDetails) {
+      session.stage = 'AWAITING_INCIDENT'
+      session.accumulatedText = (voiceTranscript || trimmed).trim()
+      return await createAndSaveNewComplaint(session, session.accumulatedText, mediaUrl, voiceTranscript)
+    }
+
+    const reply = (!session.forceNewComplaint && session.incidentId)
+      ? `✅ *Language switched to English.*
+
+All future updates and case reports will now be processed in English.
+📌 *Active Incident ID:* ${session.incidentId}
+
+🤖 You can send any additional details, UTR numbers, bank names, or voice notes 🎤 — AI will automatically add them to this complaint.
+👉 Reply *NEW* to start a fresh complaint.`
+      : `✅ *Language set to English.*
+
+Hello! We will now converse in English. Please describe what happened:
+• What occurred? (e.g. fake bank call, UPI fraud, investment scam)
+• Approximate amount lost (₹)
+• Fraudster's name, phone number, or UPI ID (if known)
+• 12-digit UTR reference (if money was debited)
+
+🎙️ You can send a **Voice Note 🎤**, type a message ✍️, or share a **Screenshot 📸** to begin!`
+
+    session.history.push({ role: 'assistant', content: reply, timestamp })
+    return { reply, incidentId: session.incidentId }
   }
 
   // ACTIVE COMPLAINT FLOW:
