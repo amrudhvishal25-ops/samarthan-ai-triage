@@ -15,6 +15,7 @@ interface FreezeStepperProps {
 export default function FreezeStepper({ steps, language, onHotlineClick }: FreezeStepperProps) {
   const hi = language === 'hi'
   const [copied, setCopied] = useState<number | null>(null)
+  const safeSteps = Array.isArray(steps) ? steps : []
 
   const handleCopy = async (step: FreezeStep, idx: number) => {
     const text = hi ? `${step.actionHi}\n${step.detailHi}` : `${step.action}\n${step.detail}`
@@ -25,7 +26,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
 
   return (
     <div className="space-y-4">
-      {steps.map((step, idx) => (
+      {safeSteps.map((step, idx) => (
         <motion.div
           key={step.step}
           initial={{ opacity: 0, x: -10 }}
@@ -41,7 +42,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
             )}>
               {step.step}
             </div>
-            {idx < steps.length - 1 && (
+            {idx < safeSteps.length - 1 && (
               <div className="w-0.5 flex-1 bg-gray-200 mt-2 mb-0" />
             )}
           </div>

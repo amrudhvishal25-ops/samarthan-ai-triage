@@ -19,7 +19,7 @@ export default function PrintableComplaint({ result, language }: PrintableCompla
   const summaryRows: [string, string, string][] = [
     ['Category', 'श्रेणी', result.fraudType],
     ['Urgency', 'प्राथमिकता', result.urgencyLevel],
-    ['Amount Involved', 'राशि', result.amount > 0 ? `₹${result.amount.toLocaleString('en-IN')}` : 'N/A'],
+    ['Amount Involved', 'राशि', Number(result.amount) > 0 ? `₹${Number(result.amount).toLocaleString('en-IN')}` : 'N/A'],
     ['Reported Against', 'आरोपी', result.fraudsterIdentifier],
     ['Contact/Handle', 'संपर्क', result.frauderContact],
     ['Financial Institution', 'बैंक', result.bankName],

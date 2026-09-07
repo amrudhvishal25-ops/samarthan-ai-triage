@@ -367,7 +367,58 @@ export async function POST(req: NextRequest) {
       parsed.complaintDraftHi = parsed.complaintDraftHi.replace(/\[शिकायतकर्ता का नाम\]/gi, parsed.complainantName)
     }
 
-    return NextResponse.json(parsed as TriageResult)
+    // Guarantee a complete, correctly-typed TriageResult so the dashboard,
+    // PrintableComplaint, and the persistence layer never hit an undefined
+    // field (e.g. `amount.toLocaleString()` crashing the whole page).
+    const VALID_FRAUD_TYPES = [
+      'Financial Fraud', 'Women/Children Related Crime', 'Extortion & Blackmail',
+      'Identity Theft', 'E-Commerce Scams', 'Investment Scam', 'Other Cyber Crime',
+    ]
+    const str = (v: unknown, fallback: string) =>
+      (typeof v === 'string' && v.trim()) ? v.trim() : fallback
+    const num = (v: unknown) => {
+      const n = typeof v === 'number' ? v : parseInt(String(v ?? '').replace(/[^\d]/g, ''), 10)
+      return Number.isFinite(n) && n >= 0 ? n : 0
+    }
+
+    const safe: TriageResult = {
+      incidentId: str(parsed.incidentId, generateId()),
+      fraudsterIdentifier: str(parsed.fraudsterIdentifier, 'Not Identified'),
+      complainantName: str(parsed.complainantName, 'Anonymous Complainant'),
+      fraudType: (VALID_FRAUD_TYPES.includes(parsed.fraudType) ? parsed.fraudType : (categoryHint && VALID_FRAUD_TYPES.includes(categoryHint) ? categoryHint : 'Other Cyber Crime')) as TriageResult['fraudType'],
+      frauderContact: str(parsed.frauderContact, 'Not Provided'),
+      amount: num(parsed.amount),
+      bankName: str(parsed.bankName, 'Not Provided'),
+      accountNumber: str(parsed.accountNumber, 'Not Provided'),
+      upiId: typeof parsed.upiId === 'string' && parsed.upiId.trim() ? parsed.upiId.trim() : undefined,
+      timeline: str(parsed.timeline, 'Not Provided'),
+      complaintDraft: str(parsed.complaintDraft, `I am filing this complaint regarding a cyber incident (${str(parsed.fraudType, 'Other Cyber Crime')}). ${str(parsed.summary, '')}`.trim()),
+      complaintDraftHi: str(parsed.complaintDraftHi, str(parsed.summaryHi, 'साइबर घटना के संबंध में औपचारिक शिकायत।')),
+      freezeSteps: Array.isArray(parsed.freezeSteps) && parsed.freezeSteps.length
+        ? parsed.freezeSteps
+        : [
+            { step: 1, action: 'Call 1930 (National Cybercrime Helpline)', actionHi: '1930 पर कॉल करें', detail: 'Report immediately for golden-hour action and emergency account freeze.', detailHi: 'तुरंत रिपोर्ट करें ताकि गोल्डन ऑवर में कार्रवाई हो सके।', hotline: '1930', url: 'https://cybercrime.gov.in' },
+            { step: 2, action: 'File a complaint on cybercrime.gov.in', actionHi: 'cybercrime.gov.in पर शिकायत दर्ज करें', detail: 'Submit the drafted complaint and preserve all screenshots and messages as evidence.', detailHi: 'शिकायत जमा करें और सभी स्क्रीनशॉट सुरक्षित रखें।', hotline: null, url: 'https://cybercrime.gov.in' },
+          ],
+      applicableLaws: Array.isArray(parsed.applicableLaws) && parsed.applicableLaws.length
+        ? parsed.applicableLaws
+        : [
+            {
+              section: 'IT Act, Section 66D',
+              title: IT_ACT_SECTIONS['66D']?.title || 'Cheating by personation by using computer resource',
+              titleHi: IT_ACT_SECTIONS['66D']?.titleHi || 'कंप्यूटर संसाधन का उपयोग करके प्रतिरूपण द्वारा धोखाधड़ी',
+              reason: 'Applies broadly to online fraud, digital cheating, and impersonation-based cybercrime.',
+              reasonHi: 'ऑनलाइन धोखाधड़ी और प्रतिरूपण-आधारित साइबर अपराध पर लागू।',
+            },
+          ],
+      urgencyLevel: parsed.urgencyLevel,
+      summary: str(parsed.summary, 'A cyber incident was reported and triaged for immediate action.'),
+      summaryHi: str(parsed.summaryHi, 'एक साइबर घटना दर्ज की गई और तत्काल कार्रवाई के लिए ट्रायज की गई।'),
+      recommendedChannel: parsed.recommendedChannel,
+      recommendedChannelTarget: parsed.recommendedChannelTarget,
+    }
+
+    return NextResponse.json(safe)
   } catch (err: any) {
     console.error('[triage] Error during processing, falling back:', err?.message)
     const fallback = await getDynamicMock()

@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ArrowRight, ShieldCheck, Sparkles, Circle } from 'lucide-react'
 import { TriageResult } from '@/data/scenarios'
 
 export interface CompulsoryField {
@@ -128,121 +128,139 @@ export default function CompulsoryDetailsReminder({
   const missingCount = totalCount - filledCount
   const percent = Math.round((filledCount / totalCount) * 100)
 
+  /* ── All complete ── */
   if (missingCount === 0) {
     return (
-      <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 p-4 sm:p-5 flex items-start gap-3.5 shadow-sm">
-        <div className="w-9 h-9 rounded-md bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+      <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 p-5 sm:p-6 flex items-start gap-4 shadow-sm">
+        <div className="w-10 h-10 rounded-xl bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-800/60 px-2.5 py-1 rounded-full">
               {hi ? '100% पूर्ण' : '100% Complete'}
             </span>
-            <span className="text-xs text-emerald-700 font-medium">
-              {hi ? 'सभी अनिवार्य विवरण भरे गए हैं' : 'All compulsory details provided'}
-            </span>
           </div>
-          <p className="text-sm font-bold text-emerald-950 mt-1">
+          <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100 mt-2 leading-relaxed">
             {hi
               ? 'आपकी शिकायत बैंक फ्रीज और पुलिस FIR के लिए पूरी तरह तैयार है!'
-              : 'Your complaint is 100% complete for emergency fund freezing and police FIR registration.'}
+              : 'Your complaint is fully complete for emergency fund freezing and police FIR registration.'}
           </p>
         </div>
       </div>
     )
   }
 
+  /* ── Incomplete ── */
   return (
-    <div className="rounded-lg bg-amber-50/90 border border-amber-300 p-5 sm:p-6 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200/70">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-md bg-amber-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-extrabold uppercase tracking-wide bg-amber-200/90 text-amber-900 px-2.5 py-0.5 rounded-sm">
-                {hi ? 'महत्वपूर्ण अनुस्मारक' : 'Compulsory Checklist'}
-              </span>
-              <span className="text-xs font-bold text-amber-900">
-                {filledCount} / {fields.length} {hi ? 'विवरण भरे गए' : 'Details Completed'}
-              </span>
+    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+
+      {/* ── Header ── */}
+      <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 bg-gradient-to-br from-amber-50/80 via-white to-white dark:from-amber-950/30 dark:via-zinc-900 dark:to-zinc-900">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 dark:bg-amber-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+              <AlertTriangle className="w-5 h-5" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-zinc-900 mt-1">
-              {hi
-                ? 'कार्रवाई आवश्यक: पुलिस FIR व बैंक लियन के लिए ये विवरण भरें'
-                : 'Action Required: Compulsory details needed to freeze funds & register FIR'}
-            </h3>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/50 px-2.5 py-1 rounded-full">
+                  {hi ? 'अनिवार्य' : 'Required'}
+                </span>
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  {filledCount} / {totalCount} {hi ? 'पूर्ण' : 'completed'}
+                </span>
+              </div>
+              <h3 className="text-[15px] sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 mt-1.5 leading-snug">
+                {hi
+                  ? 'कार्रवाई आवश्यक: फंड फ्रीज और FIR के लिए ये विवरण ज़रूरी हैं'
+                  : 'Action required — details needed to freeze funds & file FIR'}
+              </h3>
+            </div>
           </div>
+
+          {onScrollToUpdates && (
+            <button
+              type="button"
+              onClick={onScrollToUpdates}
+              className="self-start sm:self-center inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-all shadow-sm flex-shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5 opacity-80" />
+              <span>{hi ? 'ऑटो-फिल करें' : 'Auto-fill via Updates'}</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
-        {onScrollToUpdates && (
-          <button
-            type="button"
-            onClick={onScrollToUpdates}
-            className="self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-all shadow-sm flex-shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>{hi ? 'अपडेट्स में लिखकर ऑटो-फिल करें' : 'Auto-fill via Updates'}</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
-        )}
+        {/* ── Progress bar ── */}
+        <div className="mt-4 flex items-center gap-3">
+          <div className="flex-1 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-500 dark:from-amber-500 dark:to-emerald-400 transition-all duration-700 ease-out"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <span className="text-[11px] font-mono font-semibold text-zinc-400 dark:text-zinc-500 tabular-nums flex-shrink-0">
+            {percent}%
+          </span>
+        </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="w-full bg-amber-200/60 h-2 rounded-full mt-4 overflow-hidden">
-        <div
-          className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full transition-all duration-500"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-
-      {/* Checklist items */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mt-4">
+      {/* ── Checklist grid ── */}
+      <div className="px-5 sm:px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-2.5">
         {fields.map((f) => (
           <div
             key={f.key}
-            className={`p-3 rounded-md border transition-all text-xs flex items-start gap-2.5 ${
+            className={`group relative p-3.5 rounded-xl border text-xs transition-all ${
               f.isFilled
-                ? 'bg-emerald-50/50 border-emerald-200/80 text-emerald-900'
-                : 'bg-white border-amber-300 text-zinc-800 shadow-xs'
+                ? 'bg-emerald-50/60 dark:bg-emerald-950/25 border-emerald-200/70 dark:border-emerald-800/40'
+                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700/60'
             }`}
           >
-            {f.isFilled ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-            ) : (
-              <span className="w-3.5 h-3.5 rounded-sm border-2 border-amber-500 flex-shrink-0 mt-0.5" />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1">
-                <span className={`font-semibold ${f.isFilled ? 'text-emerald-950' : 'text-zinc-900'}`}>
-                  {hi ? f.labelHi : f.label}
-                </span>
-                <span
-                  className={`text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm ${
-                    f.isFilled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
-                  }`}
-                >
-                  {f.isFilled ? (hi ? 'पूर्ण' : 'Filled') : (hi ? 'बाकी' : 'Pending')}
-                </span>
+            <div className="flex items-start gap-2.5">
+              {f.isFilled ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-[1px]" />
+              ) : (
+                <Circle className="w-4 h-4 text-zinc-300 dark:text-zinc-600 flex-shrink-0 mt-[1px]" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`font-medium leading-snug ${
+                    f.isFilled
+                      ? 'text-emerald-900 dark:text-emerald-200'
+                      : 'text-zinc-800 dark:text-zinc-200'
+                  }`}>
+                    {hi ? f.labelHi : f.label}
+                  </span>
+                  <span
+                    className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0 ${
+                      f.isFilled
+                        ? 'bg-emerald-100 dark:bg-emerald-800/50 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'
+                    }`}
+                  >
+                    {f.isFilled ? (hi ? 'पूर्ण' : 'Done') : (hi ? 'बाकी' : 'Pending')}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed line-clamp-1">
+                  {f.isFilled ? f.value : hi ? f.importanceHi : f.importance}
+                </p>
               </div>
-              <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-1">
-                {f.isFilled ? `Value: ${f.value}` : hi ? f.importanceHi : f.importance}
-              </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Smart Auto-fill hint */}
-      <div className="mt-4 pt-3 border-t border-amber-200/70 flex items-center gap-2 text-xs text-amber-900">
-        <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
-        <p className="leading-relaxed">
-          {hi
-            ? '💡 आसान तरीका: फॉर्म एडिट करने की जगह नीचे "नई जानकारी जोड़ें" (Updates) में बस लिखें (जैसे: "मेरा UTR 482910394821 है और बैंक SBI है") — AI अपने-आप इन खानों को भर देगा!'
-            : '💡 Fast AI Auto-Fill: Instead of filling manually, just type a quick note in the Updates section below (e.g. "My UTR is 482910394821 and bank is SBI") — our AI will automatically extract and fill these sections for you!'}
-        </p>
+      {/* ── AI hint footer ── */}
+      <div className="px-5 sm:px-6 py-3.5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30">
+        <div className="flex items-start gap-2.5 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+          <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+          <p>
+            {hi
+              ? 'आसान तरीका: नीचे "नई जानकारी जोड़ें" में बस लिखें (जैसे: "मेरा UTR 482910394821 है, बैंक SBI") — AI अपने-आप भर देगा!'
+              : 'Skip manual entry — type details naturally in Updates below (e.g. "UTR is 482910394821, bank is SBI") and AI auto-fills for you.'}
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -7,7 +7,7 @@ interface ApplicableLawsProps {
 }
 
 export default function ApplicableLaws({ laws, hi }: ApplicableLawsProps) {
-  if (laws.length === 0) return null
+  if (!Array.isArray(laws) || laws.length === 0) return null
 
   return (
     <div className="bg-white rounded-lg border border-zinc-200 p-6 shadow-sm">

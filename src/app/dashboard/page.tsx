@@ -333,9 +333,10 @@ function DashboardContent() {
   }
 
   const handleShare = async () => {
+    const amt = Number(r.amount) || 0
     const text = hi
-      ? `🚨 साइबर धोखाधड़ी की शिकायत\nघटना ID: ${r.incidentId}\nराशि: ₹${r.amount.toLocaleString('en-IN')}\nतुरंत 1930 पर कॉल करें।`
-      : `🚨 Cyber Fraud Report\nIncident ID: ${r.incidentId}\nAmount: ₹${r.amount.toLocaleString('en-IN')}\nCall 1930 immediately.`
+      ? `🚨 साइबर धोखाधड़ी की शिकायत\nघटना ID: ${r.incidentId}\nराशि: ₹${amt.toLocaleString('en-IN')}\nतुरंत 1930 पर कॉल करें।`
+      : `🚨 Cyber Fraud Report\nIncident ID: ${r.incidentId}\nAmount: ₹${amt.toLocaleString('en-IN')}\nCall 1930 immediately.`
     if (navigator.share) {
       try { await navigator.share({ title: 'Samarthan Fraud Report', text }) } catch { }
     } else {
