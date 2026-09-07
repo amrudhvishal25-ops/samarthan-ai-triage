@@ -128,8 +128,13 @@ export async function POST(req: NextRequest) {
     })
   } catch (error: unknown) {
     console.error('[WhatsApp Webhook] Error:', error)
-    const msg = error instanceof Error ? error.message : 'Internal error'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    // Never dead-end a WhatsApp user. Return HTTP 200 with a helpful reply so
+    // the bot relays something actionable instead of a vague sync message.
+    const friendly =
+      '⚠️ I could not fully process that just now. Please re-send your message, ' +
+      'or if this is urgent, call the 1930 cybercrime helpline immediately and ' +
+      'file at cybercrime.gov.in.'
+    return NextResponse.json({ success: false, reply: friendly }, { status: 200 })
   }
 }
 

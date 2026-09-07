@@ -55,11 +55,29 @@ const STORAGE_KEY = 'samarthan_complaints'
 function normalize(c: Partial<SavedComplaint>): SavedComplaint {
   return {
     ...c,
-    freezeSteps: c.freezeSteps ?? [],
-    applicableLaws: c.applicableLaws ?? [],
-    statusHistory: c.statusHistory ?? [],
-    evidenceImages: c.evidenceImages ?? [],
-    updates: (c.updates ?? []).map(u => ({
+    // Coerce every field the UI does math/string ops on, so a partial or
+    // legacy record can never crash the dashboard / complaints list.
+    incidentId: c.incidentId ?? '',
+    fraudType: c.fraudType ?? 'Other Cyber Crime',
+    fraudsterIdentifier: c.fraudsterIdentifier ?? 'Not Identified',
+    complainantName: c.complainantName ?? 'Anonymous Complainant',
+    amount: Number(c.amount) || 0,
+    urgencyLevel: c.urgencyLevel ?? 'HIGH',
+    summary: c.summary ?? '',
+    summaryHi: c.summaryHi ?? '',
+    complaintDraft: c.complaintDraft ?? '',
+    complaintDraftHi: c.complaintDraftHi ?? '',
+    frauderContact: c.frauderContact ?? 'Not Provided',
+    bankName: c.bankName ?? 'Not Provided',
+    accountNumber: c.accountNumber ?? 'Not Provided',
+    timeline: c.timeline ?? 'Not Provided',
+    language: c.language ?? 'en',
+    savedAt: c.savedAt ?? new Date().toISOString(),
+    freezeSteps: Array.isArray(c.freezeSteps) ? c.freezeSteps : [],
+    applicableLaws: Array.isArray(c.applicableLaws) ? c.applicableLaws : [],
+    statusHistory: Array.isArray(c.statusHistory) ? c.statusHistory : [],
+    evidenceImages: Array.isArray(c.evidenceImages) ? c.evidenceImages : [],
+    updates: (Array.isArray(c.updates) ? c.updates : []).map(u => ({
       ...u,
       actionPoints: u.actionPoints ?? [],
       actionPointsHi: u.actionPointsHi ?? [],
@@ -199,14 +217,17 @@ export function useComplaints() {
 
   const save = useCallback(async (complaint: Omit<SavedComplaint, 'savedAt' | 'status' | 'statusHistory' | 'evidenceImages' | 'updates'>) => {
     const now = new Date().toISOString()
-    const record: SavedComplaint = {
+    // normalize() coerces every field to its correct type, so a partial or
+    // oddly-typed triage result can never produce a numeric-column INSERT
+    // failure (which would silently drop the complaint from the DB).
+    const record: SavedComplaint = normalize({
       ...complaint,
       savedAt: now,
       status: 'SUBMITTED',
       statusHistory: [{ status: 'SUBMITTED', at: now }],
       evidenceImages: [],
       updates: [],
-    }
+    })
 
     const all = readLocal()
     if (!all.some(c => c.incidentId === complaint.incidentId)) {

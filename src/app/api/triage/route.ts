@@ -143,8 +143,8 @@ export async function POST(req: NextRequest) {
       timeline: new Date().toLocaleString('en-IN'),
       summary: `AI triage summary generated for ${inferredCategory}.`,
       summaryHi: `${inferredCategory} के लिए AI ट्रायज सारांश।`,
-      complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI, Pratham Kamath, hereby state that I have been a victim of a cyber incident regarding ${inferredCategory}. Please investigate this matter and take appropriate action.\n\nYours faithfully,\nPratham Kamath`,
-      complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, प्रथम कामत, यह बयान देता हूँ कि मैं ${inferredCategory} से संबंधित साइबर धोखाधड़ी का शिकार हुआ हूँ। कृपया मामले की जांच करें।\n\nभवदीय,\nप्रथम कामत`,
+      complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI am filing this complaint regarding a cyber incident (${inferredCategory}). Please investigate this matter and take appropriate action.\n\n[Complainant address / city — to be provided]`,
+      complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं ${inferredCategory} से संबंधित एक साइबर घटना की औपचारिक शिकायत दर्ज कर रहा हूँ। कृपया मामले की जांच करें और उचित कार्रवाई करें।\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]`,
       freezeSteps: [
         {
           step: 1,

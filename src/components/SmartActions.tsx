@@ -51,7 +51,7 @@ export default function SmartActions({
     : ''
 
   const handleBankEmail = () => {
-    const cleanBankName = Object.keys(BANK_EMAIL_MAP).find(k => bankName.toLowerCase().includes(k.toLowerCase())) || 'Unknown'
+    const cleanBankName = Object.keys(BANK_EMAIL_MAP).find(k => String(bankName || '').toLowerCase().includes(k.toLowerCase())) || 'Unknown'
     const nodalEmail = cleanBankName !== 'Unknown' ? BANK_EMAIL_MAP[cleanBankName] : 'nodal.officer@rbi.org.in'
     const subject = encodeURIComponent(`URGENT: Fraud Reporting - Incident ${incidentId}`)
     const body = encodeURIComponent(`Dear Nodal Officer,\n\nI am reporting a cyber fraud on my account.\nIncident ID: ${incidentId}\nAmount: Rs ${amount}\n\nPlease freeze the beneficiary account immediately.${followUpText}\n\nRegards,`)

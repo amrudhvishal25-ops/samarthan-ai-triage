@@ -142,7 +142,7 @@ export default function ComplaintsPage() {
                     </div>
                     {c.amount > 0 && (
                       <span className="text-xs text-zinc-500 font-medium">
-                        ₹{c.amount.toLocaleString('en-IN')} lost
+                        ₹{(Number(c.amount) || 0).toLocaleString('en-IN')} lost
                       </span>
                     )}
                   </div>

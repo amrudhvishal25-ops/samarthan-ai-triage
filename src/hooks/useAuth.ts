@@ -11,14 +11,6 @@ export interface DigiLockerUser {
 
 const STORAGE_KEY = 'samarthan_user'
 
-// Simulated DigiLocker user pool — in prod this comes from the OAuth callback
-const MOCK_USER: DigiLockerUser = {
-  name: 'Pratham Kamath',
-  aadhaar: '****-****-8421',
-  dob: '15/03/1994',
-  verified: true,
-}
-
 export function useAuth() {
   const getUser = useCallback((): DigiLockerUser | null => {
     if (typeof window === 'undefined') return null
