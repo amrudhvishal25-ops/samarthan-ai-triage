@@ -13,7 +13,7 @@ export default function Home() {
   const { language, setLanguage } = useTriage()
 
   return (
-    <main className="min-h-screen bg-surface font-sans">
+    <main className="min-h-screen bg-background font-sans">
       <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
 
       <HeroSection language={language} />

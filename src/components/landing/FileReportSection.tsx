@@ -53,7 +53,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
   }, [])
 
   const categories = [
-    { title: 'Financial Fraud', titleHi: 'वित्तीय धोखाधड़ी', desc: 'UPI, banking, and credit-card fraud.', descHi: 'UPI, बैंकिंग और क्रेडिट कार्ड धोखाधड़ी।', icon: <DollarSign className="w-5 h-5" />, iconBg: 'bg-blue-50 text-blue-600' },
+    { title: 'Financial Fraud', titleHi: 'वित्तीय धोखाधड़ी', desc: 'UPI, banking, and credit-card fraud.', descHi: 'UPI, बैंकिंग और क्रेडिट कार्ड धोखाधड़ी।', icon: <DollarSign className="w-5 h-5" />, iconBg: 'bg-primary-tint text-primary' },
     { title: 'Women/Children Related Crime', titleHi: 'महिला/बाल अपराध', desc: 'Harassment, cyberbullying, and abuse.', descHi: 'उत्पीड़न, साइबरबुलिंग और दुर्व्यवहार।', icon: <User className="w-5 h-5" />, iconBg: 'bg-pink-50 text-pink-600' },
     { title: 'Extortion & Blackmail', titleHi: 'जबरन वसूली', desc: 'Loan apps, sextortion, and threats.', descHi: 'ऋण ऐप, ब्लैकमेल और धमकियाँ।', icon: <ShieldAlert className="w-5 h-5" />, iconBg: 'bg-red-50 text-red-600' },
     { title: 'Identity Theft', titleHi: 'पहचान की चोरी', desc: 'PAN/Aadhaar misuse and fake profiles.', descHi: 'पैन/आधार दुरुपयोग और फर्जी प्रोफाइल।', icon: <Fingerprint className="w-5 h-5" />, iconBg: 'bg-purple-50 text-purple-600' },
@@ -105,7 +105,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
     <section id="file-report" className="py-24 bg-surface border-t border-zinc-200">
       <div className="max-w-4xl mx-auto px-6">
         <div className="mb-10">
-          <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">
             {hi ? 'शुरू करें' : 'Get started'}
           </p>
           <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
@@ -185,7 +185,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
         {channel === 'web' && (
           <>
             <input type="file" ref={fileRef} onChange={handleFileSelect} className="hidden" accept="image/*,.pdf" />
-            <div className="rounded-lg border border-zinc-300 bg-white shadow-xs overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent transition-all">
+            <div className="rounded-lg border border-zinc-300 bg-white shadow-xs overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
               <textarea
                 className="w-full p-4 min-h-[120px] outline-none resize-none text-zinc-800 placeholder:text-zinc-400"
                 placeholder={hi ? 'मुझे एक फिशिंग लिंक मिला...' : 'I received a phishing link...'}
@@ -215,7 +215,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-md transition-colors shadow-xs"
                   >
-                    <Mic className="w-4 h-4 text-blue-600" />
+                    <Mic className="w-4 h-4 text-primary" />
                     <span>{hi ? 'आवाज़ का उपयोग करें' : 'Use voice'}</span>
                   </button>
                 </div>
@@ -238,7 +238,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                 <button
                   key={cat.title}
                   onClick={() => handleCategory(cat.title)}
-                  className="flex flex-col items-start p-5 rounded-lg bg-white border border-zinc-200/90 hover:border-blue-500/50 hover:shadow-xs transition-all text-left cursor-pointer"
+                  className="flex flex-col items-start p-5 rounded-lg bg-white border border-zinc-200/90 hover:border-primary/50 hover:shadow-xs transition-all text-left cursor-pointer"
                 >
                   <div className={`p-2.5 rounded-md mb-3 ${cat.iconBg}`}>{cat.icon}</div>
                   <h3 className="text-sm font-bold text-foreground mb-1">{hi ? cat.titleHi : cat.title}</h3>

@@ -5,37 +5,37 @@
 @tailwind utilities;
 
 :root {
-  /* ── Supabase-white · Modern Minimal palette ──────────────── */
-  --background: #ffffff;
-  --surface: #fafafa;          /* subtle raised / section bg   */
-  --foreground: #09090b;
-  --card: #ffffff;
-  --card-foreground: #09090b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --border: #e4e4e7;           /* zinc-200 · 1px hairlines     */
-  --border-strong: #d4d4d8;    /* zinc-300 · emphasised edges  */
-  --input: #e4e4e7;
+  /* ── Deep Oxford Navy & Warm Muted Chalk ──────────────────── */
+  --background: #F7F6F2;       /* Warm muted chalk canvas (zero glare) */
+  --surface: #EFECE6;          /* Soft warm card/section surface tint  */
+  --foreground: #1E2229;       /* Deep charcoal ink (softer than black) */
+  --card: #FFFFFF;             /* Clean card resting on warm chalk    */
+  --card-foreground: #1E2229;
+  --muted: #ECE9E2;            /* Soft warm muted chip/well background */
+  --muted-foreground: #64748B;  /* Muted slate graphite                */
+  --border: #E2DFD7;           /* Warm stone hairline (subtle)        */
+  --border-strong: #D0CCC2;    /* Emphasized warm edge                 */
+  --input: #E2DFD7;
 
-  /* Single accent — cornflower blue (reference palette) */
-  --primary: #3b6ff6;
-  --primary-hover: #2f5fe0;
-  --primary-active: #2a54c9;
-  --primary-foreground: #ffffff;
-  --primary-tint: #eef3ff;     /* 8% wash for active pills / rows */
+  /* Primary: Deep Oxford Navy */
+  --primary: #1E3A5F;
+  --primary-hover: #162C49;
+  --primary-active: #102035;
+  --primary-foreground: #FFFFFF;
+  --primary-tint: #EDF3F8;     /* Morning mist slate wash for active pills */
 
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
+  --secondary: #ECEAE3;
+  --secondary-foreground: #1E2229;
 
-  --destructive: #e4574c;
-  --destructive-hover: #d1453b;
-  --destructive-foreground: #ffffff;
-  --destructive-tint: #fdeceb;
+  --destructive: #C24134;      /* Muted terracotta/brick */
+  --destructive-hover: #AC3428;
+  --destructive-foreground: #FFFFFF;
+  --destructive-tint: #FBF0EE;
 
-  --success: #16a34a;
-  --warning: #d97706;
+  --success: #15803D;
+  --warning: #B45309;          /* Muted amber ochre */
 
-  --ring: #3b6ff6;
+  --ring: #1E3A5F;
 
   /* Two-tier radius */
   --radius-control: 0.375rem;   /* 6px — buttons, inputs, chips */
@@ -45,36 +45,36 @@
 
 .dark {
   color-scheme: dark;
-  --background: #000000;
-  --surface: #09090b;          /* subtle deep dark card/panel */
-  --foreground: #f4f4f5;
-  --card: #09090b;
-  --card-foreground: #f4f4f5;
-  --muted: #18181b;
-  --muted-foreground: #a1a1aa;
-  --border: #27272a;           /* dark zinc hairline */
-  --border-strong: #3f3f46;
-  --input: #27272a;
+  --background: #0C0F14;
+  --surface: #14181F;          /* Midnight slate surface */
+  --foreground: #F0F3F6;
+  --card: #14181F;
+  --card-foreground: #F0F3F6;
+  --muted: #1B212B;
+  --muted-foreground: #8B949E;
+  --border: #232B36;           /* Midnight border */
+  --border-strong: #323E4E;
+  --input: #232B36;
 
-  /* Blue stays exactly the same */
-  --primary: #3b6ff6;
-  --primary-hover: #2f5fe0;
-  --primary-active: #2a54c9;
-  --primary-foreground: #ffffff;
-  --primary-tint: rgba(59, 111, 246, 0.15);
+  /* Oxford Navy accent in dark mode */
+  --primary: #3E78B8;
+  --primary-hover: #4F8AC8;
+  --primary-active: #32649B;
+  --primary-foreground: #FFFFFF;
+  --primary-tint: rgba(62, 120, 184, 0.15);
 
-  --secondary: #18181b;
-  --secondary-foreground: #f4f4f5;
+  --secondary: #1B212B;
+  --secondary-foreground: #F0F3F6;
 
-  --destructive: #ef4444;
-  --destructive-hover: #dc2626;
-  --destructive-foreground: #ffffff;
-  --destructive-tint: #450a0a;
+  --destructive: #E05244;
+  --destructive-hover: #C93F32;
+  --destructive-foreground: #FFFFFF;
+  --destructive-tint: #3B1412;
 
-  --success: #22c55e;
-  --warning: #f59e0b;
+  --success: #22C55E;
+  --warning: #F59E0B;
 
-  --ring: #3b6ff6;
+  --ring: #3E78B8;
 }
 
 html {

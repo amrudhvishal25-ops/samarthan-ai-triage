@@ -16,7 +16,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg p-4 border border-zinc-200/80 shadow-2xs">
             <div className="flex items-center gap-1.5 text-zinc-500 mb-1">
-              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+              <TrendingUp className="w-3.5 h-3.5 text-primary" />
               <span className="text-[11px] font-mono uppercase tracking-wider">
                 {isHi ? 'वार्षिक साइबर मामले' : 'Annual Cyber Frauds'}
               </span>
@@ -37,7 +37,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
               </span>
             </div>
             <p className="text-2xl font-extrabold text-zinc-900 tracking-tight font-mono">
-              {isHi ? '₹66,000 करोड़' : '₹66,000 Cr'}
+              ₹66,000 Cr
             </p>
             <p className="text-[11px] text-zinc-400 mt-0.5">
               {isHi ? 'वार्षिक राष्ट्रीय वित्तीय हानि' : 'Lost to digital financial fraud'}
@@ -59,8 +59,8 @@ export default function TrustStrip({ language }: TrustStripProps) {
             </p>
           </div>
 
-          <div className="bg-blue-50/80 rounded-lg p-4 border border-blue-200/80 shadow-2xs">
-            <div className="flex items-center gap-1.5 text-blue-700 mb-1">
+          <div className="bg-primary-tint/80 rounded-lg p-4 border border-primary/20 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-primary mb-1">
               <ShieldCheck className="w-3.5 h-3.5 text-primary" />
               <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
                 {isHi ? 'समर्थन ट्रायज गति' : 'Samarthan AI Triage'}
@@ -69,7 +69,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
             <p className="text-2xl font-extrabold text-primary tracking-tight font-mono">
               60s
             </p>
-            <p className="text-[11px] text-blue-600/80 mt-0.5">
+            <p className="text-[11px] text-primary/80 mt-0.5">
               {isHi ? 'घबराहट से FIR व बैंक फ्रीज' : 'Immediate freeze dossier generated'}
             </p>
           </div>
@@ -110,7 +110,7 @@ export default function TrustStrip({ language }: TrustStripProps) {
           <div className="md:col-span-3 bg-white rounded-lg p-7 md:p-8 border border-zinc-200 flex items-center justify-between shadow-xs">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
-                <Fingerprint className="w-4 h-4 text-blue-600" />
+                <Fingerprint className="w-4 h-4 text-primary" />
                 <p className="text-[11px] font-mono font-semibold uppercase tracking-widest text-zinc-500">
                   {isHi ? "पहचान सत्यापन" : "Identity Verification"}
                 </p>

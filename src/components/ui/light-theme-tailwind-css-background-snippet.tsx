@@ -8,7 +8,7 @@ export const RadialBackground = ({ className }: { className?: string }) => {
         className="absolute inset-0 size-full"
         style={{
           background:
-            "radial-gradient(100% 70% at 50% -5%, rgba(59, 111, 246, 0.08) 0%, transparent 70%)",
+            "radial-gradient(100% 70% at 50% -5%, rgba(30, 58, 95, 0.06) 0%, transparent 70%)",
         }}
       />
       {/* Supabase-Grade Delicate Dot Matrix */}

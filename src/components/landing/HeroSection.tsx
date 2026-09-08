@@ -131,7 +131,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
         {/* Eyebrow Pill */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-6 backdrop-blur-sm">
           <span className="flex h-2 w-2 relative">
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
           </span>
           <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
             {hi ? 'राष्ट्रीय साइबर अपराध रिपोर्टिंग फ्रेमवर्क (NCRP 1930) • प्रोटोटाइप' : 'National Cybercrime Reporting Framework (NCRP 1930) • Prototype'}
@@ -174,7 +174,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
               {hi ? 'डिजीलॉकर प्रमाणित पहचान' : 'DigiLocker Verified'}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               {hi ? 'IT एक्ट व BNS वैधानिक मैपिंग' : 'IT Act & BNS Statutory Routing'}
             </span>
             <span className="flex items-center gap-1.5">
@@ -224,8 +224,8 @@ export default function HeroSection({ language }: HeroSectionProps) {
               />
 
               {isTranscribing && (
-                <div className="mt-4 p-4 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center gap-2.5 text-xs font-semibold text-primary">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <div className="mt-4 p-4 rounded-lg bg-primary-tint border border-primary/20 flex items-center justify-center gap-2.5 text-xs font-semibold text-primary">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
                   <span>{hi ? 'आपकी आवाज़ सुनी जा रही है और रिपोर्ट तैयार हो रही है...' : 'Transcribing what you said and preparing report...'}</span>
                 </div>
               )}
@@ -246,7 +246,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                         key={idx}
                         type="button"
                         onClick={() => setCommitted(hi ? sample.hi : sample.en)}
-                        className="text-xs bg-zinc-50 dark:bg-zinc-900 hover:bg-blue-50/70 dark:hover:bg-blue-950/50 border border-zinc-200/80 dark:border-zinc-800 hover:border-blue-200 dark:hover:border-blue-800 text-zinc-600 dark:text-zinc-300 hover:text-primary px-2.5 py-1 rounded-md transition-all font-medium"
+                        className="text-xs bg-zinc-50 dark:bg-zinc-900 hover:bg-primary-tint border border-zinc-200/80 dark:border-zinc-800 hover:border-primary/30 text-zinc-600 dark:text-zinc-300 hover:text-primary px-2.5 py-1 rounded-md transition-all font-medium"
                       >
                         &ldquo;{hi ? sample.hi : sample.en}&rdquo;
                       </button>
@@ -288,7 +288,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                         <button
                           type="button"
                           onClick={handleResetRecord}
-                          className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                          className="text-[11px] text-primary hover:underline font-medium flex items-center gap-1"
                         >
                           <RotateCcw className="w-3 h-3" />
                           <span>{c.reRecord}</span>
@@ -304,7 +304,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                     <div className="space-y-2.5 text-sm">
                       <Row label={c.fType} value={
                         <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
-                          <result.Icon className="w-3.5 h-3.5 text-blue-600" />
+                          <result.Icon className="w-3.5 h-3.5 text-primary" />
                           {result.type}
                         </span>
                       } />
