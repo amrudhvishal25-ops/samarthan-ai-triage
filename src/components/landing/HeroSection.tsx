@@ -14,9 +14,9 @@ interface HeroSectionProps {
 }
 
 const EN = {
-  headline: 'Tell us what happened.',
-  headlineHighlight: 'We handle the rest.',
-  sub: 'Speak in your own words in Hindi or English. Samarthan turns it into a filed cybercrime complaint, cites the law, and tells you exactly who to call in under 60 seconds.',
+  headline: 'Cyber fraud empties your account in minutes.',
+  headlineHighlight: 'The complaint takes days.',
+  sub: 'The money moves fast. The official filing is slow: legal English, forms asking which section of the IT Act applies, no clue who to call first. Say what happened in Hindi or English. In under a minute Samarthan turns it into a filed cybercrime complaint, cites the right law, and tells you exactly who to call to freeze the money.',
   primary: 'Start a report',
   secondary: 'See how it works',
   demoHint: 'Try us out: tap the mic and say your report',
@@ -32,9 +32,9 @@ const EN = {
 }
 
 const HI = {
-  headline: 'बताएं क्या हुआ।',
-  headlineHighlight: 'बाकी हम संभालेंगे।',
-  sub: 'हिंदी या अंग्रेजी में अपने शब्दों में बोलें। समर्थन इसे 60 सेकंड के अंदर दर्ज शिकायत में बदलता है, कानून उद्धृत करता है और बताता है कि किसे कॉल करना है।',
+  headline: 'साइबर धोखाधड़ी मिनटों में खाता खाली कर देती है।',
+  headlineHighlight: 'शिकायत में दिन लग जाते हैं।',
+  sub: 'पैसा तेज़ी से निकलता है। आधिकारिक शिकायत धीमी है: कानूनी अंग्रेज़ी, फ़ॉर्म जो पूछते हैं कि IT एक्ट की कौन सी धारा लागू होती है, और यह पता नहीं कि पहले किसे कॉल करें। हिंदी या अंग्रेज़ी में बताएं क्या हुआ। एक मिनट से कम में समर्थन उसे दर्ज साइबर अपराध शिकायत में बदलता है, सही कानून उद्धृत करता है, और बताता है कि पैसा फ्रीज़ कराने के लिए किसे कॉल करना है।',
   primary: 'रिपोर्ट शुरू करें',
   secondary: 'यह कैसे काम करता है',
   demoHint: 'अभी आज़माएं: माइक दबाएं और अपनी शिकायत बोलें',
