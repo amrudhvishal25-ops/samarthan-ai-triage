@@ -102,17 +102,17 @@ export default function HowItWorks({ language }: HowItWorksProps) {
       ]
 
   return (
-    <section id="how-it-works" className="py-28 md:py-36 bg-surface border-t border-zinc-200/80">
+    <section id="how-it-works" className="py-20 md:py-24 bg-surface border-t border-zinc-200/80">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
-        <div className="mb-20 md:mb-24 max-w-4xl mx-auto text-center">
-          <p className="text-xs sm:text-sm font-bold text-primary uppercase tracking-widest mb-3.5">
+        <div className="mb-14 md:mb-16 max-w-2xl mx-auto text-center">
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2.5">
             {isHi ? 'प्रक्रिया • 60 सेकंड समाधान' : 'The Process • 60-Second Resolution'}
           </p>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground tracking-tight leading-[1.08]">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
             {isHi ? 'तीन सरल कदम। एक मिनट में समाधान।' : 'Three clear steps. Finished in under a minute.'}
           </h2>
-          <p className="mt-5 text-lg sm:text-xl text-zinc-600 dark:text-zinc-300 leading-relaxed font-normal max-w-3xl mx-auto">
+          <p className="mt-3 text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
             {isHi
               ? 'बिना किसी जटिल कानूनी फॉर्म के साइबर धोखाधड़ी की शिकायत दर्ज करें, सही धाराएं प्राप्त करें और बैंक खाता फ्रीज कराने की प्रक्रिया शुरू करें।'
               : 'File cybercrime complaints, obtain applicable legal sections, and initiate bank freeze steps without navigating complicated bureaucratic questionnaires.'}
