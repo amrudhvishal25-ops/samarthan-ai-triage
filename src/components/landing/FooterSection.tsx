@@ -29,18 +29,18 @@ export default function FooterSection({ language }: FooterSectionProps) {
     <>
       {/* Final CTA */}
       <section className="bg-surface border-t border-border">
-        <div className="max-w-4xl mx-auto px-6 py-24 text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-24 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
             {hi ? 'गोल्डन ऑवर में हर मिनट मायने रखता है।' : 'Every minute matters in the golden hour.'}
           </h2>
-          <p className="mt-4 text-zinc-500 max-w-xl mx-auto">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-zinc-500 max-w-xl mx-auto leading-relaxed">
             {hi
               ? 'धोखाधड़ी की रिपोर्ट जितनी जल्दी होगी, पैसा वापस मिलने की संभावना उतनी ज़्यादा। अभी शुरू करें।'
               : 'The sooner a fraud is reported, the higher the chance of getting the money back. Start now.'}
           </p>
           <button
             onClick={startReport}
-            className="mt-8 inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-md px-8 py-3.5 text-sm font-semibold transition-colors"
+            className="mt-6 sm:mt-8 w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-8 py-3.5 text-sm font-semibold transition-colors min-h-[44px] cursor-pointer"
           >
             {hi ? 'रिपोर्ट शुरू करें' : 'Start a report'}
             <ArrowRight className="w-4 h-4" />
@@ -50,7 +50,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
 
       {/* Footer */}
       <footer className="bg-white border-t border-border">
-        <div className="max-w-6xl mx-auto px-6 py-14">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="col-span-2 md:col-span-1">
               <div className="text-lg font-bold text-foreground">Samarthan</div>

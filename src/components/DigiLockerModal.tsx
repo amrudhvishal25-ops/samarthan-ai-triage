@@ -107,12 +107,12 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative bg-white rounded-lg border border-zinc-200 shadow-2xl w-full max-w-md overflow-hidden"
+            className="relative bg-white rounded-2xl border border-zinc-200 shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden"
             role="dialog"
             aria-modal="true"
           >
             {step !== 'success' && (
-              <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors h-auto min-h-0 z-10">
+              <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors z-10 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             )}
@@ -121,7 +121,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
 
               {/* INTRO / MOCK SIGN IN STEP */}
               {step === 'intro' && (
-                <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
+                <motion.div key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-5 sm:p-6 overflow-y-auto">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
                       <ShieldCheck className="w-5 h-5 text-white" />
@@ -136,7 +136,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                   <button
                     type="button"
                     onClick={handleDirectLogin}
-                    className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-md py-2.5 font-medium text-xs transition-all shadow-sm mb-3.5"
+                    className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl py-3 font-medium text-xs sm:text-sm transition-all shadow-sm mb-3.5 min-h-[44px] cursor-pointer"
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                     <span>1-Click Direct Login (Verified Citizen)</span>
@@ -162,7 +162,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                           value={name}
                           onChange={(e) => { setName(e.target.value); setNameError(false) }}
                           placeholder="e.g. Parichay Prabhu"
-                          className={`w-full border rounded-md pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:ring-2 transition-all ${nameError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:border-zinc-900 focus:ring-zinc-900/10'}`}
+                          className={`w-full border rounded-md pl-10 pr-4 py-2.5 text-base sm:text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:ring-2 transition-all ${nameError ? 'border-red-400 focus:ring-red-200' : 'border-zinc-200 focus:border-zinc-900 focus:ring-zinc-900/10'}`}
                         />
                       </div>
                       {nameError && <p className="text-xs text-red-500 mt-1">Please enter your name to verify identity.</p>}
@@ -180,7 +180,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
                           value={aadhaar}
                           onChange={(e) => setAadhaar(e.target.value)}
                           placeholder="e.g. 5432 9876 1234 (optional)"
-                          className="w-full border border-zinc-200 rounded-md pl-10 pr-4 py-2.5 text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition-all"
+                          className="w-full border border-zinc-200 rounded-md pl-10 pr-4 py-2.5 text-base sm:text-sm text-zinc-900 bg-zinc-50/70 placeholder:text-zinc-400 outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition-all"
                         />
                       </div>
                       <p className="text-[11px] text-zinc-400 mt-1">Leave blank to use default masked ID ****-****-8421</p>
@@ -198,7 +198,7 @@ export default function DigiLockerModal({ open, onClose, onSuccess }: DigiLocker
 
                     <button
                       type="submit"
-                      className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white rounded-md py-3 font-semibold text-sm transition-all shadow-sm"
+                      className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white rounded-xl py-3.5 font-semibold text-sm transition-all shadow-sm min-h-[44px] cursor-pointer"
                     >
                       <ShieldCheck className="w-4 h-4" />
                       Continue with DigiLocker

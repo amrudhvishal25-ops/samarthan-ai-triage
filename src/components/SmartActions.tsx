@@ -101,7 +101,7 @@ export default function SmartActions({
     : (hi ? 'रिपोर्ट का मसौदा तैयार — क्लिपबोर्ड पर कॉपी (डेमो)' : 'Report drafted & copied to clipboard (demo)')
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 shadow-sm">
       <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1 uppercase tracking-wide">
         {hi ? 'स्मार्ट कार्रवाई' : 'Smart Escalation'}
       </h3>

@@ -102,17 +102,17 @@ export default function HowItWorks({ language }: HowItWorksProps) {
       ]
 
   return (
-    <section id="how-it-works" className="py-20 md:py-24 bg-surface border-t border-zinc-200/80">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+    <section id="how-it-works" className="py-14 sm:py-20 md:py-24 bg-surface border-t border-zinc-200/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="mb-14 md:mb-16 max-w-2xl mx-auto text-center">
-          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2.5">
+        <div className="mb-10 sm:mb-14 md:mb-16 max-w-2xl mx-auto text-center">
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">
             {isHi ? 'प्रक्रिया • 60 सेकंड समाधान' : 'The Process • 60-Second Resolution'}
           </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
             {isHi ? 'तीन सरल कदम। एक मिनट में समाधान।' : 'Three clear steps. Finished in under a minute.'}
           </h2>
-          <p className="mt-3 text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
+          <p className="mt-2.5 sm:mt-3 text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
             {isHi
               ? 'बिना किसी जटिल कानूनी फॉर्म के साइबर धोखाधड़ी की शिकायत दर्ज करें, सही धाराएं प्राप्त करें और बैंक खाता फ्रीज कराने की प्रक्रिया शुरू करें।'
               : 'File cybercrime complaints, obtain applicable legal sections, and initiate bank freeze steps without navigating complicated bureaucratic questionnaires.'}
@@ -120,33 +120,33 @@ export default function HowItWorks({ language }: HowItWorksProps) {
         </div>
 
         {/* 3 Step Cards */}
-        <div className="space-y-28 md:space-y-36">
+        <div className="space-y-16 sm:space-y-24 md:space-y-36">
           {steps.map((step, i) => (
             <div
               key={step.n}
-              className={`grid lg:grid-cols-12 gap-10 lg:gap-16 items-center ${i % 2 === 1 ? 'lg:[&>*:first-child]:order-2' : ''}`}
+              className={`grid lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-16 items-center ${i % 2 === 1 ? 'lg:[&>*:first-child]:order-2' : ''}`}
             >
               {/* Text column (5 cols) */}
               <div className="lg:col-span-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-base font-mono font-extrabold text-primary bg-primary-tint border border-primary/20 px-3 py-1 rounded-lg">
+                <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                  <span className="text-sm sm:text-base font-mono font-extrabold text-primary bg-primary-tint border border-primary/20 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg">
                     {step.n}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 px-3 py-1 rounded-lg shadow-2xs">
-                    <Clock className="w-4 h-4 text-primary" />
+                  <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg shadow-2xs">
+                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                     {step.duration}
                   </span>
                 </div>
 
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-snug">{step.title}</h3>
-                <p className="mt-4 text-zinc-600 dark:text-zinc-300 leading-relaxed text-base sm:text-[17px]">{step.body}</p>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight leading-snug">{step.title}</h3>
+                <p className="mt-3 sm:mt-4 text-zinc-600 dark:text-zinc-300 leading-relaxed text-sm sm:text-base md:text-[17px]">{step.body}</p>
 
                 {/* Grounded feature point list */}
-                <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="mt-5 sm:mt-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   {step.points.map((point, ptIdx) => (
                     <div
                       key={ptIdx}
-                      className="flex items-start gap-2.5 p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 text-xs sm:text-[13px] font-medium text-zinc-700 dark:text-zinc-300 shadow-2xs"
+                      className="flex items-start gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 text-xs sm:text-[13px] font-medium text-zinc-700 dark:text-zinc-300 shadow-2xs"
                     >
                       <span className="shrink-0 mt-0.5">{point.icon}</span>
                       <span className="leading-snug">{point.text}</span>
@@ -157,9 +157,9 @@ export default function HowItWorks({ language }: HowItWorksProps) {
 
               {/* Screenshot column: 7 cols (Generous width & natural height, noticeable details) */}
               <div className="lg:col-span-7">
-                <div className="rounded-[18px] border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.18),0_8px_24px_rgba(0,0,0,0.06)] group">
+                <div className="rounded-xl sm:rounded-[18px] border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.04)] sm:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.18),0_8px_24px_rgba(0,0,0,0.06)] group">
                   {/* Browser top chrome bar */}
-                  <div className="h-8 md:h-9 px-4 bg-zinc-100/90 dark:bg-zinc-850 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
+                  <div className="h-8 md:h-9 px-3 sm:px-4 bg-zinc-100/90 dark:bg-zinc-850 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600 block" />
                       <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600 block" />

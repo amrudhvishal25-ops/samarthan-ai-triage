@@ -97,10 +97,10 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
   }
 
   return (
-    <section id="comparison" className="py-24 bg-white border-t border-zinc-200">
-      <div className="max-w-5xl mx-auto px-6">
+    <section id="comparison" className="py-14 sm:py-24 bg-white border-t border-zinc-200">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Top Centered Pill Badge */}
-        <div className="flex justify-center mb-5">
+        <div className="flex justify-center mb-4 sm:mb-5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-zinc-200 rounded-md shadow-xs text-xs font-semibold text-zinc-800 tracking-tight">
             <ShieldCheck className="w-3.5 h-3.5 text-zinc-900" />
             <span>{isHi ? "समर्थन क्यों?" : "Why Samarthan"}</span>
@@ -108,11 +108,11 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
         </div>
 
         {/* Headline & Subheadline */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-zinc-950 tracking-tight leading-tight">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-zinc-950 tracking-tight leading-tight">
             {isHi ? "पहले दिन से अलग, उद्देश्यपूर्ण।" : "Built differently, on purpose"}
           </h2>
-          <p className="text-zinc-500 text-sm md:text-base mt-4 leading-relaxed">
+          <p className="text-zinc-500 text-sm md:text-base mt-3 sm:mt-4 leading-relaxed">
             {isHi
               ? "हमने उन महत्वपूर्ण 'गोल्डन ऑवर' विवरणों पर ध्यान केंद्रित किया जिन्हें पारंपरिक पोर्टल अनदेखा कर देते हैं। जानिए इसका साइबर पीड़ितों के लिए क्या मतलब है।"
               : "We obsessed over the critical golden hour details legacy systems ignore. Here is what that means for victims every single second."}
@@ -120,36 +120,36 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
         </div>
 
         {/* Two-Column Side-by-Side Cards (Us vs. Them) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 items-stretch">
           {/* LEFT CARD: Samarthan (Recommended / Hero) */}
-          <div className="bg-white border-2 border-primary rounded-lg p-7 md:p-8 flex flex-col justify-between shadow-sm relative transition-colors">
+          <div className="bg-white border-2 border-primary rounded-xl p-5 sm:p-7 md:p-8 flex flex-col justify-between shadow-sm relative transition-colors">
             <div>
               {/* Header */}
               <div className="flex items-center gap-3">
-                <h3 className="text-2xl font-bold text-zinc-950 tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-bold text-zinc-950 tracking-tight">
                   {isHi ? "समर्थन" : "Samarthan"}
                 </h3>
-                <span className="bg-primary text-white text-[11px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded font-semibold">
+                <span className="bg-primary text-white text-[10.5px] sm:text-[11px] font-mono uppercase tracking-wider px-2 sm:px-2.5 py-0.5 rounded font-semibold">
                   {isHi ? "अनुशंसित" : "Recommended"}
                 </span>
               </div>
-              <p className="text-sm text-zinc-500 mt-2 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-500 mt-2 leading-relaxed">
                 {isHi
                   ? "गोल्डन ऑवर में वह सब कुछ जो एक पीड़ित को चाहिए, बिना प्रशासनिक झंझट के।"
                   : "Everything a victim needs in the golden hour, without the administrative runaround."}
               </p>
 
               {/* Divider */}
-              <div className="border-b border-zinc-200 my-6" />
+              <div className="border-b border-zinc-200 my-5 sm:my-6" />
 
               {/* Checkmark List */}
-              <ul className="space-y-4">
+              <ul className="space-y-3.5 sm:space-y-4">
                 {samarthanPoints.map((point, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className="w-5 h-5 bg-primary text-white flex items-center justify-center shrink-0 rounded-sm mt-0.5">
                       <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                     </div>
-                    <span className="text-sm font-semibold text-zinc-900 leading-snug">
+                    <span className="text-xs sm:text-sm font-semibold text-zinc-900 leading-snug">
                       {isHi ? point.hi : point.en}
                     </span>
                   </li>
@@ -158,10 +158,10 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             </div>
 
             {/* Bottom CTA Button */}
-            <div className="pt-8">
+            <div className="pt-6 sm:pt-8">
               <button
                 onClick={handleScrollToReport}
-                className="w-full bg-primary hover:bg-primary-hover text-white font-semibold py-3.5 px-6 rounded-md text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group"
+                className="w-full bg-primary hover:bg-primary-hover text-white font-semibold py-3.5 px-6 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group min-h-[44px]"
               >
                 <span>{isHi ? "मुफ़्त शिकायत दर्ज करें" : "Start for Free"}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -170,31 +170,31 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
           </div>
 
           {/* RIGHT CARD: The others (Traditional Portals) */}
-          <div className="bg-zinc-50/70 border border-zinc-200 rounded-lg p-7 md:p-8 flex flex-col justify-between">
+          <div className="bg-zinc-50/70 border border-zinc-200 rounded-xl p-5 sm:p-7 md:p-8 flex flex-col justify-between">
             <div>
               {/* Header */}
               <div>
-                <h3 className="text-2xl font-bold text-zinc-800 tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-bold text-zinc-800 tracking-tight">
                   {isHi ? "पारंपरिक पोर्टल" : "The others"}
                 </h3>
               </div>
-              <p className="text-sm text-zinc-500 mt-2 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-500 mt-2 leading-relaxed">
                 {isHi
                   ? "पारंपरिक पुलिस और सरकारी पोर्टलों पर पीड़ितों द्वारा झेली जाने वाली सामान्य रुकावटें।"
                   : "Common friction points victims encounter with legacy reporting platforms."}
               </p>
 
               {/* Divider */}
-              <div className="border-b border-zinc-200 my-6" />
+              <div className="border-b border-zinc-200 my-5 sm:my-6" />
 
               {/* Cross Points List */}
-              <ul className="space-y-4">
+              <ul className="space-y-3.5 sm:space-y-4">
                 {othersPoints.map((point, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className="w-5 h-5 bg-zinc-200/90 text-zinc-400 flex items-center justify-center shrink-0 rounded-sm mt-0.5">
                       <X className="w-3.5 h-3.5 stroke-[2]" />
                     </div>
-                    <span className="text-sm text-zinc-500 leading-snug">
+                    <span className="text-xs sm:text-sm text-zinc-500 leading-snug">
                       {isHi ? point.hi : point.en}
                     </span>
                   </li>
@@ -203,10 +203,10 @@ export default function ComparisonTable({ language }: ComparisonTableProps) {
             </div>
 
             {/* Bottom CTA Button */}
-            <div className="pt-8">
+            <div className="pt-6 sm:pt-8">
               <button
                 onClick={handleScrollToHowItWorks}
-                className="w-full bg-zinc-200/70 hover:bg-zinc-200 text-zinc-700 font-semibold py-3.5 px-6 rounded-md text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group"
+                className="w-full bg-zinc-200/70 hover:bg-zinc-200 text-zinc-700 font-semibold py-3.5 px-6 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer group min-h-[44px]"
               >
                 <span>{isHi ? "देखें पीड़ित समर्थन क्यों चुनते हैं" : "See Why Victims Switch"}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

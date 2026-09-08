@@ -378,22 +378,22 @@ function DashboardContent() {
         updates={updates}
       />
 
-      <div className="max-w-7xl mx-auto px-6 py-8 no-print">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 no-print">
 
         {/* Page Title */}
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex items-start justify-between gap-4">
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight">
               {hi ? 'आपकी शिकायत तैयार है' : 'Your Report is Ready'}
             </h1>
-            <p className="text-sm text-zinc-500 mt-1">
+            <p className="text-xs sm:text-sm text-zinc-500 mt-1">
               {hi ? 'AI द्वारा विवरण निकाला गया। संपादित करें और तुरंत कार्रवाई करें।'
                 : 'Details extracted by AI. Review, edit, and take action immediately.'}
             </p>
           </div>
           <button
             onClick={() => { reset(); router.push('/') }}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors "
+            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors cursor-pointer min-h-[36px]"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {hi ? 'फिर से' : 'New Report'}
@@ -402,7 +402,7 @@ function DashboardContent() {
 
         {/* Compulsory Details Reminder */}
         {r && (
-          <div className="mb-6" id="compulsory-details-reminder">
+          <div className="mb-5 sm:mb-6" id="compulsory-details-reminder">
             <CompulsoryDetailsReminder
               triageResult={r}
               language={language}
@@ -425,7 +425,7 @@ function DashboardContent() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-6 p-4 rounded-md bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-700 text-white shadow-md flex items-center justify-between gap-3 border border-emerald-400/40"
+              className="mb-5 sm:mb-6 p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-700 text-white shadow-md flex items-center justify-between gap-3 border border-emerald-400/40"
             >
               <div className="flex items-center gap-2.5">
                 <Sparkles className="w-5 h-5 text-amber-300 animate-pulse flex-shrink-0" />
@@ -434,7 +434,7 @@ function DashboardContent() {
               <button
                 type="button"
                 onClick={() => setAutoFillBanner(null)}
-                className="text-xs text-white/80 hover:text-white px-2.5 py-1 rounded-md bg-black/20 hover:bg-black/30 transition-colors flex-shrink-0"
+                className="text-xs text-white/80 hover:text-white px-2.5 py-1 rounded-md bg-black/20 hover:bg-black/30 transition-colors flex-shrink-0 cursor-pointer"
               >
                 ✕
               </button>
@@ -442,21 +442,21 @@ function DashboardContent() {
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
 
           {/* ── LEFT COLUMN ── */}
           <div className="lg:col-span-7 space-y-4">
 
             {/* Editable Report Details */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="border border-zinc-200 rounded-lg bg-white shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
+              className="border border-zinc-200 rounded-xl bg-white shadow-sm overflow-hidden">
+              <div className="px-4 sm:px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
                 <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                   {hi ? 'शिकायत विवरण' : 'Complaint Details'}
                 </p>
               </div>
-              <div className="px-5 py-5 space-y-4">
+              <div className="px-4 sm:px-5 py-4 sm:py-5 space-y-4">
 
                 {/* Category */}
                 <div>
@@ -467,7 +467,7 @@ function DashboardContent() {
                     id="crime-category"
                     value={r.fraudType}
                     onChange={(e) => handleUpdate('fraudType', e.target.value)}
-                    className="w-full border border-zinc-200 rounded-md p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                    className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   >
                     <option value="Financial Fraud">Financial Fraud</option>
                     <option value="Women/Children Related Crime">Women/Children Related Crime</option>
@@ -489,12 +489,12 @@ function DashboardContent() {
                     value={r.complainantName || ''}
                     onChange={(e) => handleUpdate('complainantName', e.target.value)}
                     placeholder={hi ? 'उदा. राजेश कुमार' : 'e.g. Citizen Complainant'}
-                    className="w-full border border-zinc-200 rounded-md p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                    className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   />
                 </div>
 
                 {/* Fraudster Name + Amount */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="fraudster-name" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
                       {hi ? 'आरोपी का नाम' : 'Fraudster Name'}
@@ -503,7 +503,7 @@ function DashboardContent() {
                       id="fraudster-name"
                       type="text" value={r.fraudsterIdentifier || ''}
                       onChange={(e) => handleUpdate('fraudsterIdentifier', e.target.value)}
-                      className="w-full border border-zinc-200 rounded-md p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                      className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                   <div>
@@ -514,7 +514,7 @@ function DashboardContent() {
                       id="amount-lost"
                       type="number" value={r.amount}
                       onChange={(e) => handleUpdate('amount', Number(e.target.value))}
-                      className="w-full border border-zinc-200 rounded-md p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                      className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -528,7 +528,7 @@ function DashboardContent() {
                     id="fraudster-contact"
                     type="text" value={r.frauderContact}
                     onChange={(e) => handleUpdate('frauderContact', e.target.value)}
-                    className="w-full border border-zinc-200 rounded-md p-3 text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                    className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   />
                 </div>
 
@@ -546,7 +546,7 @@ function DashboardContent() {
                       : handleUpdate('complaintDraft', e.target.value)
                     }
                     rows={10}
-                    className="w-full border border-zinc-200 rounded-md p-4 text-sm font-mono leading-relaxed text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none"
+                    className="w-full border border-zinc-200 rounded-md p-3 sm:p-4 text-base sm:text-sm font-mono leading-relaxed text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none"
                   />
                 </div>
               </div>
@@ -571,7 +571,7 @@ function DashboardContent() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-col gap-3">
               <button
                 onClick={() => setCallModalHotline('1930')}
-                className="w-full flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-700 text-white rounded-md py-4 font-semibold text-base transition-all shadow-sm"
+                className="w-full flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-3.5 sm:py-4 font-semibold text-sm sm:text-base transition-all shadow-sm min-h-[50px] cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <Phone className="w-5 h-5" />
@@ -585,7 +585,7 @@ function DashboardContent() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleShare}
-                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 rounded-md py-3 font-semibold text-sm transition-all"
+                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 rounded-xl py-3 font-semibold text-xs sm:text-sm transition-all min-h-[44px] cursor-pointer"
                 >
                   <div className="flex items-center gap-1.5">
                     <Share2 className="w-4 h-4" />
@@ -597,7 +597,7 @@ function DashboardContent() {
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-md py-3 font-medium text-sm transition-all"
+                  className="flex flex-col items-center justify-center gap-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-xl py-3 font-medium text-xs sm:text-sm transition-all min-h-[44px] cursor-pointer"
                 >
                   <div className="flex items-center gap-1.5">
                     <Printer className="w-4 h-4" />
@@ -616,13 +616,13 @@ function DashboardContent() {
 
           </div>
 
-          {/* ── RIGHT COLUMN ── */}
-          <div className="lg:col-span-5 space-y-4">
+          {/* ── RIGHT COLUMN (Order-First on mobile so emergency actions & incident ID appear above the fold) ── */}
+          <div className="lg:col-span-5 space-y-4 order-first lg:order-last">
 
             {/* Incident ID + Urgency */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
               className="grid grid-cols-2 gap-3">
-              <div className="border border-zinc-200 rounded-lg bg-white p-4 shadow-sm">
+              <div className="border border-zinc-200 rounded-xl bg-white p-3.5 sm:p-4 shadow-sm">
                 <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">
                   {hi ? 'घटना संख्या' : 'Incident ID'}
                 </p>

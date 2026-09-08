@@ -125,42 +125,42 @@ export default function HeroSection({ language }: HeroSectionProps) {
   }
 
   return (
-    <section className="relative w-full pt-6 pb-16 md:pt-10 md:pb-24 overflow-hidden isolate">
+    <section className="relative w-full pt-5 pb-12 sm:pt-8 sm:pb-20 md:pt-10 md:pb-24 overflow-hidden isolate">
       <RadialBackground />
-      <div className="relative z-10 max-w-6xl mx-auto px-6">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
         {/* Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-6 backdrop-blur-sm">
+        <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-5 sm:mb-6 backdrop-blur-sm">
           <span className="flex h-2 w-2 relative">
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
           </span>
-          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
+          <span className="text-[11px] sm:text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
             {hi ? 'राष्ट्रीय साइबर अपराध रिपोर्टिंग फ्रेमवर्क (NCRP 1930) • प्रोटोटाइप' : 'National Cybercrime Reporting Framework (NCRP 1930) • Prototype'}
           </span>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-14 items-start">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-14 items-start">
           {/* Left: copy */}
           <div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.08]">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.12]">
               <span className="block py-0.5">{c.headline}</span>
               <span className="block text-primary mt-1 py-0.5">{c.headlineHighlight}</span>
             </h1>
 
-          <p className="mt-5 text-base sm:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg leading-relaxed">
+          <p className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg leading-relaxed">
             {c.sub}
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3.5">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <button
               onClick={goToIntake}
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-6 sm:px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm min-h-[44px]"
             >
               {c.primary}
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#how-it-works"
-              className="inline-flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-6 py-3.5 text-sm font-medium transition-colors shadow-2xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-6 py-3.5 text-sm font-medium transition-colors shadow-2xs min-h-[44px]"
             >
               {c.secondary}
               <ArrowDown className="w-4 h-4 text-zinc-400" />
@@ -168,7 +168,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </div>
 
           {/* Micro trust indicators */}
-          <div className="mt-8 pt-6 border-t border-zinc-200/70 dark:border-zinc-800/80 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-500 dark:text-zinc-400 font-medium font-mono">
+          <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-zinc-200/70 dark:border-zinc-800/80 flex flex-wrap items-center gap-y-2 gap-x-4 sm:gap-x-5 text-xs text-zinc-500 dark:text-zinc-400 font-medium font-mono">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               {hi ? 'डिजीलॉकर प्रमाणित पहचान' : 'DigiLocker Verified'}
@@ -184,7 +184,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
           </div>
 
           {/* Explicit simulation disclaimer notice */}
-          <p className="mt-4 text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
+          <p className="mt-3.5 text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
             {hi
               ? '⚠️ यह Build What Moves India हैकथॉन के लिए बनाया गया एक सिमुलेशन प्रोटोटाइप है, कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय पोर्टल: cybercrime.gov.in)।'
               : '⚠️ This is a hackathon simulation and prototype created for the Build What Moves India Hackathon. It is NOT an official government website (official portal: cybercrime.gov.in).'}
@@ -196,22 +196,22 @@ export default function HeroSection({ language }: HeroSectionProps) {
           {/* Outer window frame container */}
           <div className="rounded-[18px] border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/90 backdrop-blur-md shadow-[0_24px_48px_-12px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
             {/* Terminal Window Top Bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 dark:border-zinc-850 bg-surface">
+            <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 border-b border-zinc-100 dark:border-zinc-850 bg-surface">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-                <span className="ml-2 text-[11px] font-mono font-medium text-zinc-500 dark:text-zinc-400">
-                  {hi ? 'नागरिक त्वरित इनटेक टर्मिनल (प्रारूप NCRP-1930)' : 'Citizen Rapid Intake Terminal (Form NCRP-1930)'}
+                <span className="ml-1 sm:ml-2 text-[10.5px] sm:text-[11px] font-mono font-medium text-zinc-500 dark:text-zinc-400 truncate">
+                  {hi ? 'नागरिक इनटेक टर्मिनल' : 'Citizen Rapid Intake (NCRP-1930)'}
                 </span>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 font-mono">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 font-mono shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {hi ? 'सक्रिय टर्मिनल' : 'NCRP Active'}
+                {hi ? 'सक्रिय' : 'Active'}
               </span>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-4">
                 {committed ? c.demoHintDone : c.demoHint}
               </p>

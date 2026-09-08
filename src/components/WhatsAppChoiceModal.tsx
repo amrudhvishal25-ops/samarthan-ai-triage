@@ -67,34 +67,34 @@ export default function WhatsAppChoiceModal({
   const realWhatsAppUrl = `https://wa.me/916303807967?text=${encodeURIComponent(textToForward)}`
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs">
-      <div className="w-full max-w-xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-xs overflow-y-auto">
+      <div className="w-full max-w-xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden max-h-[92vh] flex flex-col my-auto">
         {/* Header */}
-        <div className="bg-[#075E54] dark:bg-[#064e46] text-white p-5 sm:p-6 flex items-start justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-emerald-700/80 border border-emerald-400/40 flex items-center justify-center text-white shadow-sm flex-shrink-0">
-              <MessageCircle className="w-6 h-6 fill-white" />
+        <div className="bg-[#075E54] dark:bg-[#064e46] text-white p-4 sm:p-6 flex items-start justify-between shrink-0">
+          <div className="flex items-center gap-3 sm:gap-3.5">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-700/80 border border-emerald-400/40 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+              <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-bold">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm sm:text-lg font-bold">
                   {isHi ? 'व्हाट्सएप AI ट्रायज एजेंट' : 'Samarthan WhatsApp AI Triage'}
                 </h3>
                 <span className="bg-emerald-500 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                   24x7 AI
                 </span>
               </div>
-              <p className="text-xs text-emerald-100/90 mt-1 leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-emerald-100/90 mt-0.5 sm:mt-1 leading-relaxed">
                 {isHi
-                  ? 'Build What Moves India हैकथॉन प्रोटोटाइप सिमुलेशन • कोई आधिकारिक सरकारी वेबसाइट नहीं'
-                  : 'Build What Moves India Hackathon Prototype Simulation • Not an Official Government Website'}
+                  ? 'Build What Moves India हैकथॉन प्रोटोटाइप सिमुलेशन'
+                  : 'Build What Moves India Hackathon Prototype'}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors cursor-pointer"
+            className="text-emerald-200 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors cursor-pointer shrink-0"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -102,7 +102,7 @@ export default function WhatsAppChoiceModal({
         </div>
 
         {/* Options Content */}
-        <div className="p-5 sm:p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto">
           {/* Option 1: In-App WhatsApp Web Simulator */}
           <div
             onClick={() => {

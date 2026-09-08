@@ -36,31 +36,31 @@ export default function TrustStrip({ language }: TrustStripProps) {
   ]
 
   return (
-    <section className="w-full bg-surface border-y border-zinc-200/80 py-12">
-      <div className="max-w-6xl mx-auto px-6">
+    <section className="w-full bg-surface border-y border-zinc-200/80 py-8 sm:py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* 4 Major Points Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
           {items.map((item, idx) => (
             <div
               key={idx}
-              className="rounded-[14px] p-6 border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
+              className="rounded-[14px] p-4 sm:p-6 border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-2 sm:mb-3">
                   <span className="shrink-0">{item.icon}</span>
                   <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400">
                     {item.label}
                   </span>
                 </div>
                 <p
-                  className={`text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-white ${
+                  className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-white ${
                     item.value === 'DigiLocker' ? 'font-sans' : 'font-mono'
                   }`}
                 >
                   {item.value}
                 </p>
               </div>
-              <p className="text-xs mt-3 leading-relaxed text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs mt-2.5 sm:mt-3 leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {item.sub}
               </p>
             </div>

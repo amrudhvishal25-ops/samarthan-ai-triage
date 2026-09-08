@@ -23,7 +23,7 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 shadow-sm">
       <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-6 uppercase tracking-wider">
         {hi ? 'शिकायत स्थिति ट्रैकर' : 'Complaint Status Tracker'}
       </h3>
