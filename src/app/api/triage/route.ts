@@ -27,6 +27,17 @@ CRITICAL INSTRUCTIONS:
    - If "WhatsApp group Rakesh Jhunjhunwala" impersonated → extract group name.
    - Use 'Not Identified' ONLY if zero identifiers found for the fraudster (no scammer name, no handle, no app, no fake bank, no website, no channel).
 
+1b. COMPLAINANT VS "ON BEHALF OF X" / VICTIM:
+    - CRITICAL: When the narrative mentions filing "on behalf of X" (e.g. "on behalf of my father Ramesh Sharma I am filing this complaint", "on behalf of Sunita Devi", "Ramesh ke behalf pe"):
+      * X is the VICTIM / person on whose behalf the complaint is filed. X is NOT the complainant!
+      * The COMPLAINANT is the person who is ACTUALLY COMPLAINING / submitting the report.
+      * If the filer explicitly states their own name (e.g. "My name is Rahul Verma and on behalf of Ramesh Sharma I am filing"): complainantName MUST be "Rahul Verma" (the person filing), NOT Ramesh Sharma!
+      * If the filer does NOT state their own name in the text, use the COMPLAINANT IDENTITY provided below (e.g. "Parichay Prabhu"). The complainantName MUST be the person actually complaining ("Parichay Prabhu"), NOT the person on whose behalf it is filed!
+      * In complaintDraft: Begin with: "I, [Complainant Name], am filing this formal complaint on behalf of [X] regarding..." (e.g. "I, Parichay Prabhu, am filing this formal cybercrime complaint on behalf of Ramesh Sharma...").
+      * In complaintDraftHi: "मैं, [शिकायतकर्ता का नाम], [X] की ओर से यह औपचारिक शिकायत दर्ज करा रहा हूँ..."
+      * In summary / summaryHi: Clearly state that the complainant is filing on behalf of X.
+      * Under NO circumstances extract X or the complainant as the fraudsterIdentifier!
+
 2. FRAUD TYPE CLASSIFICATION — Use EXACT categories and logic:
    - Financial Fraud: Direct bank/UPI transfers phished, credit card misuse, phishing for money, OTP theft leading to bank debit, direct money theft via banking channels (NOT marketplace).
    - Women/Children Related Crime: Cyberbullying, harassment, abuse, threats involving minors or women, sextortion of minors/women, fake impersonation profiles targeting someone.
@@ -58,7 +69,7 @@ CRITICAL INSTRUCTIONS:
 {
   "incidentId": "",  // leave this EMPTY — the server assigns the acknowledgement number
   "fraudsterIdentifier": "FRAUDSTER's primary identifier ONLY (name, @handle, UPI ID, domain, seller username, phone). Examples: 'Rithwik', '@rithwik8024', 'random@ybl', 'example.com', 'tech-deals-mumbai'. Use 'Not Identified' ONLY if absolutely none exist.",
-  "complainantName": "The victim / complainant's own name if explicitly stated in the narrative (e.g., 'mera naam X hai', 'my name is X', 'I am X'). If not mentioned and no logged-in user is specified, return 'Anonymous Complainant'. NEVER leave as empty string.",
+  "complainantName": "The person who is ACTUALLY complaining / filing the report. If filing on behalf of X (e.g. 'on behalf of Ramesh Sharma'), the complainant is the filer (from narrative or logged-in identity), NOT X! If not mentioned and no logged-in user is specified, return 'Anonymous Complainant'. NEVER leave as empty string.",
   "recommendedChannel": "bank | platform | agency | helpline — see rule 3b. The escalation route this victim should take FIRST.",
   "recommendedChannelTarget": "Who to escalate to: bank name, platform name (Instagram/WhatsApp/…), 'UIDAI', 'Income Tax', 'RBI Sachet', 'National Consumer Helpline', or '1930'.",
   "fraudType": "Classify STRICTLY by incident type: Financial Fraud (UPI/bank money theft, QR scams), Women/Children Related Crime (harassment of minors/women, cyberbullying, fake impersonation profiles), Extortion & Blackmail (adult sextortion, ransom threats), Identity Theft (Aadhaar/PAN misuse), E-Commerce Scams (ordered product never delivered), Investment Scam (money put into a trading/crypto/investment app for promised returns, cannot withdraw), Other Cyber Crime (ransomware, hacking of the victim's own accounts, data theft). DO NOT confuse cyberbullying with extortion—if victim is minor/woman and being harassed/threatened, it's Women/Children Related Crime. DO NOT classify a trading-app deposit scam as E-Commerce — that is Investment Scam.",
@@ -286,9 +297,9 @@ export async function POST(req: NextRequest) {
       customPrompt += `\n\nNOTE: The user pre-selected the category: "${categoryHint}". Please strongly consider mapping the incident to this category.`
     }
     if (complainantName) {
-      customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). The complaintDraft and complaintDraftHi MUST begin with "I, ${complainantName}, hereby state that..."`
+      customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). If the user states they are filing on behalf of someone else X (e.g. "on behalf of X"), the complainantName MUST still be "${complainantName}" (the person actually filing), and the complaintDraft must open with "I, ${complainantName}, am filing this formal cybercrime complaint on behalf of [X] regarding...". Otherwise, begin with "I, ${complainantName}, hereby state that..."`
     } else {
-      customPrompt += `\n\nCOMPLAINANT IDENTITY: The complainant is filing anonymously and is NOT signed in — no verified name or address is available. Set "complainantName" to "Anonymous Complainant". The complaintDraft / complaintDraftHi must open like "I am filing this complaint regarding..." (do NOT invent a name, and do NOT write "I, Anonymous Complainant"). Leave the address/city as a blank placeholder: "[Address — to be provided]".`
+      customPrompt += `\n\nCOMPLAINANT IDENTITY: The complainant is filing anonymously and is NOT signed in. If the narrative states a self-intro name ("my name is Y"), use Y. If filing on behalf of X, the complaintDraft must open like "I am filing this complaint on behalf of X regarding...". Set "complainantName" to the person actually complaining (or "Anonymous Complainant" if unnamed).`
     }
 
     // 2. Structured legal complaint generation. Safety race well below the
@@ -341,23 +352,85 @@ export async function POST(req: NextRequest) {
     }
 
     // Resolve complainant name with priority:
-    // 1. Explicitly extracted name from user's narrative (e.g. "I am Rajesh", "Mera naam Parichay hai")
+    // 1. Explicit self-intro of the filer from narrative (e.g. "I am Rajesh", "Mera naam Rahul hai")
     // 2. Logged-in user's identity (e.g. from DigiLocker session)
     // 3. "Anonymous Complainant" — no name given and not signed in
+    // CRITICAL: If the narrative says "on behalf of X", X is the victim, NOT the complainant!
+    let onBehalfOfTarget: string | null = null
+    const behalfAfterMatch = userText.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+    if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
+      onBehalfOfTarget = behalfAfterMatch[1].trim()
+    }
+    if (!onBehalfOfTarget) {
+      const behalfBeforeMatch = userText.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
+      if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
+        onBehalfOfTarget = behalfBeforeMatch[1].trim()
+      }
+    }
+
+    let selfIntroName: string | null = null
+    const explicitNameMatch = userText.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+    if (explicitNameMatch && explicitNameMatch[1]) {
+      const candidate = explicitNameMatch[1].trim()
+      if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
+        selfIntroName = candidate
+      }
+    }
+    if (!selfIntroName) {
+      const iAmMatch = userText.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+      if (iAmMatch && iAmMatch[1]) {
+        const candidate = iAmMatch[1].trim()
+        const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
+        if (!isVerbOrGrammar) {
+          selfIntroName = candidate
+        }
+      }
+    }
+
     const rawExtractedName = typeof parsed.complainantName === 'string' ? parsed.complainantName.trim() : ''
     const isGeneric = !rawExtractedName || /^(not (provided|identified|stated)|citizen complainant|anonymous complainant|unknown|none|na|n\/a)$/i.test(rawExtractedName)
 
-    const nameMatch = userText.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-    const selfIntroName = nameMatch && nameMatch[1] && !/^(a|an|the|reporting|calling|scammed|victim)$/i.test(nameMatch[1]) ? nameMatch[1].trim() : null
+    // Check if the extracted name was mistakenly assigned the victim from "on behalf of X":
+    const isExtractedNameTheVictim = Boolean(
+      onBehalfOfTarget &&
+      rawExtractedName &&
+      (rawExtractedName.toLowerCase().includes(onBehalfOfTarget.toLowerCase()) || onBehalfOfTarget.toLowerCase().includes(rawExtractedName.toLowerCase()))
+    )
 
-    if (!isGeneric) {
-      parsed.complainantName = rawExtractedName
-    } else if (selfIntroName) {
+    if (selfIntroName) {
       parsed.complainantName = selfIntroName
+    } else if (!isGeneric && !isExtractedNameTheVictim) {
+      parsed.complainantName = rawExtractedName
     } else if (complainantName && complainantName.trim() && !/^(citizen user|unknown)$/i.test(complainantName.trim())) {
       parsed.complainantName = complainantName.trim()
     } else {
       parsed.complainantName = 'Anonymous Complainant'
+    }
+
+    // If complainant explicitly introduced themselves with another name, sync it into drafts
+    if (complainantName && parsed.complainantName && parsed.complainantName !== complainantName) {
+      if (parsed.complaintDraft) {
+        parsed.complaintDraft = parsed.complaintDraft.replace(new RegExp(complainantName, 'g'), parsed.complainantName)
+      }
+      if (parsed.complaintDraftHi) {
+        parsed.complaintDraftHi = parsed.complaintDraftHi.replace(new RegExp(complainantName, 'g'), parsed.complainantName)
+      }
+    }
+
+    // Ensure the draft states filing on behalf of X if onBehalfOfTarget was specified
+    if (onBehalfOfTarget) {
+      if (parsed.complaintDraft && !/on behalf of/i.test(parsed.complaintDraft)) {
+        parsed.complaintDraft = parsed.complaintDraft.replace(
+          new RegExp(`\\bI,?\\s*(?:${parsed.complainantName}|${complainantName || ''})?,?\\s*(?:hereby state that|hereby lodge|am filing this complaint regarding|am filing)?`, 'i'),
+          `I, ${parsed.complainantName}, am filing this formal cybercrime complaint on behalf of ${onBehalfOfTarget} regarding`
+        )
+      }
+      if (parsed.complaintDraftHi && !/की ओर से|के behalf/i.test(parsed.complaintDraftHi)) {
+        parsed.complaintDraftHi = parsed.complaintDraftHi.replace(
+          new RegExp(`(^|[\\s,।])मैं,?\\s*(?:${parsed.complainantName}|${complainantName || ''})?,?\\s*`, 'u'),
+          `$1मैं, ${parsed.complainantName}, ${onBehalfOfTarget} की ओर से यह `
+        )
+      }
     }
 
     if (parsed.complaintDraft) {

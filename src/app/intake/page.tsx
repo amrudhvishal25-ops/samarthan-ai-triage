@@ -55,10 +55,38 @@ function IntakeContent() {
     const buildClientFallback = (): TriageResult => {
       const finalTxt = finalTxtForFallback
       const user = getUser()
-      const selfNameMatch = finalTxt.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-      const detectedName = selfNameMatch && selfNameMatch[1] && !/^(a|an|the|reporting|calling|scammed|victim)$/i.test(selfNameMatch[1])
-        ? selfNameMatch[1].trim()
-        : (user?.name || 'Anonymous Complainant')
+      let onBehalfOfTarget: string | null = null
+      const behalfAfterMatch = finalTxt.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+      if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
+        onBehalfOfTarget = behalfAfterMatch[1].trim()
+      }
+      if (!onBehalfOfTarget) {
+        const behalfBeforeMatch = finalTxt.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
+        if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
+          onBehalfOfTarget = behalfBeforeMatch[1].trim()
+        }
+      }
+
+      let detectedSelfName: string | null = null
+      const explicitNameMatch = finalTxt.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+      if (explicitNameMatch && explicitNameMatch[1]) {
+        const candidate = explicitNameMatch[1].trim()
+        if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
+          detectedSelfName = candidate
+        }
+      }
+      if (!detectedSelfName) {
+        const iAmMatch = finalTxt.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+        if (iAmMatch && iAmMatch[1]) {
+          const candidate = iAmMatch[1].trim()
+          const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
+          if (!isVerbOrGrammar) {
+            detectedSelfName = candidate
+          }
+        }
+      }
+
+      const detectedName = detectedSelfName || user?.name || 'Parichay Prabhu'
 
       const inferredCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
       const rawAmount = (finalTxt.match(/(?:₹|rs\.?|inr)\s*([\d,]+)/i) || finalTxt.match(/(\d+)\s*(?:rupees|rs)/i))?.[1]
@@ -86,8 +114,12 @@ function IntakeContent() {
         timeline: new Date().toLocaleString('en-IN'),
         summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${inferredCat}.`,
         summaryHi: `${inferredCat} के तहत साइबर घटना दर्ज की गई।`,
-        complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`,
-        complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`,
+        complaintDraft: onBehalfOfTarget
+          ? `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint on behalf of ${onBehalfOfTarget} regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`
+          : `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`,
+        complaintDraftHi: onBehalfOfTarget
+          ? `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, ${onBehalfOfTarget} की ओर से इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`
+          : `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`,
         freezeSteps: [
           {
             step: 1,

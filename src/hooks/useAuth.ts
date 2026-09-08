@@ -9,24 +9,35 @@ export interface DigiLockerUser {
   verified: boolean
 }
 
+export const DEFAULT_USER: DigiLockerUser = {
+  name: 'Parichay Prabhu',
+  aadhaar: '****-****-8421',
+  dob: '15/03/1994',
+  verified: true,
+}
+
 const STORAGE_KEY = 'samarthan_user'
 
 export function useAuth() {
   const getUser = useCallback((): DigiLockerUser | null => {
-    if (typeof window === 'undefined') return null
+    if (typeof window === 'undefined') return DEFAULT_USER
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return null
+      if (raw === 'SIGNED_OUT') return null
+      if (!raw) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USER))
+        return DEFAULT_USER
+      }
       return JSON.parse(raw)
     } catch {
-      return null
+      return DEFAULT_USER
     }
   }, [])
 
   const signIn = useCallback((customUser?: Partial<DigiLockerUser>) => {
     if (typeof window === 'undefined') return
     const user: DigiLockerUser = {
-      name: customUser?.name?.trim() || 'Citizen User',
+      name: customUser?.name?.trim() || 'Parichay Prabhu',
       aadhaar: customUser?.aadhaar?.trim() || '****-****-8421',
       dob: customUser?.dob || '15/03/1994',
       verified: true,
@@ -38,7 +49,7 @@ export function useAuth() {
 
   const signOut = useCallback(() => {
     if (typeof window === 'undefined') return
-    localStorage.removeItem(STORAGE_KEY)
+    localStorage.setItem(STORAGE_KEY, 'SIGNED_OUT')
     window.dispatchEvent(new Event('samarthan_auth_change'))
   }, [])
 

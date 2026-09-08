@@ -713,7 +713,24 @@ async function extractUpdateDetailsWithAI(note: string) {
   const upiMatch = note.match(/[\w.-]+@[\w.-]+/)
   const phoneMatch = note.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
   const accountMatch = note.match(/(?:a\/c|acc|account)[\s:#-]*([0-9]{9,18})/i)
-  const nameMatch = note.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+  let updateComplainantName: string | null = null
+  const explicitNameMatch = note.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+  if (explicitNameMatch && explicitNameMatch[1]) {
+    const candidate = explicitNameMatch[1].trim()
+    if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
+      updateComplainantName = candidate
+    }
+  }
+  if (!updateComplainantName) {
+    const iAmMatch = note.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+    if (iAmMatch && iAmMatch[1]) {
+      const candidate = iAmMatch[1].trim()
+      const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
+      if (!isVerbOrGrammar) {
+        updateComplainantName = candidate
+      }
+    }
+  }
 
   // Accused / fraudster correction regex: e.g. "his name is not amrit vijal its amruth vishal and he is from tapmi manipal"
   const fraudsterCorrectionMatch = note.match(/(?:his name is not|his name is|not [a-z0-9\s]+ (?:it's|its|it is)|correct name is|accused is|fraudster is)\s*([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?(?:\s+(?:from|at)\s+[A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)?)/i)
@@ -726,7 +743,7 @@ async function extractUpdateDetailsWithAI(note: string) {
     accountNumber: accountMatch ? accountMatch[1] : null,
     amount: null,
     amountIsAdditional: false,
-    complainantName: nameMatch ? nameMatch[1].trim() : null,
+    complainantName: updateComplainantName,
   }
 
   const apiKey = process.env.OPENAI_API_KEY
@@ -961,7 +978,7 @@ async function createAndSaveNewComplaint(
             role: 'system',
             content: `You are an Indian cybercrime triage officer. Return ONLY JSON matching TriageResult schema. Fields: fraudType (Financial Fraud, Women/Children Related Crime, Extortion & Blackmail, Identity Theft, E-Commerce Scams, Investment Scam, Other Cyber Crime), fraudsterIdentifier, complainantName, amount (number), bankName, accountNumber, upiId, timeline, summary (2 sentences), summaryHi, complaintDraft (formal police complaint), complaintDraftHi, freezeSteps (string[]), applicableLaws (string[]), frauderContact, recommendedChannel ("bank"|"agency"|"platform"|"helpline"), recommendedChannelTarget.
 
-COMPLAINANT: This report comes via WhatsApp with NO verified identity. Only set "complainantName" to a real name if the person explicitly states it in the narrative ("my name is X", "mera naam X hai"). Otherwise set it to "Anonymous Complainant", open complaintDraft with "I am filing this complaint regarding..." (never "I, Anonymous Complainant"), and leave the address/city as "[Address / city — to be provided]".`,
+COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a real name if the person explicitly states their own name in the narrative ("my name is X", "mera naam X hai"). If filing on behalf of someone else (e.g. "on behalf of X"), X is the victim, NOT the complainant! Set complainantName to the filer's name (or "Anonymous Complainant" if unnamed), and open complaintDraft with "I am filing this complaint on behalf of X regarding...". Otherwise set it to "Anonymous Complainant", open complaintDraft with "I am filing this complaint regarding..." (never "I, Anonymous Complainant"), and leave the address/city as "[Address / city — to be provided]".`,
           },
           { role: 'user', content: incidentText },
         ],
@@ -974,11 +991,60 @@ COMPLAINANT: This report comes via WhatsApp with NO verified identity. Only set 
       const fraudType = (parsed.fraudType || 'Financial Fraud') as any
       const channelInfo = inferChannelFromFraudType(fraudType)
 
-      const nameMatch = incidentText.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-      const rawComplainant = (parsed.complainantName && typeof parsed.complainantName === 'string' && parsed.complainantName.trim()) || (nameMatch ? nameMatch[1].trim() : '')
-      const finalComplainant = rawComplainant && !['not identified', 'not provided', 'unknown', 'n/a', 'none'].includes(rawComplainant.toLowerCase())
-        ? rawComplainant
-        : 'Anonymous Complainant'
+      let onBehalfOfTarget: string | null = null
+      const behalfAfterMatch = incidentText.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+      if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
+        onBehalfOfTarget = behalfAfterMatch[1].trim()
+      }
+      if (!onBehalfOfTarget) {
+        const behalfBeforeMatch = incidentText.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
+        if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
+          onBehalfOfTarget = behalfBeforeMatch[1].trim()
+        }
+      }
+
+      let selfIntroName: string | null = null
+      const explicitNameMatch = incidentText.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+      if (explicitNameMatch && explicitNameMatch[1]) {
+        const candidate = explicitNameMatch[1].trim()
+        if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
+          selfIntroName = candidate
+        }
+      }
+      if (!selfIntroName) {
+        const iAmMatch = incidentText.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+        if (iAmMatch && iAmMatch[1]) {
+          const candidate = iAmMatch[1].trim()
+          const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
+          if (!isVerbOrGrammar) {
+            selfIntroName = candidate
+          }
+        }
+      }
+
+      const rawComplainant = (parsed.complainantName && typeof parsed.complainantName === 'string' && parsed.complainantName.trim()) || ''
+      const isVictimName = Boolean(
+        onBehalfOfTarget &&
+        rawComplainant &&
+        (rawComplainant.toLowerCase().includes(onBehalfOfTarget.toLowerCase()) || onBehalfOfTarget.toLowerCase().includes(rawComplainant.toLowerCase()))
+      )
+
+      const finalComplainant = selfIntroName || (!isVictimName && rawComplainant && !['not identified', 'not provided', 'unknown', 'n/a', 'none', 'anonymous complainant'].includes(rawComplainant.toLowerCase()) ? rawComplainant : 'Anonymous Complainant')
+
+      if (onBehalfOfTarget) {
+        if (parsed.complaintDraft && !/on behalf of/i.test(parsed.complaintDraft)) {
+          parsed.complaintDraft = parsed.complaintDraft.replace(
+            new RegExp(`I,\\s*(?:${finalComplainant})?,?\\s*(?:hereby state that|hereby lodge|am filing)?`, 'i'),
+            `I, ${finalComplainant}, am filing this formal cybercrime complaint on behalf of ${onBehalfOfTarget} regarding`
+          )
+        }
+        if (parsed.complaintDraftHi && !/की ओर से|के behalf/i.test(parsed.complaintDraftHi)) {
+          parsed.complaintDraftHi = parsed.complaintDraftHi.replace(
+            new RegExp(`मैं,\\s*(?:${finalComplainant})?,?\\s*`, 'i'),
+            `मैं, ${finalComplainant}, ${onBehalfOfTarget} की ओर से यह `
+          )
+        }
+      }
 
       const freezeSteps = Array.isArray(parsed.freezeSteps) && parsed.freezeSteps.length > 0 && typeof parsed.freezeSteps[0] === 'object'
         ? parsed.freezeSteps
@@ -1142,12 +1208,46 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
   const incidentId = generateId()
   const amount = ext.amount || 45000
   const fraudster = ext.upi || ext.phone || 'Fraudulent Entity'
-  const nameMatch = text.match(/(?:mera naam|my name is|i am|main hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-  const namedComplainant = nameMatch ? nameMatch[1].trim() : null
+
+  let onBehalfOfTarget: string | null = null
+  const behalfAfterMatch = text.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+  if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
+    onBehalfOfTarget = behalfAfterMatch[1].trim()
+  }
+  if (!onBehalfOfTarget) {
+    const behalfBeforeMatch = text.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
+    if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
+      onBehalfOfTarget = behalfBeforeMatch[1].trim()
+    }
+  }
+
+  let namedComplainant: string | null = null
+  const explicitNameMatch = text.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+  if (explicitNameMatch && explicitNameMatch[1]) {
+    const candidate = explicitNameMatch[1].trim()
+    if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
+      namedComplainant = candidate
+    }
+  }
+  if (!namedComplainant) {
+    const iAmMatch = text.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+    if (iAmMatch && iAmMatch[1]) {
+      const candidate = iAmMatch[1].trim()
+      const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
+      if (!isVerbOrGrammar) {
+        namedComplainant = candidate
+      }
+    }
+  }
+
   const complainantName = namedComplainant || 'Anonymous Complainant'
-  // Anonymous filers get an impersonal opener; a named filer gets "I, <name>,".
-  const draftOpenerEn = namedComplainant ? `I, ${namedComplainant}, am` : 'I am'
-  const draftOpenerHi = namedComplainant ? `\u092E\u0948\u0902, ${namedComplainant},` : '\u092E\u0948\u0902'
+  const draftOpenerEn = onBehalfOfTarget
+    ? `${namedComplainant ? `I, ${namedComplainant}, am` : 'I am'} filing this formal complaint on behalf of ${onBehalfOfTarget} regarding`
+    : (namedComplainant ? `I, ${namedComplainant}, am filing a formal complaint regarding` : 'I am filing a formal complaint regarding')
+
+  const draftOpenerHi = onBehalfOfTarget
+    ? `${namedComplainant ? `मैं, ${namedComplainant},` : 'मैं'} ${onBehalfOfTarget} की ओर से यह औपचारिक शिकायत दर्ज करा रहा हूँ:`
+    : (namedComplainant ? `मैं, ${namedComplainant}, अपने खाते से` : 'मैं अपने खाते से')
 
   return {
     incidentId,
@@ -1159,9 +1259,9 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
     summary: `Unauthorized financial debit of ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.`,
     summaryHi: `व्हाट्सएप बॉट के माध्यम से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी दर्ज की गई।`,
     complaintDraft: `To The Station House Officer / Cyber Crime Cell,
-${draftOpenerEn} filing a formal complaint regarding an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from my account. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.${namedComplainant ? '' : '\n\n[Complainant address / city — to be provided]'}`,
+${draftOpenerEn} an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from ${onBehalfOfTarget ? `${onBehalfOfTarget}'s account` : 'my account'}. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.${namedComplainant ? '' : '\n\n[Complainant address / city — to be provided]'}`,
     complaintDraftHi: `थाना प्रभारी / साइबर अपराध शाखा,
-${draftOpenerHi} अपने खाते से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत दर्ज कर रहा हूँ। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।${namedComplainant ? '' : '\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]'}`,
+${draftOpenerHi} ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।${namedComplainant ? '' : '\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]'}`,
     frauderContact: ext.utr ? `Ref UTR: ${ext.utr}; Contact: ${ext.phone || 'Not Provided'}` : (ext.phone || 'Not Provided'),
     bankName: 'Bank Nodal Desk',
     accountNumber: 'Not Provided',
