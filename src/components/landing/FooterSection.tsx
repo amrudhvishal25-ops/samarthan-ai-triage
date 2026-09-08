@@ -86,7 +86,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
                 {hi ? 'के बारे में' : 'About'}
               </h4>
               <ul className="space-y-3 text-sm text-zinc-600">
-                <li>{hi ? 'Aevy TV × OpenAI हैकाथॉन के लिए बनाया' : 'Built for Aevy TV × OpenAI Hackathon'}</li>
+                <li>{hi ? 'Build What Moves India हैकथॉन के लिए बनाया' : 'Built for Build What Moves India Hackathon'}</li>
                 <li>{hi ? 'DigiLocker सत्यापित पहचान' : 'DigiLocker verified identity'}</li>
                 <li>{hi ? 'GPT-4o द्वारा संचालित' : 'Powered by GPT-4o'}</li>
               </ul>
@@ -95,7 +95,7 @@ export default function FooterSection({ language }: FooterSectionProps) {
 
           <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500 dark:text-zinc-400">
             <p className="max-w-3xl leading-relaxed">
-              🏆 <strong>Aevy TV × OpenAI Hackathon Project</strong> • ⚠️ <em>{hi ? 'अस्वीकरण: यह वेबसाइट Aevy TV × OpenAI हैकथॉन के लिए बनाया गया एक AI सिमुलेशन और प्रोटोटाइप है। यह कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय साइबर अपराध पोर्टल cybercrime.gov.in है)।' : 'Disclaimer: This platform is an AI simulation & prototype developed for the Aevy TV × OpenAI Hackathon. It is NOT an official government website (the official government portal is cybercrime.gov.in). For real emergency cybercrime assistance, immediately dial 1930.'}</em>
+              🏆 <strong>Build What Moves India Hackathon Project</strong> • ⚠️ <em>{hi ? 'अस्वीकरण: यह वेबसाइट Build What Moves India हैकथॉन के लिए बनाया गया एक AI सिमुलेशन और प्रोटोटाइप है। यह कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय साइबर अपराध पोर्टल cybercrime.gov.in है)।' : 'Disclaimer: This platform is an AI simulation & prototype developed for the Build What Moves India Hackathon. It is NOT an official government website (the official government portal is cybercrime.gov.in). For real emergency cybercrime assistance, immediately dial 1930.'}</em>
             </p>
             <p className="whitespace-nowrap font-medium text-zinc-400">
               Made with ❤️ for India

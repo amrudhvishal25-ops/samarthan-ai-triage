@@ -5,7 +5,7 @@ import { ThemeProvider } from '@/context/ThemeContext'
 import SmoothScroll from '@/components/SmoothScroll'
 
 export const metadata: Metadata = {
-  title: 'Samarthan — Aevy TV X OpenAI',
+  title: 'Samarthan — Build What Moves India Hackathon',
   description: 'AI-powered cybercrime triage platform',
   manifest: '/manifest.json',
   appleWebApp: {

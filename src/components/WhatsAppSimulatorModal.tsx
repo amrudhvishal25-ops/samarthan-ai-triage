@@ -820,7 +820,7 @@ export default function WhatsAppSimulatorModal({
                   GPT-4o API
                 </span>
                 <span className="bg-amber-400/20 text-amber-200 border border-amber-300/30 text-[9px] font-mono px-1.5 py-0.5 rounded-full">
-                  Aevy TV × OpenAI Demo
+                  Build What Moves India Demo
                 </span>
               </div>
               <p className="text-[11px] text-emerald-200 dark:text-emerald-300/80">
@@ -828,7 +828,7 @@ export default function WhatsAppSimulatorModal({
                   ? '⚡ GPT-4o is triaging & drafting legal sections...'
                   : activeIncidentId
                   ? `Active Case: ${activeIncidentId} • Auto-Sync Active`
-                  : 'Aevy TV × OpenAI Hackathon Simulation • Not an Official Govt Website'}
+                  : 'Build What Moves India Hackathon Simulation • Not an Official Govt Website'}
               </p>
             </div>
           </div>

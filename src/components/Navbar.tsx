@@ -46,11 +46,11 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
       {/* Subtle National Tricolor Ribbon */}
       <div className="h-[3px] w-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] sticky top-0 z-55" />
 
-      {/* Aevy TV × OpenAI Hackathon Simulation Disclaimer Banner */}
+      {/* Build What Moves India Hackathon Simulation Disclaimer Banner */}
       <div className="bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-[11px] sm:text-xs py-1.5 px-4 text-center font-medium sticky top-[3px] z-50 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1 font-bold text-amber-800 dark:text-amber-300">
-            🏆 Aevy TV × OpenAI Hackathon Project
+            🏆 Build What Moves India Hackathon Project
           </span>
           <span className="text-amber-600/60 dark:text-amber-400/60 hidden sm:inline">•</span>
           <span>

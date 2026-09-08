@@ -186,8 +186,8 @@ export default function HeroSection({ language }: HeroSectionProps) {
           {/* Explicit simulation disclaimer notice */}
           <p className="mt-4 text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
             {hi
-              ? '⚠️ यह Aevy TV × OpenAI हैकथॉन के लिए बनाया गया एक सिमुलेशन प्रोटोटाइप है, कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय पोर्टल: cybercrime.gov.in)।'
-              : '⚠️ This is a hackathon simulation and prototype created for the Aevy TV × OpenAI Hackathon. It is NOT an official government website (official portal: cybercrime.gov.in).'}
+              ? '⚠️ यह Build What Moves India हैकथॉन के लिए बनाया गया एक सिमुलेशन प्रोटोटाइप है, कोई आधिकारिक सरकारी वेबसाइट नहीं है (आधिकारिक राष्ट्रीय पोर्टल: cybercrime.gov.in)।'
+              : '⚠️ This is a hackathon simulation and prototype created for the Build What Moves India Hackathon. It is NOT an official government website (official portal: cybercrime.gov.in).'}
           </p>
         </div>
 
