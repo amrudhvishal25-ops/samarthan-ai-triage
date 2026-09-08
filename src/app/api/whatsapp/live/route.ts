@@ -25,7 +25,7 @@ async function getStateFromDb() {
       status: string; qr_data_url: string | null; user_phone: string | null
       started_at: number | null; last_ping: number | null
     }
-    const isRecent = r.last_ping != null && Date.now() - Number(r.last_ping) < 20000
+    const isRecent = r.last_ping != null && Date.now() - Number(r.last_ping) < 60000
     if (!isRecent) {
       return { isRunning: false, status: 'DISCONNECTED', qrDataUrl: null, userPhone: null, wasActive: r.status }
     }
@@ -45,8 +45,8 @@ function isProcessAlive(pid: number): boolean {
   try {
     process.kill(pid, 0)
     return true
-  } catch {
-    return false
+  } catch (err: any) {
+    return err?.code === 'EPERM'
   }
 }
 
@@ -59,7 +59,7 @@ function getLiveState() {
     const raw = fs.readFileSync(STATE_FILE, 'utf-8')
     const data = JSON.parse(raw)
     const now = Date.now()
-    const isRecent = data.lastPing && (now - data.lastPing < 20000)
+    const isRecent = data.lastPing && (now - data.lastPing < 60000)
     const pidAlive = data.pid ? isProcessAlive(data.pid) : false
 
     if (!isRecent || !pidAlive) {
