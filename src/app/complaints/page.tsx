@@ -28,7 +28,7 @@ export default function ComplaintsPage() {
   const hi = language === 'hi'
 
   useEffect(() => {
-    getAll()
+    getAll(true)
       .then(setComplaints)
       .catch(err => console.error('Failed to load complaints:', err))
       .finally(() => setLoading(false))

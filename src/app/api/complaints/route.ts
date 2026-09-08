@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(rows[0])
     }
     const rows = await sql`SELECT * FROM complaints ORDER BY saved_at DESC LIMIT 100`
-    return NextResponse.json(rows, { headers: { 'Cache-Control': 'private, max-age=30' } })
+    return NextResponse.json(rows, { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } })
   } catch (err: unknown) {
     const isDev = process.env.NODE_ENV === 'development'
     const message = isDev && err instanceof Error ? err.message : 'Database error. Please try again.'

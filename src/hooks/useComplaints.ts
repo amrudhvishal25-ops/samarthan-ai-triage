@@ -194,10 +194,10 @@ async function apiPatch(body: unknown): Promise<Response> {
 const CACHE_TTL = 30000 // 30s
 
 export function useComplaints() {
-  const getAll = useCallback(async (): Promise<SavedComplaint[]> => {
+  const getAll = useCallback(async (forceRefresh = false): Promise<SavedComplaint[]> => {
     // Check memory cache first
     const cached = (globalThis as any).__complaintsCache
-    if (cached && Date.now() - cached.time < CACHE_TTL) {
+    if (!forceRefresh && cached && Date.now() - cached.time < CACHE_TTL) {
       return cached.data
     }
 
