@@ -155,10 +155,22 @@ export default function HowItWorks({ language }: HowItWorksProps) {
                 </div>
               </div>
 
-              {/* Screenshot column */}
-              <div className="rounded-xl border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs overflow-hidden">
+              {/* Screenshot column (Jansahai .shot browser frame design) */}
+              <div className="rounded-[18px] border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.16),0_4px_12px_rgba(0,0,0,0.06)]">
+                {/* Browser top chrome bar */}
+                <div className="h-7 px-3.5 bg-zinc-100/90 dark:bg-zinc-850 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 block" />
+                    <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 block" />
+                    <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 block" />
+                  </div>
+                  <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 tracking-tight select-none">
+                    {step.n === '01' ? 'samarthan.gov.in/intake' : step.n === '02' ? 'samarthan.gov.in/dossier' : 'samarthan.gov.in/complaints'}
+                  </span>
+                  <span className="w-2" />
+                </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={step.shot} alt={step.title} className="w-full h-auto max-h-[420px] object-cover object-top" />
+                <img src={step.shot} alt={step.title} className="w-full h-auto max-h-[420px] object-cover object-top block" />
               </div>
             </div>
           ))}

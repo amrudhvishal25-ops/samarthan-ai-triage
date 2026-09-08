@@ -194,7 +194,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
         {/* Right: Studio Window Terminal */}
         <div className="relative">
           {/* Outer window frame container */}
-          <div className="rounded-lg border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/90 backdrop-blur-md shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="rounded-[18px] border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/90 backdrop-blur-md shadow-[0_24px_48px_-12px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
             {/* Terminal Window Top Bar */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 dark:border-zinc-850 bg-surface">
               <div className="flex items-center gap-2">
