@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     let mediaUrl: string | undefined
     let isTwilio = false
     let voiceTranscript = ''
+    let isResetPing = false
 
     let imageBase64: string | undefined = undefined
 
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
       // Sticky signal from the bot: user is in "NEW complaint" mode and stays there
       // (across every follow-up message) until a fresh complaint is actually filed.
       const forceNew = json.forceNew === true
+      isResetPing = json.resetSession === true || json.forceNew === true || json.activeIncidentId === null
 
       const session = getOrCreateSession(from)
       if (json.isSimulator) {
@@ -121,6 +123,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (!body && !mediaUrl && !voiceTranscript && !imageBase64) {
+      // A reset ping legitimately carries no message — the session was already
+      // cleared above. Acknowledge with 200 instead of a 400 the caller ignores.
+      if (isResetPing) {
+        return NextResponse.json({ success: true, reply: '', reset: true }, { status: 200 })
+      }
       return NextResponse.json({ error: 'Empty message' }, { status: 400 })
     }
 

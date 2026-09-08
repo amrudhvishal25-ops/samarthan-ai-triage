@@ -473,7 +473,13 @@ You can send a **Voice Note 🎤**, type your message ✍️, or share a **Scree
 
     // Check if user also provided incident details along with language switch
     const ext = quickExtract(trimmed)
-    const hasIncidentDetails = Boolean(voiceTranscript || ext.amount || ext.upi || ext.phone || trimmed.length > 55)
+    // A bare language / menu pick ("1", "2", "english", "hindi") is NOT incident content.
+    // quickExtract would otherwise read "1" / "2" as an amount and file a ₹1 complaint.
+    const isBareLangPick = /^(1|2|1️⃣|2️⃣|en|english|angrezi|angreji|hi|hindi|हिंदी|हिन्दी|hinglish)$/i.test(trimmed)
+    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye)/i.test(trimmed)))
+    const hasIncidentDetails = !isBareLangPick && Boolean(
+      voiceTranscript || hasRealAmount || ext.upi || ext.phone || ext.utr || trimmed.length > 55
+    )
     if (hasIncidentDetails) {
       session.stage = 'AWAITING_INCIDENT'
       session.accumulatedText = (voiceTranscript || trimmed).trim()
@@ -509,7 +515,13 @@ You can send a **Voice Note 🎤**, type your message ✍️, or share a **Scree
     }
 
     const ext = quickExtract(trimmed)
-    const hasIncidentDetails = Boolean(voiceTranscript || ext.amount || ext.upi || ext.phone || trimmed.length > 55)
+    // A bare language / menu pick ("1", "2", "english", "hindi") is NOT incident content.
+    // quickExtract would otherwise read "1" / "2" as an amount and file a ₹1 complaint.
+    const isBareLangPick = /^(1|2|1️⃣|2️⃣|en|english|angrezi|angreji|hi|hindi|हिंदी|हिन्दी|hinglish)$/i.test(trimmed)
+    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye)/i.test(trimmed)))
+    const hasIncidentDetails = !isBareLangPick && Boolean(
+      voiceTranscript || hasRealAmount || ext.upi || ext.phone || ext.utr || trimmed.length > 55
+    )
     if (hasIncidentDetails) {
       session.stage = 'AWAITING_INCIDENT'
       session.accumulatedText = (voiceTranscript || trimmed).trim()
@@ -602,10 +614,18 @@ Please describe your new incident: send a **Voice Note 🎤** or type what happe
   if (session.forceNewComplaint) {
     const newText = (voiceTranscript || trimmed).trim()
     const isJustNewCommand = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test(newText)
-    const looksSubstantive = Boolean(
+    // Bare menu / navigation / language tokens are NOT an incident narrative. "1" and "2"
+    // in particular would otherwise be read by quickExtract as an amount of ₹1 / ₹2 and
+    // file a garbage complaint. Anything this short and keyword-like just re-prompts.
+    const isNavToken = /^(1|2|1️⃣|2️⃣|en|english|hi|hindi|हिंदी|हिन्दी|yes|no|ok|okay|start|menu|hello|hey|namaste)$/i.test(newText)
+    const ext = quickExtract(newText)
+    // Only trust an extracted amount when it actually looks like money (>= 3 digits or has a ₹/rs marker),
+    // not a lone "1" from a menu pick.
+    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye)/i.test(newText)))
+    const looksSubstantive = !isNavToken && Boolean(
       voiceTranscript || mediaUrl || imageBase64 ||
       (newText.length >= 25 && !isJustNewCommand) ||
-      quickExtract(newText).amount || quickExtract(newText).upi || quickExtract(newText).phone
+      hasRealAmount || ext.upi || ext.phone || ext.utr
     )
     // Bare "NEW" (or anything too thin to triage) — acknowledge and wait for the story.
     if (!looksSubstantive) {
