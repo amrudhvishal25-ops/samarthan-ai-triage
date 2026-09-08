@@ -23,9 +23,9 @@ export default function HowItWorks({ language }: HowItWorksProps) {
           n: '01',
           duration: 'लगभग 15 सेकंड',
           title: 'अपनी बात सीधे बताएं, कोई लंबा फॉर्म नहीं',
-          body: 'अपनी सामान्य भाषा में बोलें, संदेश लिखें या बैंक से आया मैसेज और स्क्रीनशॉट भेजें। आप वेबसाइट के ज़रिए रिपोर्ट कर सकते हैं, हमारे व्हाट्सएप नंबर (+91 63038 07967) पर भेज सकते हैं, या ब्राउज़र में सीधे व्हाट्सएप सिम्युलेटर आज़मा सकते हैं। पहचान के लिए डिजीलॉकर से तुरंत सत्यापन की सुविधा भी है।',
+          body: 'अपनी सामान्य भाषा में बोलें, संदेश लिखें या बैंक से आया मैसेज और स्क्रीनशॉट भेजें। आप वेबसाइट के ज़रिए रिपोर्ट कर सकते हैं, हमारे व्हाट्सएप AI एजेंट पर भेज सकते हैं, या ब्राउज़र में सीधे व्हाट्सएप सिम्युलेटर आज़मा सकते हैं। पहचान के लिए डिजीलॉकर से तुरंत सत्यापन की सुविधा भी है।',
           points: [
-            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'व्हाट्सएप बॉट (+91 63038 07967) व सिम्युलेटर' },
+            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'व्हाट्सएप AI एजेंट व सिम्युलेटर' },
             { icon: <Mic className="w-3.5 h-3.5 text-primary" />, text: 'हिंदी और अंग्रेजी में बोलकर शिकायत' },
             { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'लेनदेन रसीद और स्क्रीनशॉट से ऑटो-रीडिंग' },
             { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'डिजीलॉकर से सुरक्षित आधार/पैन सत्यापन' },
@@ -64,9 +64,9 @@ export default function HowItWorks({ language }: HowItWorksProps) {
           n: '01',
           duration: 'Takes ~15 seconds',
           title: 'Explain what happened in plain words, without forms',
-          body: 'Describe the incident naturally using voice, text, or a screenshot of the scam transaction. You can use the web portal, message our WhatsApp assistant at +91 63038 07967, or try the in-browser simulator. DigiLocker is available for quick citizen identity verification.',
+          body: 'Describe the incident naturally using voice, text, or a screenshot of the scam transaction. You can use the web portal, message our WhatsApp AI agent, or try the in-browser simulator. DigiLocker is available for quick citizen identity verification.',
           points: [
-            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'WhatsApp assistant (+91 63038 07967) and web simulator' },
+            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'WhatsApp AI agent and web simulator' },
             { icon: <Mic className="w-3.5 h-3.5 text-primary" />, text: 'Spoken voice reporting in Hindi or English' },
             { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'Automatic details from payment receipts and screenshots' },
             { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'Official DigiLocker identity confirmation' },

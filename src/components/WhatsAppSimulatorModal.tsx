@@ -219,8 +219,8 @@ export default function WhatsAppSimulatorModal({
   const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null)
 
   const initialGreeting = isHi
-    ? '👋 *नमस्ते! मैं समर्थन (Samarthan) AI साइबर अपराध ट्रायज बॉट हूँ।*\n\nमैं 24x7 आपातकालीन साइबर धोखाधड़ी रिपोर्टिंग और 1930 गोल्डन ऑवर फंड फ्रीज में आपकी सहायता करूँगा।\n\n📋 *अगले चरण के लिए आवश्यक बुनियादी जानकारी:*\n• क्या हुआ (फर्जी कॉल, UPI फ्रॉड, निवेश स्कैम, ब्लैकमेल)\n• खोई हुई राशि (₹)\n• धोखेबाज़ की जानकारी (UPI ID, फोन नंबर, खाता)\n• 12-अंकों का UTR संदर्भ नंबर (यदि पैसे कटे हों)\n\n🎙️ आप **वॉइस नोट 🎤**, टेक्स्ट संदेश ✍️, या लेनदेन का **स्क्रीनशॉट 📸** भेज सकते हैं। मैं तुरंत विश्लेषण कर आपकी FIR शिकायत तैयार करूँगा!'
-    : '👋 *Hi, I\'m the Samarthan AI Cybercrime Triage Bot.*\n\nI provide 24x7 automated emergency cybercrime triage and golden-hour fund freeze assistance under the Indian IT Act 2000.\n\n📋 *Basic information needed before the next stage:*\n• What happened (fake bank call, UPI scam, loan app, or investment fraud)\n• Total amount lost in ₹\n• Fraudster details (UPI ID, phone, account, or scam link)\n• 12-digit UTR reference number (if money was debited)\n\n🎙️ Send a **Voice Note 🎤**, type your incident ✍️, or upload a **Payment Screenshot 📸** to begin!'
+    ? '👋 *नमस्ते! मैं समर्थन (Samarthan) व्हाट्सएप AI एजेंट हूँ।*\n\nमैं 24x7 आपातकालीन साइबर धोखाधड़ी रिपोर्टिंग और 1930 गोल्डन ऑवर फंड फ्रीज में आपकी सहायता करूँगा।\n\n📋 *अगले चरण के लिए आवश्यक बुनियादी जानकारी:*\n• क्या हुआ (फर्जी कॉल, UPI फ्रॉड, निवेश स्कैम, ब्लैकमेल)\n• खोई हुई राशि (₹)\n• धोखेबाज़ की जानकारी (UPI ID, फोन नंबर, खाता)\n• 12-अंकों का UTR संदर्भ नंबर (यदि पैसे कटे हों)\n\n🎙️ आप **वॉइस नोट 🎤**, टेक्स्ट संदेश ✍️, या लेनदेन का **स्क्रीनशॉट 📸** भेज सकते हैं। मैं तुरंत विश्लेषण कर आपकी FIR शिकायत तैयार करूँगा!'
+    : '👋 *Hi, I\'m the Samarthan WhatsApp AI Agent.*\n\nI provide 24x7 automated emergency cybercrime triage and golden-hour fund freeze assistance under the Indian IT Act 2000.\n\n📋 *Basic information needed before the next stage:*\n• What happened (fake bank call, UPI scam, loan app, or investment fraud)\n• Total amount lost in ₹\n• Fraudster details (UPI ID, phone, account, or scam link)\n• 12-digit UTR reference number (if money was debited)\n\n🎙️ Send a **Voice Note 🎤**, type your incident ✍️, or upload a **Payment Screenshot 📸** to begin!'
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -814,7 +814,7 @@ export default function WhatsAppSimulatorModal({
             </div>
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="text-sm font-semibold tracking-tight">Samarthan 1930 AI Bot</h3>
+                <h3 className="text-sm font-semibold tracking-tight">Samarthan WhatsApp AI Agent</h3>
                 <span className="bg-emerald-500 text-white rounded-full px-1 text-[9px] font-bold">✓</span>
                 <span className="bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 text-[9px] font-mono px-1.5 py-0.5 rounded-full">
                   GPT-4o API

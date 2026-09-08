@@ -170,14 +170,14 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fa851] active:scale-[0.99] text-white rounded-xl px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold transition-all shadow-md hover:shadow-lg cursor-pointer min-h-[44px]"
               >
                 <MessageCircle className="w-5 h-5 fill-white" />
-                <span>{hi ? 'व्हाट्सएप एजेंट से बात करें' : 'Visit the Agent on WhatsApp'}</span>
+                <span>{hi ? 'व्हाट्सएप AI एजेंट से बात करें' : 'Chat with WhatsApp AI Agent'}</span>
                 <ExternalLink className="w-4 h-4 opacity-80" />
               </button>
             </div>
 
             <div className="mt-5 inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-[11px] sm:text-xs font-mono text-emerald-800">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span>{hi ? 'लाइव एजेंट सक्रिय (+91 63038 07967)' : 'Agent Active: +91 63038 07967 (24x7)'}</span>
+              <span>{hi ? 'व्हाट्सएप AI एजेंट सक्रिय (24x7)' : 'WhatsApp AI Agent Active (24x7)'}</span>
             </div>
           </div>
         )}

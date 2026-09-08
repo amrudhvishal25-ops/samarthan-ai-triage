@@ -151,14 +151,14 @@ export default function WhatsAppChoiceModal({
                     <span className="font-bold text-sm sm:text-base text-zinc-900 dark:text-zinc-100">
                       {isHi ? 'असली व्हाट्सएप ऐप में खोलें' : 'Open Real WhatsApp App'}
                     </span>
-                    <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
-                      +91 63038 07967
+                    <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                      {isHi ? 'व्हाट्सएप AI एजेंट' : 'WhatsApp AI Agent'}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
                     {isHi
-                      ? 'अपने फोन या व्हाट्सएप डेस्कटॉप ऐप पर सीधे हमारे बॉट से चैट करें।'
-                      : 'Chat directly in your WhatsApp mobile or web app with our Baileys companion bridge.'}
+                      ? 'अपने फोन या व्हाट्सएप डेस्कटॉप ऐप पर सीधे हमारे AI एजेंट से चैट करें।'
+                      : 'Chat directly in your WhatsApp mobile or web app with our AI agent.'}
                   </p>
                 </div>
               </div>

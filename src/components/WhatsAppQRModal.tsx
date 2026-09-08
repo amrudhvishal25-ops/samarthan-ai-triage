@@ -304,12 +304,12 @@ export default function WhatsAppQRModal({
                     {hi ? 'व्हाट्सएप सफलतापूर्वक कनेक्ट हो गया!' : 'WhatsApp Connected Successfully!'}
                   </h4>
                   <p className="text-sm font-semibold text-emerald-700 mt-1">
-                    {state.userPhone ? `Linked: ${state.userPhone}` : 'Bot Active'}
+                    {hi ? 'व्हाट्सएप AI एजेंट सक्रिय' : 'WhatsApp AI Agent Active'}
                   </p>
                   <p className="text-xs text-zinc-500 max-w-sm mx-auto mt-2 leading-relaxed">
                     {hi
-                      ? 'समर्थन AI ट्रायज बॉट अब सक्रिय है। आप इस नंबर पर किसी भी भाषा में साइबर धोखाधड़ी का संदेश या वॉयस नोट भेजकर परीक्षण कर सकते हैं।'
-                      : 'Samarthan AI is actively listening. Send any complaint (UPI fraud, extortion, phishing) to this WhatsApp account for instant triage and portal filing.'}
+                      ? 'समर्थन व्हाट्सएप AI एजेंट अब सक्रिय है। आप किसी भी भाषा में साइबर धोखाधड़ी का संदेश या वॉयस नोट भेजकर परीक्षण कर सकते हैं।'
+                      : 'Samarthan AI is actively listening. Send any complaint (UPI fraud, extortion, phishing) to the WhatsApp AI agent for instant triage and portal filing.'}
                   </p>
                 </div>
 
