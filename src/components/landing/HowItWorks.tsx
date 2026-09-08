@@ -30,7 +30,7 @@ export default function HowItWorks({ language }: HowItWorksProps) {
             { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'लेनदेन रसीद और स्क्रीनशॉट से ऑटो-रीडिंग' },
             { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'डिजीलॉकर से सुरक्षित आधार/पैन सत्यापन' },
           ],
-          shot: '/landing/shot-intake.jpg',
+          shot: '/landing/shot-intake.png',
         },
         {
           n: '02',
@@ -43,7 +43,7 @@ export default function HowItWorks({ language }: HowItWorksProps) {
             { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />, text: 'हिंदी और अंग्रेजी में तैयार पुलिस शिकायत' },
             { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600" />, text: 'सुरक्षित डिजिटल एविडेंस रिकॉर्ड' },
           ],
-          shot: '/landing/shot-dashboard.jpg',
+          shot: '/landing/shot-dashboard.png',
         },
         {
           n: '03',
@@ -71,7 +71,7 @@ export default function HowItWorks({ language }: HowItWorksProps) {
             { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'Automatic details from payment receipts and screenshots' },
             { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'Official DigiLocker identity confirmation' },
           ],
-          shot: '/landing/shot-intake.jpg',
+          shot: '/landing/shot-intake.png',
         },
         {
           n: '02',
@@ -84,7 +84,7 @@ export default function HowItWorks({ language }: HowItWorksProps) {
             { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />, text: 'FIR-ready complaint in Hindi and English' },
             { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600" />, text: 'Chain-of-custody evidence preservation' },
           ],
-          shot: '/landing/shot-dashboard.jpg',
+          shot: '/landing/shot-dashboard.png',
         },
         {
           n: '03',
