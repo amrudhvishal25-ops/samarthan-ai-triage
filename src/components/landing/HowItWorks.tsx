@@ -16,93 +16,105 @@ interface StepItem {
   shot: string
 }
 
+const DURATION_MAP: Record<string, { s1: string; s2: string; s3: string }> = {
+  en: { s1: 'Takes ~15 seconds', s2: 'Takes ~20 seconds', s3: 'Takes ~25 seconds' },
+  hi: { s1: 'लगभग 15 सेकंड', s2: 'लगभग 20 सेकंड', s3: 'लगभग 25 सेकंड' },
+  bn: { s1: 'প্রায় ১৫ সেকেন্ড', s2: 'প্রায় ২০ সেকেন্ড', s3: 'প্রায় ২৫ সেকেন্ড' },
+  mr: { s1: 'सुमारे १५ सेकंद', s2: 'सुमारे २० सेकंद', s3: 'सुमारे २५ सेकंद' },
+  te: { s1: 'సుమారు 15 సెకన్లు', s2: 'సుమారు 20 సెకన్లు', s3: 'సుమారు 25 సెకన్లు' },
+  ta: { s1: 'சுமார் 15 வினாடிகள்', s2: 'சுமார் 20 வினாடிகள்', s3: 'சுமார் 25 வினாடிகள்' },
+  gu: { s1: 'લગભગ 15 સેકન્ડ', s2: 'લગભગ 20 સેકન્ડ', s3: 'લગભગ 25 સેકન્ડ' },
+  ur: { s1: 'تقریباً 15 سیکنڈ', s2: 'تقریباً 20 سیکنڈ', s3: 'تقریباً 25 سیکنڈ' },
+  kn: { s1: 'ಸುಮಾರು 15 ಸೆಕೆಂಡುಗಳು', s2: 'ಸುಮಾರು 20 ಸೆಕೆಂಡುಗಳು', s3: 'ಸುಮಾರು 25 ಸೆಕೆಂಡುಗಳು' },
+  or: { s1: 'ପ୍ରାୟ ୧୫ ସେକେଣ୍ଡ', s2: 'ପ୍ରାୟ ୨୦ ସେକେଣ୍ଡ', s3: 'ପ୍ରାୟ ୨୫ ସେକେଣ୍ଡ' },
+  ml: { s1: 'ഏകദേശം 15 സെക്കൻഡ്', s2: 'ഏകദേശം 20 സെക്കൻഡ്', s3: 'ഏകദേശം 25 സെക്കൻഡ്' },
+  pa: { s1: 'ਲਗਭਗ 15 ਸਕਿੰਟ', s2: 'ਲਗਭਗ 20 ਸਕਿੰਟ', s3: 'ਲਗਭਗ 25 ਸਕਿੰਟ' },
+}
+
+const SUBTITLE_MAP: Record<string, string> = {
+  en: 'File cybercrime complaints, obtain applicable legal sections, and initiate bank freeze steps without navigating complicated bureaucratic questionnaires.',
+  hi: 'बिना किसी जटिल कानूनी फॉर्म के साइबर धोखाधड़ी की शिकायत दर्ज करें, सही धाराएं प्राप्त करें और बैंक खाता फ्रीज कराने की प्रक्रिया शुरू करें।',
+  bn: 'জটিল ফর্ম পূরণ ছাড়াই সাইবার প্রতারণার অভিযোগ দায়ের করুন, আইনি ধারা জানুন এবং ব্যাংক অ্যাকাউন্ট ফ্রিজ করার প্রক্রিয়া শুরু করুন।',
+  mr: 'जटिल फॉर्म न भरता सायबर फसवणुकीची तक्रार नोंदवा, योग्य कायदेशीर कलमे मिळवा आणि बँक खाते गोठवण्याची प्रक्रिया सुरू करा.',
+  te: 'సంక్లిష్టమైన ఫారమ్‌లు లేకుండా సైబర్ క్రైమ్ ఫిర్యాదులను నమోదు చేయండి, సంబంధిత చట్ట విభాగాలను పొందండి మరియు బ్యాంక్ ఫ్రీజ్ ప్రక్రియను ప్రారంభించండి.',
+  ta: 'சிக்கலான படிவங்கள் இல்லாமல் சைபர் குற்றப் புகார்களைப் பதிவு செய்து, சட்டப் பிரிவுகளைப் பெற்று, வங்கி முடக்க நடவடிக்கையைத் தொடங்குங்கள்.',
+  gu: 'કોઈપણ જટિલ ફોર્મ વગર સાયબર છેતરપિંડીની ફરિયાદ નોંધાવો, કાનૂની કલમો મેળવો અને બેંક એકાઉન્ટ ફ્રીઝ કરવાની પ્રક્રિયા શરૂ કરો.',
+  ur: 'کسی پیچیدہ فارم کے بغیر سائبر کرائم کی شکایت درج کریں، قانونی دفعات حاصل کریں اور بینک اکاؤنٹ فریز کرنے کا عمل شروع کریں۔',
+  kn: 'ಯಾವುದೇ ಸಂಕೀರ್ಣ ಫಾರ್ಮ್‌ಗಳಿಲ್ಲದೆ ಸೈಬರ್ ಅಪರಾಧ ದೂರುಗಳನ್ನು ಸಲ್ಲಿಸಿ, ಕಾನೂನು ವಿಭಾಗಗಳನ್ನು ಪಡೆಯಿರಿ ಮತ್ತು ಬ್ಯಾಂಕ್ ಖಾತೆ ಫ್ರೀಜ್ ಪ್ರಕ್ರಿಯೆಯನ್ನು ಪ್ರಾರಂಭಿಸಿ.',
+  or: 'କୌଣସି ଜଟିଳ ଫର୍ମ ବିନା ସାଇବର୍ ଅପରାଧ ଅଭିଯୋଗ ଦାଖଲ କରନ୍ତୁ, ଆଇନଗତ ଧାରା ଜାଣନ୍ତୁ ଏବଂ ବ୍ୟାଙ୍କ ଖାତା ଫ୍ରିଜ୍ ପ୍ରକ୍ରିୟା ଆରମ୍ଭ କରନ୍ତୁ।',
+  ml: 'സങ്കീർണ്ണമായ ഫോമുകളില്ലാതെ സൈബർ കുറ്റകൃത്യ പരാതികൾ നൽകുക, നിയമ വകുപ്പുകൾ നേടുക, ബാങ്ക് അക്കൗണ്ട് ഫ്രീസ് ചെയ്യുക.',
+  pa: 'ਬਿਨਾਂ ਕਿਸੇ ਗੁੰਝਲਦਾਰ ਫਾਰਮ ਦੇ ਸਾਈਬਰ ਅਪਰਾਧ ਦੀ ਸ਼ਿਕਾਇਤ ਦਰਜ ਕਰੋ, ਕਾਨੂੰਨੀ ਧਾਰਾਵਾਂ ਪ੍ਰਾਪਤ ਕਰੋ ਅਤੇ ਬੈਂਕ ਖਾਤਾ ਫ੍ਰੀਜ਼ ਕਰਨ ਦੀ ਪ੍ਰਕਿਰਿਆ ਸ਼ੁਰੂ ਕਰੋ।',
+}
+
 export default function HowItWorks({ language }: HowItWorksProps) {
   const isHi = language === 'hi'
+  const isEn = language === 'en'
   const t = getTranslation(language)
+  const durations = DURATION_MAP[language] || DURATION_MAP.en
+  const subtitle = SUBTITLE_MAP[language] || SUBTITLE_MAP.en
 
-  const steps: StepItem[] = isHi
-    ? [
-        {
-          n: '01',
-          duration: 'लगभग 15 सेकंड',
-          title: 'अपनी बात सीधे बताएं, कोई लंबा फॉर्म नहीं',
-          body: 'अपनी सामान्य भाषा में बोलें, संदेश लिखें या बैंक से आया मैसेज और स्क्रीनशॉट भेजें। आप वेबसाइट के ज़रिए रिपोर्ट कर सकते हैं, हमारे व्हाट्सएप AI एजेंट पर भेज सकते हैं, या ब्राउज़र में सीधे व्हाट्सएप सिम्युलेटर आज़मा सकते हैं। पहचान के लिए डिजीलॉकर से तुरंत सत्यापन की सुविधा भी है।',
-          points: [
-            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'व्हाट्सएप AI एजेंट व सिम्युलेटर' },
-            { icon: <Mic className="w-3.5 h-3.5 text-primary" />, text: 'हिंदी और अंग्रेजी में बोलकर शिकायत' },
-            { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'लेनदेन रसीद और स्क्रीनशॉट से ऑटो-रीडिंग' },
-            { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'डिजीलॉकर से सुरक्षित आधार/पैन सत्यापन' },
+  const steps: StepItem[] = [
+    {
+      n: '01',
+      duration: durations.s1,
+      title: t.howItWorks.step1Title,
+      body: t.howItWorks.step1Desc,
+      points: isHi
+        ? [
+            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />, text: 'व्हाट्सएप AI एजेंट व सिम्युलेटर' },
+            { icon: <Mic className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'बोलकर या लिखकर त्वरित शिकायत' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-amber-600 shrink-0" />, text: 'लेनदेन रसीद व स्क्रीनशॉट ऑटो-रीडिंग' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'डिजीलॉकर से सुरक्षित आधार सत्यापन' },
+          ]
+        : [
+            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />, text: 'WhatsApp AI agent & web simulator' },
+            { icon: <Mic className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'Voice & text reporting in 12 languages' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-amber-600 shrink-0" />, text: 'Auto-reads receipts & screenshots' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'DigiLocker verified citizen identity' },
           ],
-          shot: '/landing/shot-intake.png',
-        },
-        {
-          n: '02',
-          duration: 'लगभग 20 सेकंड',
-          title: 'मामले की जांच और कानूनी धाराओं की पहचान',
-          body: 'सिस्टम अपराध के प्रकार को समझकर धोखेबाज़ की UPI आईडी, बैंक खाता, 12 अंकों का UTR नंबर और फोन नंबर अलग से दर्ज कर लेता है। इसके बाद मामले के अनुसार IT एक्ट और भारतीय न्याय संहिता की सही धाराएं जोड़कर हिंदी और अंग्रेजी में पुलिस शिकायत पत्र तैयार कर देता है।',
-          points: [
-            { icon: <Scale className="w-3.5 h-3.5 text-primary" />, text: 'IT एक्ट और BNS की जरूरी कानूनी धाराएं' },
-            { icon: <Building2 className="w-3.5 h-3.5 text-primary" />, text: 'धोखेबाज़ का खाता, UPI और UTR नंबर की पहचान' },
-            { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />, text: 'हिंदी और अंग्रेजी में तैयार पुलिस शिकायत' },
-            { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600" />, text: 'सुरक्षित डिजिटल एविडेंस रिकॉर्ड' },
+      shot: '/landing/shot-intake.png',
+    },
+    {
+      n: '02',
+      duration: durations.s2,
+      title: t.howItWorks.step2Title,
+      body: t.howItWorks.step2Desc,
+      points: isHi
+        ? [
+            { icon: <Scale className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'IT एक्ट और BNS की कानूनी धाराएं' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'धोखेबाज़ का खाता, UPI व UTR नंबर' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />, text: 'तैयार औपचारिक पुलिस शिकायत पत्र' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600 shrink-0" />, text: 'सुरक्षित डिजिटल एविडेंस रिकॉर्ड' },
+          ]
+        : [
+            { icon: <Scale className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'Mapped IT Act & BNS legal sections' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'Extracted UTR, bank account & UPI' },
+            { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />, text: 'Dual-draft formal police complaint' },
+            { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600 shrink-0" />, text: 'Cryptographic evidence vault' },
           ],
-          shot: '/landing/shot-dashboard.png',
-        },
-        {
-          n: '03',
-          duration: 'लगभग 25 सेकंड',
-          title: 'खाता फ्रीज करने की तैयारी और केस अपडेट',
-          body: 'गोल्डन ऑवर में पैसे को आगे ट्रांसफर होने से रोकने के लिए 1930 हेल्पलाइन पर बोलने योग्य जरूरी बातें और बैंक नोडल अधिकारी के लिए खाता फ्रीज ईमेल तैयार मिलता है। अगर बाद में धोखेबाज़ का नया मैसेज या कोई और UTR मिले, तो बस व्हाट्सएप या वेबसाइट पर भेज दें। वह बिना नया फॉर्म भरे पुरानी शिकायत में ही जुड़ जाएगा।',
-          points: [
-            { icon: <Phone className="w-3.5 h-3.5 text-red-600" />, text: '1930 हेल्पलाइन ऑपरेटर को बताने के मुख्य बिंदु' },
-            { icon: <Building2 className="w-3.5 h-3.5 text-primary" />, text: 'बैंक नोडल अधिकारी को खाता फ्रीज अनुरोध' },
-            { icon: <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />, text: 'व्हाट्सएप से नई जानकारी स्वतः शिकायत में दर्ज' },
-            { icon: <Clock className="w-3.5 h-3.5 text-primary" />, text: 'लाइव केस स्टेटस ट्रैकिंग और PDF डाउनलोड' },
+      shot: '/landing/shot-dashboard.png',
+    },
+    {
+      n: '03',
+      duration: durations.s3,
+      title: t.howItWorks.step3Title,
+      body: t.howItWorks.step3Desc,
+      points: isHi
+        ? [
+            { icon: <Phone className="w-3.5 h-3.5 text-red-600 shrink-0" />, text: '1930 ऑपरेटर को बताने के मुख्य बिंदु' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'बैंक नोडल अधिकारी को खाता फ्रीज नोटिस' },
+            { icon: <RefreshCw className="w-3.5 h-3.5 text-emerald-600 shrink-0" />, text: 'व्हाट्सएप से स्वतः केस अपडेट' },
+            { icon: <Clock className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'लाइव केस स्टेटस और PDF डाउनलोड' },
+          ]
+        : [
+            { icon: <Phone className="w-3.5 h-3.5 text-red-600 shrink-0" />, text: '1930 helpline operator briefing points' },
+            { icon: <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'Bank nodal officer freeze notice' },
+            { icon: <RefreshCw className="w-3.5 h-3.5 text-emerald-600 shrink-0" />, text: 'Automatic WhatsApp case tracking' },
+            { icon: <Clock className="w-3.5 h-3.5 text-primary shrink-0" />, text: 'Live tracking portal & printable PDF' },
           ],
-          shot: '/landing/shot-complaints.png',
-        },
-      ]
-    : [
-        {
-          n: '01',
-          duration: 'Takes ~15 seconds',
-          title: 'Explain what happened in plain words, without forms',
-          body: 'Describe the incident naturally using voice, text, or a screenshot of the scam transaction. You can use the web portal, message our WhatsApp AI agent, or try the in-browser simulator. DigiLocker is available for quick citizen identity verification.',
-          points: [
-            { icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />, text: 'WhatsApp AI agent and web simulator' },
-            { icon: <Mic className="w-3.5 h-3.5 text-primary" />, text: 'Spoken voice reporting in Hindi or English' },
-            { icon: <FileImage className="w-3.5 h-3.5 text-amber-600" />, text: 'Automatic details from payment receipts and screenshots' },
-            { icon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />, text: 'Official DigiLocker identity confirmation' },
-          ],
-          shot: '/landing/shot-intake.png',
-        },
-        {
-          n: '02',
-          duration: 'Takes ~20 seconds',
-          title: 'Incident review and applicable legal sections',
-          body: 'The system identifies the type of fraud and extracts actionable details like the 12-digit UTR, suspect UPI handle, destination bank account, and phone numbers. It matches applicable provisions under the IT Act and BNS, then formats an official FIR complaint in English and Hindi.',
-          points: [
-            { icon: <Scale className="w-3.5 h-3.5 text-primary" />, text: 'Mapped IT Act and BNS criminal sections' },
-            { icon: <Building2 className="w-3.5 h-3.5 text-primary" />, text: 'Extracted UTR, recipient account, and UPI details' },
-            { icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />, text: 'FIR-ready complaint in Hindi and English' },
-            { icon: <FileImage className="w-3.5 h-3.5 text-zinc-600" />, text: 'Chain-of-custody evidence preservation' },
-          ],
-          shot: '/landing/shot-dashboard.png',
-        },
-        {
-          n: '03',
-          duration: 'Takes ~25 seconds',
-          title: 'Emergency account freeze and continuous updates',
-          body: 'During the golden hour, victims receive a clear script for the 1930 helpline and an account freeze notice addressed to the bank nodal officer. Any new information received later, such as follow-up bank SMS or extra transaction IDs sent on WhatsApp, is automatically added to the existing record.',
-          points: [
-            { icon: <Phone className="w-3.5 h-3.5 text-red-600" />, text: 'Prepared talking points for 1930 helpline staff' },
-            { icon: <Building2 className="w-3.5 h-3.5 text-primary" />, text: 'Draft notice for bank nodal officers to freeze accounts' },
-            { icon: <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />, text: 'New WhatsApp messages update the active case automatically' },
-            { icon: <Clock className="w-3.5 h-3.5 text-primary" />, text: 'Live tracking portal and printable PDF dossier' },
-          ],
-          shot: '/landing/shot-complaints.png',
-        },
-      ]
+      shot: '/landing/shot-complaints.png',
+    },
+  ]
 
   return (
     <section id="how-it-works" className="py-14 sm:py-20 md:py-24 bg-surface border-t border-zinc-200/80">
@@ -116,9 +128,7 @@ export default function HowItWorks({ language }: HowItWorksProps) {
             {t.howItWorks.title}
           </h2>
           <p className="mt-2.5 sm:mt-3 text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
-            {isHi
-              ? 'बिना किसी जटिल कानूनी फॉर्म के साइबर धोखाधड़ी की शिकायत दर्ज करें, सही धाराएं प्राप्त करें और बैंक खाता फ्रीज कराने की प्रक्रिया शुरू करें।'
-              : 'File cybercrime complaints, obtain applicable legal sections, and initiate bank freeze steps without navigating complicated bureaucratic questionnaires.'}
+            {subtitle}
           </p>
         </div>
 

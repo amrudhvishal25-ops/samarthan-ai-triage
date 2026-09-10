@@ -18,10 +18,39 @@ const MAX_SECONDS = 60
 const BAR_COUNT = 28
 const CHUNK_MS = 4000
 
+const MIC_ERROR_I18N: Record<SupportedLanguage, string> = {
+  en: 'Microphone permission denied. Please allow mic access in browser settings.',
+  hi: 'माइक्रोफोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग में माइक की अनुमति दें।',
+  bn: 'মাইক্রোফোনের অনুমতি প্রত্যাখ্যাত হয়েছে। অনুগ্রহ করে ব্রাউজার সেটিংসে মাইকের অনুমতি দিন।',
+  mr: 'मायक्रोफोन परवानगी नाकारली. कृपया ब्राउझर सेटिंग्जमध्ये माइकला अनुमती द्या.',
+  te: 'మైక్రోఫోన్ అనుమతి నిరాకరించబడింది. దయచేసి బ్రౌజర్ సెట్టింగ్‌లలో మైక్ అనుమతి ఇవ్వండి.',
+  ta: 'மைக்ரோஃபோன் அனுமதி மறுக்கப்பட்டது. உலாவி அமைப்புகளில் மைக் அணுகலை அனுமதிக்கவும்.',
+  gu: 'માઇક્રોફોન પરવાનગી નકારવામાં આવી. કૃપા કરીને બ્રાઉઝર સેટિંગ્સમાં માઇકની પરવાનગી આપો.',
+  ur: 'مائیکروفون کی اجازت مسترد کر دی گئی۔ براہ کرم براؤزر کی ترتیبات میں مائیک کی اجازت دیں۔',
+  kn: 'ಮೈಕ್ರೊಫೋನ್ ಅನುಮತಿಯನ್ನು ನಿರಾಕರಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಬ್ರೌಸರ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಮೈಕ್ ಪ್ರವೇಶವನ್ನು ಅನುಮತಿಸಿ.',
+  or: 'ମାଇକ୍ରୋଫୋନ୍ ଅନୁମତି ପ୍ରତ୍ୟାଖ୍ୟାନ କରାଗଲା। ଦୟାକରି ବ୍ରାଉଜର୍ ସେଟିଂସମୂହରେ ମାଇକ୍ ଅନୁମତି ଦିଅନ୍ତୁ।',
+  ml: 'മൈക്രോഫോൺ അനുമതി നിരസിച്ചു. ബ്രൗസർ ക്രമീകരണങ്ങളിൽ മൈക്ക് ആക്‌സസ്സ് അനുവദിക്കുക.',
+  pa: 'ਮਾਈਕ੍ਰੋਫੋਨ ਦੀ ਇਜਾਜ਼ਤ ਅਸਵੀਕਾਰ ਕੀਤੀ ਗਈ। ਕਿਰਪਾ ਕਰਕੇ ਬ੍ਰਾਊਜ਼ਰ ਸੈਟਿੰਗਾਂ ਵਿੱਚ ਮਾਈਕ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ।',
+}
+
+const AUDIO_READY_I18N: Record<SupportedLanguage, string> = {
+  en: '✓ Recording ready',
+  hi: '✓ रिकॉर्डिंग तैयार है',
+  bn: '✓ রেকর্ডিং প্রস্তুত',
+  mr: '✓ रेकॉर्डिंग तयार आहे',
+  te: '✓ రికార్డింగ్ సిద్ధంగా ఉంది',
+  ta: '✓ பதிவு தயாராக உள்ளது',
+  gu: '✓ રેકોર્ડિંગ તૈયાર છે',
+  ur: '✓ ریکارڈنگ تیار ہے',
+  kn: '✓ ರೆಕಾರ್ಡಿಂಗ್ ಸಿದ್ಧವಾಗಿದೆ',
+  or: '✓ ରେକର୍ଡିଂ ପ୍ରସ୍ତୁତ',
+  ml: '✓ റെക്കോർഡിംഗ് തയ്യാറാണ്',
+  pa: '✓ ਰਿਕਾਰਡਿੰਗ ਤਿਆਰ ਹੈ',
+}
+
 export default function AudioRecorder({ language, onAudioReady, onLiveTranscript, theme = 'light' }: AudioRecorderProps) {
   const t = getTranslation(language)
   const isDark = theme === 'dark'
-  const hi = language === 'hi'
 
   const [recording, setRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
@@ -240,10 +269,8 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
 
   if (permissionDenied) {
     return (
-      <div className={clsx("rounded-lg p-4 text-sm border", isDark ? "bg-red-500/10 border-red-500/30 text-red-300" : "bg-red-50 border-red-200 text-red-700")}>
-        {hi
-          ? 'माइक्रोफोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग में माइक की अनुमति दें।'
-          : 'Microphone permission denied. Please allow mic access in browser settings.'}
+      <div className={clsx("rounded-lg p-4 text-sm border indic-body", isDark ? "bg-red-500/10 border-red-500/30 text-red-300" : "bg-red-50 border-red-200 text-red-700")}>
+        {MIC_ERROR_I18N[language] || MIC_ERROR_I18N.en}
       </div>
     )
   }
@@ -320,8 +347,8 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
       {/* Playback */}
       {blobUrl && !recording && (
         <div className={clsx("rounded-lg p-2.5 border", isDark ? "bg-green-500/10 border-green-500/30" : "bg-green-50 border-green-200")}>
-          <p className={clsx("text-[10px] font-semibold mb-1.5 uppercase tracking-wide", isDark ? "text-green-400" : "text-green-700")}>
-            {language === 'en' ? 'Recording ready' : '✓ Audio Ready'}
+          <p className={clsx("text-[10px] font-semibold mb-1.5 uppercase tracking-wide indic-body", isDark ? "text-green-400" : "text-green-700")}>
+            {AUDIO_READY_I18N[language] || AUDIO_READY_I18N.en}
           </p>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <audio controls src={blobUrl} className={clsx("w-full h-8", isDark ? "opacity-90 grayscale-[0.2]" : "")} />

@@ -50,6 +50,14 @@ export function TriageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Synchronize document lang & RTL directionality (Urdu is RTL, others LTR)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = language
+      document.documentElement.dir = language === 'ur' ? 'rtl' : 'ltr'
+    }
+  }, [language])
+
   const setLanguage = (l: Language) => {
     setLanguageState(l)
     try {

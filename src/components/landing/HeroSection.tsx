@@ -94,6 +94,9 @@ export default function HeroSection({ language }: HeroSectionProps) {
     router.push(`/intake?category=auto${q}`)
   }
 
+  const cleanCtaReport = trans.hero.ctaReport.replace(/[\s→➔\->]+$/, '').trim()
+  const cleanCtaLearnMore = trans.hero.ctaLearnMore.replace(/[\s↓▼]+$/, '').trim()
+
   return (
     <section className="relative w-full pt-5 pb-12 sm:pt-8 sm:pb-20 md:pt-10 md:pb-24 overflow-hidden isolate">
       <RadialBackground />
@@ -111,9 +114,9 @@ export default function HeroSection({ language }: HeroSectionProps) {
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-14 items-start">
           {/* Left: copy */}
           <div>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.12]">
-              <span className="block py-0.5">{trans.hero.headline1}</span>
-              <span className="block text-primary mt-1 py-0.5">{trans.hero.headline2}</span>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.22] indic-headline">
+              <span className="block py-1">{trans.hero.headline1}</span>
+              <span className="block text-primary mt-1 py-1">{trans.hero.headline2}</span>
             </h1>
 
           <p className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg leading-relaxed">
@@ -125,14 +128,14 @@ export default function HeroSection({ language }: HeroSectionProps) {
               onClick={goToIntake}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-6 sm:px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm min-h-[44px]"
             >
-              {trans.hero.ctaReport}
-              <ArrowRight className="w-4 h-4" />
+              <span>{cleanCtaReport}</span>
+              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
             </button>
             <a
               href="#how-it-works"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-6 py-3.5 text-sm font-medium transition-colors shadow-2xs min-h-[44px]"
             >
-              {trans.hero.ctaLearnMore}
+              <span>{cleanCtaLearnMore}</span>
               <ArrowDown className="w-4 h-4 text-zinc-400" />
             </a>
           </div>
@@ -290,8 +293,8 @@ export default function HeroSection({ language }: HeroSectionProps) {
                       onClick={goToIntake}
                       className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
                     >
-                      <span>{isEn ? 'Proceed to Formal Filing (Form NCRP-1930) →' : `${meta.nativeName}: Proceed to Filing →`}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'Proceed to Formal Filing (Form NCRP-1930)' : `${meta.nativeName}: Proceed to Filing`}</span>
+                      <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                     </button>
 
                     <div className="mt-2.5 flex items-center justify-center">
@@ -336,8 +339,8 @@ export default function HeroSection({ language }: HeroSectionProps) {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-zinc-400 text-xs pt-0.5">{label}</span>
-      <span className="text-right">{value}</span>
+      <span className="text-zinc-400 text-xs pt-0.5 shrink-0">{label}</span>
+      <span className="text-right rtl:text-left">{value}</span>
     </div>
   )
 }

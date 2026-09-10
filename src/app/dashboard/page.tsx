@@ -491,7 +491,7 @@ function DashboardContent() {
                 {/* Complainant Name */}
                 <div>
                   <label htmlFor="complainant-name" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
-                    {hi ? 'शिकायतकर्ता का नाम' : 'Complainant Name'}
+                    {t.dashboard.complainant}
                   </label>
                   <input
                     id="complainant-name"
@@ -507,7 +507,7 @@ function DashboardContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="fraudster-name" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
-                      {hi ? 'आरोपी का नाम' : 'Fraudster Name'}
+                      {t.dashboard.fraudster}
                     </label>
                     <input
                       id="fraudster-name"
@@ -518,7 +518,7 @@ function DashboardContent() {
                   </div>
                   <div>
                     <label htmlFor="amount-lost" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
-                      {hi ? 'राशि (₹)' : 'Amount Lost (₹)'}
+                      {t.dashboard.amount} (₹)
                     </label>
                     <input
                       id="amount-lost"
@@ -552,11 +552,11 @@ function DashboardContent() {
                   </div>
 
                   {language !== 'en' && (
-                    <div className="flex items-center gap-1.5 mb-2.5 p-1 bg-zinc-100 rounded-lg w-fit">
+                    <div className="flex items-center gap-1.5 mb-2.5 p-1 bg-zinc-100 rounded-lg w-fit flex-wrap">
                       <button
                         type="button"
                         onClick={() => setActiveDraftTab('english')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
                           activeDraftTab === 'english'
                             ? 'bg-white text-zinc-900 shadow-xs font-semibold'
                             : 'text-zinc-500 hover:text-zinc-900'
@@ -567,7 +567,7 @@ function DashboardContent() {
                       <button
                         type="button"
                         onClick={() => setActiveDraftTab('regional')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer whitespace-nowrap ${
                           activeDraftTab === 'regional'
                             ? 'bg-primary text-white shadow-xs font-semibold'
                             : 'text-zinc-500 hover:text-zinc-900'
@@ -652,7 +652,7 @@ function DashboardContent() {
                 >
                   <div className="flex items-center gap-1.5">
                     <Printer className="w-4 h-4" />
-                    {hi ? 'PDF / प्रिंट करें' : 'Save as PDF / Print'}
+                    <span>{t.dashboard.savePdfBtn}</span>
                   </div>
                   <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded-sm px-1.5 py-0.5">
                     Live
@@ -675,7 +675,7 @@ function DashboardContent() {
               className="grid grid-cols-2 gap-3">
               <div className="border border-zinc-200 rounded-xl bg-white p-3.5 sm:p-4 shadow-sm">
                 <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">
-                  {hi ? 'घटना संख्या' : 'Incident ID'}
+                  {t.dashboard.incidentId}
                 </p>
                 <p className="font-mono font-bold text-zinc-900 text-base tracking-tight truncate">{r.incidentId}</p>
               </div>

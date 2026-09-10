@@ -99,7 +99,7 @@ export default function ComplaintsPage() {
             className="self-start sm:self-auto inline-flex items-center gap-2 text-xs font-semibold bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-xl px-4 py-2.5 transition-all shadow-sm cursor-pointer min-h-[44px]"
           >
             {t.complaints.fileNew}
-            <ArrowUpRight className="w-4 h-4" />
+            <ArrowUpRight className="w-4 h-4 rtl:rotate-90" />
           </button>
         </div>
 
@@ -127,7 +127,7 @@ export default function ComplaintsPage() {
               className="mt-6 inline-flex items-center gap-2 text-xs font-semibold bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-xl px-5 py-3 transition-all shadow-sm cursor-pointer min-h-[44px]"
             >
               {t.complaints.fileNew}
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-3.5 h-3.5 rtl:rotate-90" />
             </button>
           </motion.div>
         ) : (
@@ -161,7 +161,9 @@ export default function ComplaintsPage() {
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-zinc-900 mb-1">{c.fraudType}</p>
-                  <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{c.summary}</p>
+                  <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                    {c.summaryRegional && language !== 'en' && language !== 'hi' ? c.summaryRegional : (hi ? (c.summaryHi || c.summary) : c.summary)}
+                  </p>
                   <div className="flex items-center gap-3 mt-2.5 flex-wrap">
                     <div className="flex items-center gap-1 text-xs text-zinc-400">
                       <Clock className="w-3 h-3" />
@@ -176,7 +178,7 @@ export default function ComplaintsPage() {
                 </div>
 
                 {/* Arrow */}
-                <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-zinc-600 shrink-0 mt-2 transition-colors" />
+                <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-zinc-600 shrink-0 mt-2 transition-colors rtl:rotate-180" />
               </motion.div>
             ))}
           </div>

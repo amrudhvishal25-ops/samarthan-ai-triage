@@ -13,8 +13,24 @@ interface FreezeStepperProps {
   onHotlineClick?: (hotline: string) => void
 }
 
+const OPEN_PORTAL_I18N: Record<SupportedLanguage, string> = {
+  en: 'Open Portal',
+  hi: 'पोर्टल खोलें',
+  bn: 'পোর্টাল খুলুন',
+  mr: 'पोर्टल उघडा',
+  te: 'పోర్టల్ తెరవండి',
+  ta: 'போர்ட்டலைத் திறக்கவும்',
+  gu: 'પોર્ટલ ખોલો',
+  ur: 'پورٹل کھولیں',
+  kn: 'ಪೋರ್ಟಲ್ ತೆರೆಯಿರಿ',
+  or: 'ପୋର୍ଟାଲ୍ ଖୋଲନ୍ତୁ',
+  ml: 'പോർട്ടൽ തുറക്കുക',
+  pa: 'ਪੋਰਟਲ ਖੋਲ੍ਹੋ',
+}
+
 export default function FreezeStepper({ steps, language, onHotlineClick }: FreezeStepperProps) {
   const hi = language === 'hi'
+  const portalLabel = OPEN_PORTAL_I18N[language] || OPEN_PORTAL_I18N.en
   const [copied, setCopied] = useState<number | null>(null)
   const safeSteps = Array.isArray(steps) ? steps : []
 
@@ -118,7 +134,7 @@ export default function FreezeStepper({ steps, language, onHotlineClick }: Freez
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 text-zinc-700 dark:text-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-xs"
                   >
-                    <span>{hi ? 'पोर्टल खोलें' : 'Open Portal'}</span>
+                    <span className="indic-body">{portalLabel}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}

@@ -239,7 +239,7 @@ function IntakeContent() {
             aria-label={hi ? 'वापस जाएं' : 'Go back'}
             className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
           </button>
           <div>
             <p className="text-sm font-semibold text-zinc-900">{hi ? 'शिकायत विवरण' : 'Incident Details'}</p>
@@ -356,8 +356,8 @@ function IntakeContent() {
           disabled={!textValue && !voiceTranscript && !audioBlob && !imageFile && !scenario}
           className="w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-white py-3.5 sm:py-4 text-sm bg-primary hover:bg-primary-hover transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px] cursor-pointer"
         >
-          {t.intake.submitForTriage}
-          <ArrowRight className="w-4 h-4" />
+          <span>{t.intake.submitForTriage.replace(/[\s→➔\->]+$/, '').trim()}</span>
+          <ArrowRight className="w-4 h-4 rtl:rotate-180" />
         </button>
 
       </div>

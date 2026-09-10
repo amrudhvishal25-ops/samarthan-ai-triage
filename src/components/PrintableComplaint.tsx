@@ -34,6 +34,7 @@ export default function PrintableComplaint({ result, language, activeDraft }: Pr
   const summaryRows: [string, string, string][] = [
     ['Category', 'श्रेणी', result.fraudType],
     ['Urgency', 'प्राथमिकता', result.urgencyLevel],
+    ['Complainant Name', 'शिकायतकर्ता', result.complainantName || 'Citizen Complainant'],
     ['Amount Involved', 'राशि', Number(result.amount) > 0 ? `₹${Number(result.amount).toLocaleString('en-IN')}` : 'N/A'],
     ['Reported Against', 'आरोपी', result.fraudsterIdentifier],
     ['Contact/Handle', 'संपर्क', result.frauderContact],
@@ -50,6 +51,11 @@ export default function PrintableComplaint({ result, language, activeDraft }: Pr
         <h1 className="text-xl font-bold mt-1">
           {hi ? 'शिकायत पावती रसीद' : 'Complaint Acknowledgement Receipt'}
         </h1>
+        {language !== 'en' && language !== 'hi' && (
+          <p className="text-xs text-gray-600 mt-0.5 font-medium">
+            ({meta.nativeName} · {meta.name})
+          </p>
+        )}
       </div>
 
       <div className="border-2 border-black rounded-none p-4 mb-6 text-center">
