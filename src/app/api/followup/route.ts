@@ -8,6 +8,8 @@ import {
   isAdditionalAmount,
   extractMultilingualFraudster,
   extractMultilingualComplainant,
+  extractMultilingualUPI,
+  extractMultilingualIFSC,
   normalizeIndicNumerals,
 } from '@/lib/i18n/multilingualRegex'
 
@@ -19,6 +21,7 @@ export interface ExtractedFollowupFields {
   bankName: string | null
   accountNumber: string | null
   upiId: string | null
+  ifscCode?: string | null
   fraudsterIdentifier: string | null
   amount: number | null
   amountIsAdditional: boolean
@@ -31,6 +34,8 @@ function fallbackExtract(text: string): ExtractedFollowupFields {
   const utrRes = extractMultilingualUTR(text)
   const bank = extractMultilingualBank(text)
   const account = extractMultilingualAccount(text)
+  const upi = extractMultilingualUPI(text)
+  const ifsc = extractMultilingualIFSC(text)
   const upiMatch = normalized.match(/[\w.-]+@[\w.-]+/i)
   const phoneMatch = normalized.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
   const detectedFraudster = extractMultilingualFraudster(text)
@@ -41,11 +46,12 @@ function fallbackExtract(text: string): ExtractedFollowupFields {
   return {
     utr: utrRes.utr,
     bankName: bank,
-    upiId: upiMatch ? upiMatch[0] : null,
+    upiId: upi || (upiMatch ? upiMatch[0] : null),
+    ifscCode: ifsc || null,
     fraudsterIdentifier:
       detectedFraudster !== 'Not Identified'
         ? detectedFraudster
-        : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null),
+        : (phoneMatch ? phoneMatch[1] : (upi || (upiMatch ? upiMatch[0] : null))),
     accountNumber: account,
     amount: amt > 0 ? amt : null,
     amountIsAdditional: isAdditional,

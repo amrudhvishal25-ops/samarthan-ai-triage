@@ -3,7 +3,7 @@
 // Supports 12 Indian Languages: en, hi, bn, mr, te, ta, gu, ur, kn, or, ml, pa
 
 import { SupportedLanguage } from './languages'
-import { FraudType } from '@/data/scenarios'
+import { FraudType, ApplicableLaw } from '@/data/scenarios'
 
 // 1. Universal Unicode Script Ranges for Indian Languages + Arabic/Urdu + Latin
 export const ALL_INDIC_SCRIPTS_PATTERN =
@@ -47,8 +47,106 @@ export function extractMultilingualAmount(text: string): number {
   if (!text) return 0
   const normalized = normalizeIndicNumerals(text)
 
+  // Priority 0a: Vernacular Fractional Multipliers (डेढ़, ढाई, सवा, पौने दो) across all 12 languages
+  const fractionalMultipliers = [
+    // 1.5 Lakhs (1,50,000)
+    {
+      regex: /(?:डेढ़|देड़|देढ़|dedh|দেড়|दीड|દોઢ|ڈیڑھ|ਡੇਢ|ஒன்றரை|లక్షన్నర|ఒకటిన్నర|ಒಂದೂವರೆ|ଦେଢ଼|ഒന്നര)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)?/i,
+      value: 150000,
+    },
+    // 2.5 Lakhs (2,50,000)
+    {
+      regex: /(?:ढाई|dhai|আড়াই|अडीच|અઢી|ڈھائی|ਢਾਈ|இரண்டரை|రెండున్నర|ಎರಡುವರೆ|ଅଢ଼େଇ|രണ്ടര)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)?/i,
+      value: 250000,
+    },
+    // 1.25 Lakhs (1,25,000)
+    {
+      regex: /(?:सवा|sawa|સવા|ਸਵਾ)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)/i,
+      value: 125000,
+    },
+    // 1.75 Lakhs (1,75,000)
+    {
+      regex: /(?:पौने दो|paune do)\s*(?:lakh|लाख)/i,
+      value: 175000,
+    },
+  ]
+  for (const fm of fractionalMultipliers) {
+    if (fm.regex.test(normalized)) {
+      return fm.value
+    }
+  }
+
+  // Priority 0b: Suffix 'k' or 'K' for thousands (50k, 25k, 100k, 15k)
+  const kSuffixRegex = /(?:(?:₹|rs\.?|inr|loss|debited|paid)\s*)?([0-9]{1,4})\s*(?:k|K)\b/i
+  const mK = normalized.match(kSuffixRegex)
+  if (mK && mK[1]) {
+    const val = parseInt(mK[1], 10) * 1000
+    if (val >= 1000 && val <= 10000000) return val
+  }
+
+  // Priority 0c: Digit + Vernacular Thousand Word (e.g. "50 हजार", "20 হাজার", "75 వేలు", "30 ஆயிரம்", "15 ಸಾವಿರ")
+  const digitThousandRegex = /(?:(?:₹|rs\.?|inr)?\s*)?([0-9]{1,4})\s*(?:हजार|हज़ार|হাজার|వేలు|ஆயிரம்|હજાર|ہزار|ಸಾವಿರ|ହଜାର|ആയിരം|ਹਜ਼ਾਰ|hazar|hazaron)\b/i
+  const mDigitThousand = normalized.match(digitThousandRegex)
+  if (mDigitThousand && mDigitThousand[1]) {
+    const val = parseInt(mDigitThousand[1], 10) * 1000
+    if (val > 0) return val
+  }
+
+  // Priority 0d: Vernacular Word Multipliers for round numbers (1 lakh, 2 lakh, 5 lakh, 10 lakh)
+  const roundLakhWordRegex = /(?:एक|दो|दोन|तीन|चार|पांच|पाच|दहा|दस|১|২|৩|৪|৫|১০|এক|দুই|তিন|চার|পাঁচ|দশ|దోన్|రెండు|మూడు|నాలుగు|ఐదు|పది|ఒక|ஒன்று|ஒரு|இரண்டு|மூன்று|நான்கு|ஐந்து|பத்து|ഒരു|രണ്ട്|മൂന്ന്|നാല്|അഞ്ച്|പത്ത്|એક|બે|ત્રણ|ચાર|પાંચ|દસ|ایک|دو|تین|چار|پانچ|دس|ಒಂದು|ಎರಡು|ಮೂರು|ನಾಲ್ಕು|ಐದು|ಹತ್ತು|ଏକ|ଦୁଇ|ତିନି|ଚାରି|ପାଞ୍ଚ|ଦଶ|ਇੱਕ|ਦੋ|ਤਿੰਨ|ਚਾਰ|ਪੰਜ|ਦਸ)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)/i
+  const mLakhWord = normalized.match(roundLakhWordRegex)
+  if (mLakhWord) {
+    const wordMap: Record<string, number> = {
+      'एक': 1, '১': 1, 'এক': 1, 'ఒక': 1, 'ஒன்று': 1, 'ஒரு': 1, 'ഒരു': 1, 'એક': 1, 'ایک': 1, 'ಒಂದು': 1, 'ଏକ': 1, 'ਇੱਕ': 1,
+      'दो': 2, '२': 2, 'दोन': 2, 'দুই': 2, 'రెండు': 2, 'இரண்டு': 2, 'രണ്ട്': 2, 'બે': 2, 'دو': 2, 'ಎರಡು': 2, 'ଦୁଇ': 2, 'ਦੋ': 2,
+      'तीन': 3, '३': 3, 'তিন': 3, 'మూడు': 3, 'மூன்று': 3, 'മൂന്ന്': 3, 'ત્રણ': 3, 'تین': 3, 'ಮೂರು': 3, 'ତିନି': 3, 'ਤਿੰਨ': 3,
+      'चार': 4, '४': 4, 'চার': 4, 'నాలుగు': 4, 'நான்கு': 4, 'നാല്': 4, 'ચાર': 4, 'چار': 4, 'ನಾಲ್ಕು': 4, 'ଚାରି': 4, 'ਚਾਰ': 4,
+      'पांच': 5, '५': 5, 'पाच': 5, 'পাঁচ': 5, 'ఐదు': 5, 'ஐந்து': 5, 'അഞ്ച്': 5, 'પાંચ': 5, 'پانچ': 5, 'ಐದು': 5, 'ପାଞ୍ଚ': 5, 'ਪੰਜ': 5,
+      'दस': 10, '१०': 10, 'दहा': 10, 'দশ': 10, 'పది': 10, 'பத்து': 10, 'പത്ത്': 10, 'દસ': 10, 'دس': 10, 'ಹತ್ತು': 10, 'ଦଶ': 10, 'ਦਸ': 10,
+    }
+    const firstW = mLakhWord[0].split(/\s+/)[0]
+    if (wordMap[firstW]) {
+      return wordMap[firstW] * 100000
+    }
+  }
+
+  // Priority 0e: Vernacular Word + Thousand (e.g. "पचास हजार", "दहा हजार", "পঞ্চাশ হাজার", "యాభై వేలు", "ஐம்பதாயிரம்")
+  const vernacularThousandMap: Record<string, number> = {
+    // Malayalam compound thousands
+    'പതിനായിരം': 10000, 'ഇരുപതിനായിരം': 20000, 'മുപ്പതിനായിരം': 30000, 'നാല്പതിനായിരം': 40000,
+    'അമ്പതിനായിരം': 50000, 'അറുപതിനായിരം': 60000, 'എഴുപതിനായിരം': 70000, 'എൺപതിനായിരം': 80000, 'തൊണ്ണൂറായിരം': 90000,
+    // Tamil compound thousands
+    'பத்தாயிரம்': 10000, 'இருபதாயிரம்': 20000, 'முப்பதாயிரம்': 30000, 'நாற்பதாயிரம்': 40000,
+    'ஐம்பதாயிரம்': 50000, 'அறுபதாயிரம்': 60000, 'எழுபதாயிரம்': 70000, 'எண்பதாயிரம்': 80000, 'தொண்ணூறாயிரம்': 90000,
+    // Multi-script number words
+    'दस': 10000, 'दहा': 10000, 'দশ': 10000, 'పది': 10000, 'பத்து': 10000, 'દસ': 10000, 'دس': 10000, 'ಹತ್ತು': 10000, 'ଦଶ': 10000, 'പത്ത്': 10000, 'ਦਸ': 10000,
+    'बीस': 20000, 'वीस': 20000, 'বিশ': 20000, 'ఇరవై': 20000, 'இருபது': 20000, 'વીસ': 20000, 'بیس': 20000, 'ಇಪ್ಪತ್ತು': 20000, 'କୋଡ଼ିଏ': 20000, 'ਵੀਹ': 20000,
+    'पच्चीस': 25000, 'पंचवीस': 25000, 'পঁচিশ': 25000, 'இருபத்தைந்து': 25000, 'પચીસ': 25000, 'پچیس': 25000, 'ಇಪ್ಪತ್ತೈದು': 25000, 'ପଚିଶ': 25000, 'ਪੰਚੀ': 25000,
+    'तीस': 30000, 'তিরিশ': 30000, 'ত্রিশ': 30000, 'ముప్పై': 30000, 'முப்பது': 30000, 'ત્રીસ': 30000, 'تیس': 30000, 'ಮೂವತ್ತು': 30000, 'ତିରିଶ': 30000, 'ਤੀਹ': 30000,
+    'चालीस': 40000, 'चाळीस': 40000, 'চল্লিশ': 40000, 'నలభై': 40000, 'நாற்பது': 40000, 'ચાલીસ': 40000, 'چالیس': 40000, 'ನಲವತ್ತು': 40000, 'ଚାଳିଶ': 40000, 'ਚਾਲੀ': 40000,
+    'पचास': 50000, 'पन्नास': 50000, 'পঞ্চাশ': 50000, 'యాభై': 50000, 'ஐம்பது': 50000, 'પચાસ': 50000, 'پچاس': 50000, 'ಐವತ್ತು': 50000, 'ପଚାଶ': 50000, 'ਪੰਜਾਹ': 50000,
+    'साठ': 60000, 'षাট': 60000, 'అరవై': 60000, 'அறுபது': 60000, 'સાઠ': 60000, 'ساٹھ': 60000, 'ಅರವತ್ತು': 60000, 'ଷାଠିଏ': 60000, 'ਸੱਠ': 60000,
+    'सत्तर': 70000, 'সত্তর': 70000, 'డెబ్బై': 70000, 'எழுபது': 70000, 'સિત્તેર': 70000, 'ستر': 70000, 'ಎಪ್ಪತ್ತು': 70000, 'ସତୁରି': 70000, 'ਸੱਤਰ': 70000,
+    'अस्सी': 80000, 'ऐंशी': 80000, 'আশি': 80000, 'ఎనభై': 80000, 'எண்பது': 80000, 'એંસી': 80000, 'اسی': 80000, 'ಎಂಬತ್ತು': 80000, 'ଅଶୀ': 80000, 'ਅੱਸੀ': 80000,
+    'नब्बे': 90000, 'नव्वद': 90000, 'নব্বই': 90000, 'తొంభై': 90000, 'தொண்ணூறு': 90000, 'નેવું': 90000, 'نوے': 90000, 'ತೊಂಬತ್ತು': 90000, 'ନବ୍ବେ': 90000, 'ਨੱਬੇ': 90000,
+  }
+
+  const sortedThousandKeys = Object.keys(vernacularThousandMap).sort((a, b) => b.length - a.length)
+  for (const w of sortedThousandKeys) {
+    const val = vernacularThousandMap[w]
+    if (normalized.includes(w)) {
+      if (/^(?:പതിനായിരം|ഇരുപതിനായിരം|മുപ്പതിനായിരം|നാല്പതിനായിരം|അമ്പതിനായിരം|അറുപതിനായിരം|എഴുപതിനായിരം|എൺപതിനായിരം|തൊണ്ണൂറായിരം|பத்தாயிரம்|இருபதாயிரம்|முப்பதாயிரம்|நாற்பதாயிரம்|ஐம்பதாயிரம்|அறுபதாயிரம்|எழுபதாயிரம்|எண்பதாயிரம்|தொண்ணூறாயிரம்)$/.test(w)) {
+        return val
+      }
+      const rx = new RegExp(`(?:^|[^\\p{L}\\p{M}\\p{N}])${w}\\s*(?:हजार|हज़ार|হাজার|వేలు|ஆயிரம்|હજાર|ہزار|ಸಾವಿರ|ହଜାର|ആയിരം|ਹਜ਼ਾਰ)(?:[^\\p{L}\\p{M}\\p{N}]|$)`, 'iu')
+      if (rx.test(normalized)) {
+        return val
+      }
+    }
+  }
+
   // Priority 0: Total / Cumulative loss indicator ("total X debited", "মোট ১৫,০০০", "કુલ ₹૧૫,૦૦૦", "एकूण")
-  const totalRegex = /(?:\b(?:total|mot|motto|kull|kul|ekun|mottam|moththam|ottu|motam)\b|মোট|કુલ|एकूण|మొత్తం|மொத்தம்|ಒಟ್ಟು|ମୋଟ|ആകെ|ਕੁੱਲ)\s*(?:of\s*)?(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  const totalRegex = /(?:\b(?:total|mot|motto|kull|kul|ekun|mottam|moththam|ottu|motam)\b|মোট|કુલ|एकूण|మొత్తం|மொத்தம்|ಒಟ್ಟು|ମୋଟ|ആകെ|ਕੁੱਲ)\s*(?:of\s*)?(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/i
   const mTotal = normalized.match(totalRegex)
   if (mTotal && mTotal[1]) {
     const val = parseInt(mTotal[1].replace(/,/g, ''), 10)
@@ -112,14 +210,14 @@ export function extractMultilingualAmount(text: string): number {
   // 3. Multipliers: lakh / crore
   const isLotteryPrompt = /(?:lottery|kbc|prize|won|জিতেছিলাম|जिंकलेले|గెలుచుకున్నారని|గెలిచిన|ஜித்த|જીતેલા|ಗೆದ್ದ|ଜିତିଥିଲି)/i.test(normalized)
   if (!isLotteryPrompt) {
-    const multiplierRegex = /([\d,]+)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)/i
+    const multiplierRegex = /([\d,]+(?:\.\d+)?)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)/i
     const mMulti = normalized.match(multiplierRegex)
     if (mMulti && mMulti[1]) {
       const clean = parseFloat(mMulti[1].replace(/,/g, ''))
       if (Number.isFinite(clean) && clean > 0) candidates.push(Math.round(clean * 100000))
     }
 
-    const croreRegex = /([\d,]+)\s*(?:crore|crores|কোটি|करोड़|કરોડ|కోట్లు|కోటి|கோடி|کروڑ|ಕೋಟಿ|କୋଟି|കോടി|ਕਰੋੜ)/i
+    const croreRegex = /([\d,]+(?:\.\d+)?)\s*(?:crore|crores|কোটি|करोड़|કરોડ|కోట్లు|కోటి|கோடி|کروڑ|ಕೋಟಿ|କୋଟି|കോടി|ਕਰੋੜ)/i
     const mCrore = normalized.match(croreRegex)
     if (mCrore && mCrore[1]) {
       const clean = parseFloat(mCrore[1].replace(/,/g, ''))
@@ -566,6 +664,7 @@ export const MULTILINGUAL_GREETINGS_OR_NAV_REGEX =
   /^(?:status|track|reset|\/reset|restart|clear|hi|hello|hey|hlo|hii|yes|no|[1-9]|1[0-2]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|8️⃣|9️⃣|🔟|1️⃣0️⃣|1️⃣1️⃣|1️⃣2️⃣|help|madad|namaste|pranam|সাহায্য|নমস্কার|मदत|नमस्कार|సహాయం|నమస్కారం|உதவி|வணக்கம்|મદદ|નમસ્તે|مدد|سلام|سلام علیکم|ಆದರ್ಶ|ಸಹಾಯ|ನಮಸ್ಕಾರ|ସାହାଯ୍ୟ|ନମସ୍କାର|സഹായം|നമസ്കാരം|ਮਦਦ|ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ)$/i
 
 // 8. Official Regional State Police Complaint FIR Templates (for Fallback)
+// 8. Official Regional State Police Complaint FIR Templates (for Fallback & Direct Drafts)
 export function getRegionalComplaintDraft(
   lang: SupportedLanguage,
   complainantName: string,
@@ -573,44 +672,50 @@ export function getRegionalComplaintDraft(
   fraudType: string,
   incidentDetails: string,
   amount: number,
-  utr?: string
+  utr?: string,
+  upiId?: string,
+  ifsc?: string
 ): string {
   const lossText = amount > 0 ? `₹${amount.toLocaleString('en-IN')}` : ''
-  const utrText = utr ? `(Ref/UTR: ${utr})` : ''
+  const trailParts: string[] = []
+  if (utr) trailParts.push(`Ref/UTR: ${utr}`)
+  if (upiId) trailParts.push(`UPI: ${upiId}`)
+  if (ifsc) trailParts.push(`IFSC: ${ifsc}`)
+  const trailText = trailParts.length > 0 ? `(${trailParts.join(', ')})` : ''
 
   switch (lang) {
     case 'bn':
-      return `প্রতি,\nঅধ্যক্ষ মহাশয় / অফিসার-ইন-চার্জ,\nসাইবার ক্রাইম পুলিশ স্টেশন।\n\nবিষয়: ${fraudType} সংক্রান্ত আনুষ্ঠানিক সাইবার অপরাধ অভিযোগ।\n\nমাননীয় মহাশয়,\nআমি, ${complainantName}${onBehalfOf ? ` (${onBehalfOf}-এর পক্ষ থেকে)` : ''}, বিনীতভাবে জানাচ্ছি যে একটি সাইবার প্রতারণার ঘটনা ঘটেছে। ${lossText ? `এতে আর্থিক ক্ষতি হয়েছে: ${lossText} ${utrText}।` : ''}\n\nঘটনার বিবরণ:\n${incidentDetails}\n\nতথ্যপ্রযুক্তি আইন (IT Act 2000) ধারা ৬৬ডি ও প্রাসঙ্গিক ধারায় তদন্ত করে অপরাধীদের বিরুদ্ধে আইনানুগ ব্যবস্থা গ্রহণ এবং খোয়া যাওয়া অর্থ পুনরুদ্ধারের বিনীত অনুরোধ জানাচ্ছি।\n\nবিনীত,\n${complainantName}`
+      return `প্রতি,\nঅধ্যক্ষ মহাশয় / অফিসার-ইন-চার্জ,\nসাইবার ক্রাইম পুলিশ স্টেশন।\n\nবিষয়: ${fraudType} সংক্রান্ত আনুষ্ঠানিক সাইবার অপরাধ অভিযোগ (FIR)।\n\nমাননীয় মহাশয়,\nআমি, ${complainantName}${onBehalfOf ? ` (${onBehalfOf}-এর পক্ষ থেকে)` : ''}, বিনীতভাবে জানাচ্ছি যে একটি সাইবার প্রতারণার ঘটনা ঘটেছে। ${lossText ? `এতে আর্থিক ক্ষতি হয়েছে: ${lossText} ${trailText}।` : ''}\n\nঘটনার বিবরণ:\n${incidentDetails}\n\nতথ্যপ্রযুক্তি আইন (IT Act 2000) ধারা ৬৬ডি ও ভারতীয় ন্যায় সংহিতা (BNS 2023) ধারা ৩১৮(৪)/৩১৯(২) অনুযায়ী এফআইআর নথিভুক্ত করে অবিলম্বে অর্থ পুনরুদ্ধার ও আইনি পদক্ষেপ গ্রহণের বিনীত অনুরোধ জানাচ্ছি।\n\nবিনীত,\n${complainantName}`
 
     case 'mr':
-      return `प्रति,\nपोलीस निरीक्षक,\nसायबर क्राईम पोलीस ठाणे.\n\nविषय: ${fraudType} बाबत अधिकृत तक्रार नोंदवणेबाबत.\n\nमहोदय,\nमी, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} यांच्या वतीने)` : ''}, या पत्राद्वारे कळवतो की माझ्यासोबत ऑनलाईन फसवणुकीची घटना घडली आहे. ${lossText ? `यात नुकसान झालेली रक्कम: ${lossText} ${utrText}.` : ''}\n\nघटनेचा तपशील:\n${incidentDetails}\n\nकृपया माहिती तंत्रज्ञान कायदा (IT Act) कलम ६६ डी व भारतीय न्याय संहितेनुसार त्वरित गुन्हा नोंदवून कारवाई करावी ही नम्र विनंती.\n\nआपला नम्र,\n${complainantName}`
+      return `प्रति,\nपोलीस निरीक्षक,\nसायबर क्राईम पोलीस ठाणे.\n\nविषय: ${fraudType} बाबत अधिकृत सायबर गुन्हा (FIR) तक्रार नोंदवणेबाबत.\n\nमहोदय,\nमी, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} यांच्या वतीने)` : ''}, या पत्राद्वारे कळवतो की माझ्यासोबत ऑनलाईन फसवणुकीची घटना घडली आहे. ${lossText ? `यात नुकसान झालेली रक्कम: ${lossText} ${trailText}.` : ''}\n\nघटनेचा तपशील:\n${incidentDetails}\n\nकृपया माहिती तंत्रज्ञान कायदा (IT Act 2000) कलम ६६ डी व भारतीय न्याय संहिता (BNS 2023) कलम ३१८(४)/३१९(२) नुसार त्वरित गुन्हा नोंदवून कारवाई करावी ही नम्र विनंती.\n\nआपला नम्र,\n${complainantName}`
 
     case 'te':
-      return `స్వీకర్త,\nస్టేషన్ హౌస్ ఆఫీసర్,\nసైబర్ క్రైమ్ పోలీస్ స్టేషన్.\n\nవిషయం: ${fraudType} పై అధికారిక సైబర్ నేర ఫిర్యాదు.\n\nగౌరవనీయులైన అయ్యా/అమ్మా,\nనేను, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} తరపున)` : ''}, ఈ క్రింది సైబర్ మోసం గురించి ఫిర్యాదు చేస్తున్నాను. ${lossText ? `నష్టపోయిన మొత్తం: ${lossText} ${utrText}.` : ''}\n\nసంఘటన వివరాలు:\n${incidentDetails}\n\nఐటీ చట్టం సెక్షన్ 66D కింద విచారణ జరిపి తగిన చట్టపరమైన చర్యలు తీసుకోవాలని కోరుతున్నాను.\n\nభవదీయుడు,\n${complainantName}`
+      return `స్వీకర్త,\nస్టేషన్ హౌస్ ఆఫీసర్,\nసైబర్ క్రైమ్ పోలీస్ స్టేషన్.\n\nవిషయం: ${fraudType} పై అధికారిక సైబర్ నేర ఎఫ్‌ఐఆర్ (FIR) ఫిర్యాదు.\n\nగౌరవనీయులైన అయ్యా/అమ్మా,\nనేను, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} తరపున)` : ''}, ఈ క్రింది సైబర్ మోసం గురించి ఫిర్యాదు చేస్తున్నాను. ${lossText ? `నష్టపోయిన మొత్తం: ${lossText} ${trailText}.` : ''}\n\nసంఘటన వివరాలు:\n${incidentDetails}\n\nఐటీ చట్టం (IT Act 2000) సెక్షన్ 66D మరియు భారతీయ న్యాయ సంహిత (BNS 2023) సెక్షన్ 318(4)/319(2) కింద ఎఫ్‌ఐఆర్ నమోదు చేసి విచారణ జరిపి తగిన చట్టపరమైన చర్యలు తీసుకోవాలని కోరుతున్నాను.\n\nభవదీయుడు,\n${complainantName}`
 
     case 'ta':
-      return `பெறுநர்,\nகாவல் நிலைய பொறுப்பு அதிகாரி,\nசைபர் கிரைம் காவல் நிலையம்.\n\nபொருள்: ${fraudType} தொடர்பான முறையான குற்றப் புகார்.\n\nமதிப்பிற்குரிய ஐயா,\nநான், ${complainantName}${onBehalfOf ? ` (${onBehalfOf} சார்பாக)` : ''}, இணையதள மோசடி குறித்து இப்புகாரைப் பதிவு செய்கிறேன். ${lossText ? `இழப்புத் தொகை: ${lossText} ${utrText}.` : ''}\n\nசம்பவ விவரம்:\n${incidentDetails}\n\nதகவல் தொழில்நுட்பச் சட்டம் (IT Act) பிரிவு 66D கீழ் உரிய நடவடிக்கை எடுத்து பணத்தை மீட்க உதவ வேண்டுகிறேன்.\n\nஇப்படிக்கு,\n${complainantName}`
+      return `பெறுநர்,\nகாவல் நிலைய பொறுப்பு அதிகாரி,\nசைபர் கிரைம் காவல் நிலையம்.\n\nபொருள்: ${fraudType} தொடர்பான முறையான முதல் தகவல் அறிக்கை (FIR) புகார்.\n\nமதிப்பிற்குரிய ஐயா,\nநான், ${complainantName}${onBehalfOf ? ` (${onBehalfOf} சார்பாக)` : ''}, இணையதள மோசடி குறித்து இப்புகாரைப் பதிவு செய்கிறேன். ${lossText ? `இழப்புத் தொகை: ${lossText} ${trailText}.` : ''}\n\nசம்பவ விவரம்:\n${incidentDetails}\n\nதகவல் தொழில்நுட்பச் சட்டம் (IT Act 2000) பிரிவு 66D மற்றும் பாரதிய நியாய சன்ஹிதா (BNS 2023) பிரிவு 318(4)/319(2) கீழ் முதல் தகவல் அறிக்கை பதிவு செய்து உரிய நடவடிக்கை எடுத்து பணத்தை மீட்க உதவ வேண்டுகிறேன்.\n\nஇப்படிக்கு,\n${complainantName}`
 
     case 'gu':
-      return `પ્રતિ,\nપોલીસ ઈન્સ્પેક્ટર સાહેબ,\nસાયબર ક્રાઈમ પોલીસ સ્ટેશન.\n\nવિષય: ${fraudType} અંગે ઔપચારિક સાયબર ફરિયાદ બાબત.\n\nમાનનીય સાહેબ,\nહું, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} વતી)` : ''}, સાયબર છેતરપિંડી અંગે આ ફરિયાદ નોંધાવી રહ્યો છું. ${lossText ? `ગુમાવેલી રકમ: ${lossText} ${utrText}.` : ''}\n\nઘટનાની વિગતો:\n${incidentDetails}\n\nઆઈટી એક્ટ કલમ 66D હેઠળ તપાસ હાથ ધરી યોગ્ય કાયદેસર કાર્યવાહી કરવા નમ્ર વિનંતી છે.\n\nઆપનો વિશ્વાસુ,\n${complainantName}`
+      return `પ્રતિ,\nપોલીસ ઈન્સ્પેક્ટર સાહેબ,\nસાયબર ક્રાઈમ પોલીસ સ્ટેશન.\n\nવિષય: ${fraudType} અંગે ઔપચારિક સાયબર એફઆઈઆર (FIR) ફરિયાદ બાબત.\n\nમાનનીય સાહેબ,\nહું, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} વતી)` : ''}, સાયબર છેતરપિંડી અંગે આ ફરિયાદ નોંધાવી રહ્યો છું. ${lossText ? `ગુમાવેલી રકમ: ${lossText} ${trailText}.` : ''}\n\nઘટનાની વિગતો:\n${incidentDetails}\n\nઆઈટી એક્ટ (IT Act 2000) કલમ 66D અને ભારતીય ન્યાય સંહિતા (BNS 2023) કલમ 318(4)/319(2) હેઠળ ગુનો નોંધી યોગ્ય કાયદેસર કાર્યવાહી કરવા નમ્ર વિનંતી છે.\n\nઆપનો વિશ્વાસુ,\n${complainantName}`
 
     case 'ur':
-      return `بخدمت جناب،\nاسٹیشن ہاؤس آفیسر،\nسائبر کرائم پولیس اسٹیشن۔\n\nموضوع: ${fraudType} کے متعلق باضابطہ سائبر شکایت۔\n\nجناب عالی،\nمیں، ${complainantName}${onBehalfOf ? ` (${onBehalfOf} کی جانب سے)` : ''}، سائبر دھوکہ دہی کی شکایت درج کرا رہا ہوں۔ ${lossText ? `نقصان شدہ رقم: ${lossText} ${utrText}۔` : ''}\n\nواقعے کی تفصیل:\n${incidentDetails}\n\nآئی ٹی ایکٹ کی دفعہ 66D کے تحت قانونی کارروائی کی التماس ہے۔\n\nالعبد،\n${complainantName}`
+      return `بخدمت جناب،\nاسٹیشن ہاؤس آفیسر،\nسائبر کرائم پولیس اسٹیشن۔\n\nموضوع: ${fraudType} کے متعلق باضابطہ سائبر ایف آئی آر (FIR) شکایت۔\n\nجناب عالی،\nمیں، ${complainantName}${onBehalfOf ? ` (${onBehalfOf} کی جانب سے)` : ''}، سائبر دھوکہ دہی کی شکایت درج کرا رہا ہوں۔ ${lossText ? `نقصان شدہ رقم: ${lossText} ${trailText}۔` : ''}\n\nواقعے کی تفصیل:\n${incidentDetails}\n\nآئی ٹی ایکٹ (IT Act 2000) کی دفعہ 66D اور بھارتیہ نیا سنہتا (BNS 2023) کی دفعہ 318(4)/319(2) کے تحت ایف آئی آر درج کر کے قانونی کارروائی کی التماس ہے۔\n\nالعبد،\n${complainantName}`
 
     case 'kn':
-      return `ರವರಿಗೆ,\nಠಾಣಾಧಿಕಾರಿಗಳು,\nಸೈಬರ್ ಕ್ರೈಮ್ ಪೊಲೀಸ್ ಠಾಣೆ.\n\nವಿಷಯ: ${fraudType} ಕುರಿತು ಅಧಿಕೃತ ದೂರು ದಾಖಲಿಸುವ ಬಗ್ಗೆ.\n\nಮಾನ್ಯರೇ,\nನಾನು, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} ಅವರ ಪರವಾಗಿ)` : ''}, ಈ ಸೈಬರ್ ವಂಚನೆ ಕುರಿತು ದೂರು ನೀಡುತ್ತಿದ್ದೇನೆ. ${lossText ? `ಕಳೆದುಕೊಂಡ ಹಣ: ${lossText} ${utrText}.` : ''}\n\nಘಟನೆಯ ವಿವರ:\n${incidentDetails}\n\nಮಾಹಿತಿ ತಂತ್ರಜ್ಞಾನ ಕಾಯ್ದೆ ಕಲಂ 66D ಅಡಿಯಲ್ಲಿ ಕಾನೂನು ಕ್ರಮ ಕೈಗೊಳ್ಳಬೇಕಾಗಿ ವಿನಂತಿ.\n\nತಮ್ಮ ವಿಶ್ವಾಸಿ,\n${complainantName}`
+      return `ರವರಿಗೆ,\nಠಾಣಾಧಿಕಾರಿಗಳು,\nಸೈಬರ್ ಕ್ರೈಮ್ ಪೊಲೀಸ್ ಠಾಣೆ.\n\nವಿಷಯ: ${fraudType} ಕುರಿತು ಅಧಿಕೃತ ಎಫ್‌ಐಆರ್ (FIR) ದೂರು ದಾಖಲಿಸುವ ಬಗ್ಗೆ.\n\nಮಾನ್ಯರೇ,\nನಾನು, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} ಅವರ ಪರವಾಗಿ)` : ''}, ಈ ಸೈಬರ್ ವಂಚನೆ ಕುರಿತು ದೂರು ನೀಡುತ್ತಿದ್ದೇನೆ. ${lossText ? `ಕಳೆದುಕೊಂಡ ಹಣ: ${lossText} ${trailText}.` : ''}\n\nಘಟನೆಯ ವಿವರ:\n${incidentDetails}\n\nಮಾಹಿತಿ ತಂತ್ರಜ್ಞಾನ ಕಾಯ್ದೆ (IT Act 2000) ಕಲಂ 66D ಮತ್ತು ಭಾರತೀಯ ನ್ಯಾಯ ಸಂಹಿತೆ (BNS 2023) ಕಲಂ 318(4)/319(2) ಅಡಿಯಲ್ಲಿ ಎಫ್‌ಐಆರ್ ದಾಖಲಿಸಿ ಕಾನೂನು ಕ್ರಮ ಕೈಗೊಳ್ಳಬೇಕಾಗಿ ವಿನಂತಿ.\n\nತಮ್ಮ ವಿಶ್ವಾಸಿ,\n${complainantName}`
 
     case 'or':
-      return `ମାନ୍ୟବର,\nଥାନା ଅଧିକାରୀ,\nସାଇବର କ୍ରାଇମ ପୋଲିସ ଷ୍ଟେସନ।\n\nବିଷୟ: ${fraudType} ସମ୍ପର୍କରେ ଆନୁଷ୍ଠାନିକ ଅଭିଯୋଗ।\n\nମହାଶୟ,\nମୁଁ, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} ଙ୍କ ତରଫରୁ)` : ''}, ସାଇବର ଠକେଇ ସମ୍ପର୍କରେ ଜଣାଉଛି। ${lossText ? `କ୍ଷତିଗ୍ରସ୍ତ ରାଶି: ${lossText} ${utrText}।` : ''}\n\nଘଟଣାର ବିବରଣୀ:\n${incidentDetails}\n\nଆଇଟି ଆକ୍ଟ ଧାରା 66D ଅନୁଯାୟୀ କାର୍ଯ୍ୟାନୁଷ୍ଠାନ ଗ୍ରହଣ କରିବାକୁ ବିନମ୍ର ପ୍ରାର୍ଥନା।\n\nଆପଣଙ୍କର ବିଶ୍ୱସ୍ତ,\n${complainantName}`
+      return `ମାନ୍ୟବର,\nଥାନା ଅଧିକାରୀ,\nସାଇବର କ୍ରାଇମ ପୋଲିସ ଷ୍ଟେସନ।\n\nବିଷୟ: ${fraudType} ସମ୍ପର୍କରେ ଆନୁଷ୍ଠାନିକ ଏଫଆଇଆର (FIR) ଅଭିଯୋଗ।\n\nମହାଶୟ,\nମୁଁ, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} ଙ୍କ ତରଫରୁ)` : ''}, ସାଇବର ଠକେଇ ସମ୍ପର୍କରେ ଜଣାଉଛି। ${lossText ? `କ୍ଷତିଗ୍ରସ୍ତ ରାଶି: ${lossText} ${trailText}।` : ''}\n\nଘଟଣାର ବିବରଣୀ:\n${incidentDetails}\n\nଆଇଟି ଆକ୍ଟ (IT Act 2000) ଧାରା 66D ଏବଂ ଭାରତୀୟ ନ୍ୟାୟ ସଂହିତା (BNS 2023) ଧାରା 318(4)/319(2) ଅନୁଯାୟୀ ଏଫଆଇଆର ରୁଜୁ କରି କାର୍ଯ୍ୟାନୁଷ୍ଠାନ ଗ୍ରହଣ କରିବାକୁ ବିନମ୍ର ପ୍ରାର୍ଥନା।\n\nଆପଣଙ୍କର ବିଶ୍ୱସ୍ତ,\n${complainantName}`
 
     case 'ml':
-      return `ബഹുമാനപ്പെട്ട,\nസ്റ്റേഷൻ ഹൗസ് ഓഫീസർ,\nസൈബർ ക്രൈം പോലീസ് സ്റ്റേഷൻ.\n\nവിഷയം: ${fraudType} സംബന്ധിച്ച ഔദ്യോഗിക സൈബർ കുറ്റകൃത്യ പരാതി.\n\nബഹുമാനപ്പെട്ട സർ,\nഞാൻ, ${complainantName}${onBehalfOf ? ` (${onBehalfOf}-ന് വേണ്ടി)` : ''}, ഓൺലൈൻ തട്ടിപ്പ് സംബന്ധിച്ച് ഈ പരാതി സമർപ്പിക്കുന്നു. ${lossText ? `നഷ്ടപ്പെട്ട തുക: ${lossText} ${utrText}.` : ''}\n\nസംഭവ വിവരണം:\n${incidentDetails}\n\nഐടി നിയമം സെക്ഷൻ 66D പ്രകാരം നടപടി സ്വീകരിക്കണമെന്ന് അപേക്ഷിക്കുന്നു.\n\nവിശ്വസ്തതയോടെ,\n${complainantName}`
+      return `ബഹുമാനപ്പെട്ട,\nസ്റ്റേഷൻ ഹൗസ് ഓഫീസർ,\nസൈബർ ക്രൈം പോലീസ് സ്റ്റേഷൻ.\n\nവിഷയം: ${fraudType} സംബന്ധിച്ച ഔദ്യോഗിക എഫ്ഐആർ (FIR) പരാതി.\n\nബഹുമാനപ്പെട്ട സർ,\nഞാൻ, ${complainantName}${onBehalfOf ? ` (${onBehalfOf}-ന് വേണ്ടി)` : ''}, ഓൺലൈൻ തട്ടിപ്പ് സംബന്ധിച്ച് ഈ പരാതി സമർപ്പിക്കുന്നു. ${lossText ? `നഷ്ടപ്പെട്ട തുക: ${lossText} ${trailText}.` : ''}\n\nസംഭവ വിവരണം:\n${incidentDetails}\n\nഐടി നിയമം (IT Act 2000) സെക്ഷൻ 66D, ഭാരതീയ ന്യായ സംഹിത (BNS 2023) സെക്ഷൻ 318(4)/319(2) പ്രകാരം എഫ്ഐആർ രജിസ്റ്റർ ചെയ്ത് നടപടി സ്വീകരിക്കണമെന്ന് അപേക്ഷിക്കുന്നു.\n\nവിശ്വസ്തതയോടെ,\n${complainantName}`
 
     case 'pa':
-      return `ਸੇਵਾ ਵਿਖੇ,\nਮੁੱਖ ਅਫਸਰ (SHO),\nਸਾਈਬਰ ਕ੍ਰਾਈਮ ਪੁਲਿਸ ਸਟੇਸ਼ਨ।\n\nਵਿਸ਼ਾ: ${fraudType} ਸੰਬੰਧੀ ਰਸਮੀ ਸ਼ਿਕਾਇਤ।\n\nਜਨਾਬ,\nਮੈਂ, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} ਵੱਲੋਂ)` : ''}, ਇਸ ਸਾਈਬਰ ਧੋਖਾਧੜੀ ਬਾਰੇ ਸ਼ਿਕਾਇਤ ਦਰਜ ਕਰਵਾ ਰਿਹਾ ਹਾਂ। ${lossText ? `ਨੁਕਸਾਨ ਹੋਈ ਰਕਮ: ${lossText} ${utrText}।` : ''}\n\nਘਟਨਾ ਦਾ ਵੇਰਵਾ:\n${incidentDetails}\n\nਆਈਟੀ ਐਕਟ ਦੀ ਧਾਰਾ 66D ਤਹਿਤ ਕਾਨੂੰਨੀ ਕਾਰਵਾਈ ਕਰਕੇ ਨਿਆਂ ਦਿਵਾਇਆ ਜਾਵੇ।\n\nਤੁਹਾਡਾ ਸ਼ੁਭਚਿੰਤਕ,\n${complainantName}`
+      return `ਸੇਵਾ ਵਿਖੇ,\nਮੁੱਖ ਅਫਸਰ (SHO),\nਸਾਈਬਰ ਕ੍ਰਾਈਮ ਪੁਲਿਸ ਸਟੇਸ਼ਨ।\n\nਵਿਸ਼ਾ: ${fraudType} ਸੰਬੰਧੀ ਰਸਮੀ ਐਫਆਈਆਰ (FIR) ਸ਼ਿਕਾਇਤ।\n\nਜਨਾਬ,\nਮੈਂ, ${complainantName}${onBehalfOf ? ` (${onBehalfOf} ਵੱਲੋਂ)` : ''}, ਇਸ ਸਾਈਬਰ ਧੋਖਾਧੜੀ ਬਾਰੇ ਸ਼ਿਕਾਇਤ ਦਰਜ ਕਰਵਾ ਰਿਹਾ ਹਾਂ। ${lossText ? `ਨੁਕਸਾਨ ਹੋਈ ਰਕਮ: ${lossText} ${trailText}।` : ''}\n\nਘਟਨਾ ਦਾ ਵੇਰਵਾ:\n${incidentDetails}\n\nਆਈਟੀ ਐਕਟ (IT Act 2000) ਦੀ ਧਾਰਾ 66D ਅਤੇ ਭਾਰਤੀ ਨਿਆਂ ਸੰਹਿਤਾ (BNS 2023) ਦੀ ਧਾਰਾ 318(4)/319(2) ਤਹਿਤ ਐਫਆਈਆਰ ਦਰਜ ਕਰਕੇ ਕਾਨੂੰਨੀ ਕਾਰਵਾਈ ਕੀਤੀ ਜਾਵੇ।\n\nਤੁਹਾਡਾ ਸ਼ੁਭਚਿੰਤਕ,\n${complainantName}`
 
     default:
-      return `To,\nThe Station House Officer,\nCyber Crime Police Station.\n\nSubject: Formal Cybercrime Complaint regarding ${fraudType}\n\nRespected Sir/Madam,\n\nI, ${complainantName}${onBehalfOf ? ` (on behalf of ${onBehalfOf})` : ''}, am lodging this formal complaint regarding cyber fraud. ${lossText ? `Financial loss incurred: ${lossText} ${utrText}.` : ''}\n\nIncident Details:\n${incidentDetails}\n\nPlease take immediate legal action under Section 66D of the IT Act 2000.\n\nYours faithfully,\n${complainantName}`
+      return `To,\nThe Station House Officer,\nCyber Crime Police Station.\n\nSubject: Formal Cybercrime Complaint / FIR regarding ${fraudType}\n\nRespected Sir/Madam,\n\nI, ${complainantName}${onBehalfOf ? ` (on behalf of ${onBehalfOf})` : ''}, am lodging this formal complaint regarding cyber fraud. ${lossText ? `Financial loss incurred: ${lossText} ${trailText}.` : ''}\n\nIncident Details:\n${incidentDetails}\n\nPlease register an FIR and take immediate legal action under Section 66D of the Information Technology Act 2000 and Section 318(4) / 319(2) of the Bharatiya Nyaya Sanhita (BNS 2023).\n\nYours faithfully,\n${complainantName}`
   }
 }
 
@@ -716,4 +821,207 @@ export function isAdditionalAmount(text: string): boolean {
     'iu'
   )
   return additionalMarkers.test(text)
+}
+
+// 13. Universal Multilingual UPI ID / VPA Extractor
+export function extractMultilingualUPI(text: string): string | null {
+  if (!text) return null
+  const normalized = normalizeIndicNumerals(text)
+
+  // 1. Explicit UPI marker across 12 languages
+  const explicitMarkerRx = /(?:upi\s*(?:id|handle|address|vpa)?|यूपीआई\s*(?:आईडी)?|ইউপিআই\s*(?:আইডি)?|యుపిఐ\s*(?:ఐడి)?|யூபிஐ\s*(?:ஐடி)?|યુપીઆઈ\s*(?:આઈડી)?|یو\s*پی\s*آئی\s*(?:آئی\s*ڈی)?|ಯುಪಿಐ\s*(?:ಐಡಿ)?|ୟୁପିଆଇ\s*(?:ଆଇଡି)?|യുപിഐ\s*(?:ഐഡി)?|ਯੂਪੀਆਈ\s*(?:ਆਈਡੀ)?)\s*[:#-]?\s*([a-zA-Z0-9.\-_]{2,64}@[a-zA-Z]{2,32})/i
+  const mExp = normalized.match(explicitMarkerRx)
+  if (mExp && mExp[1]) {
+    const vpa = mExp[1].trim()
+    if (!/(@gmail\.com|@yahoo\.|@outlook\.|@hotmail\.|@icloud\.)/i.test(vpa)) {
+      return vpa
+    }
+  }
+
+  // 2. Known Indian UPI handle domains
+  const knownHandles = 'okaxis|okhdfcbank|oksbi|okicici|paytm|ybl|ibl|axl|apl|upi|postbank|kotak|barodampay|fednet|aubank|indus|idfcbank|freecharge|airtel|jupiteraxis|fbl|federal|waaxis|sbi|hdfc|icici|axis'
+  const knownVpaRx = new RegExp(`\\b([a-zA-Z0-9.\\-_]{2,64}@(?:${knownHandles}))\\b`, 'i')
+  const mKnown = normalized.match(knownVpaRx)
+  if (mKnown && mKnown[1]) {
+    return mKnown[1].trim()
+  }
+
+  // 3. General VPA pattern (exclude standard web email domains)
+  const generalVpaRx = /\b([a-zA-Z0-9.\-_]{2,64}@[a-zA-Z]{2,32})\b/gi
+  let mGen: RegExpExecArray | null = null
+  while ((mGen = generalVpaRx.exec(normalized)) !== null) {
+    const candidate = mGen[1].trim()
+    if (!/(?:gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|icloud\.com|protonmail\.com|rediffmail\.com|live\.com)/i.test(candidate)) {
+      return candidate
+    }
+  }
+
+  return null
+}
+
+// 14. Universal Multilingual Indian Bank IFSC Code Extractor
+export function extractMultilingualIFSC(text: string): string | null {
+  if (!text) return null
+  const normalized = normalizeIndicNumerals(text)
+
+  // Explicit IFSC marker across 12 languages
+  const explicitRx = /(?:ifsc(?:\s*code)?|आईएफएससी(?:\s*कोड)?|আইএফএসসি|ఐఎఫ్‌ఎస్‌సి|ஐஎப்எஸ்சி|આઈએફએસસી|آئی\s*ایف\s*ایس\s*سی|ಐಎಫ್‌ಎಸ್‌ಸಿ|ଆଇଏଫଏସସି|ഐഎഫ്എസ്സി|ਆਈਐਫਐਸਸੀ)\s*[:#-]?\s*([A-Za-z]{4}0[A-Za-z0-9]{6})/i
+  const mExp = normalized.match(explicitRx)
+  if (mExp && mExp[1]) {
+    return mExp[1].toUpperCase().trim()
+  }
+
+  // Standalone 11-character Indian Bank IFSC format: 4 letters + 0 + 6 alphanumeric
+  const standaloneIfscRx = /\b([A-Z]{4}0[A-Z0-9]{6})\b/gi
+  let mStand: RegExpExecArray | null = null
+  while ((mStand = standaloneIfscRx.exec(normalized)) !== null) {
+    const code = mStand[1].toUpperCase()
+    // Verify prefix matches standard Indian banks
+    if (/^(SBIN|HDFC|ICIC|UTIB|PUNB|BARB|KKBK|CNRB|UBIN|PYTM|INDB|YESB|IDFB|IOBA|CBIN|BKID|MAHB|ANDB|ALLA|CORP|VIJB|SYNB|BDBL|KVBL|FDRL|CSBK|SIBL|JAKA|AIRP)/.test(code)) {
+      return code
+    }
+  }
+
+  return null
+}
+
+// 15. Digital Arrest & High-Harm Scam Detector & Statutory Warning Generator
+export function detectDigitalArrest(text: string): boolean {
+  if (!text) return false
+  const t = text.toLowerCase()
+
+  // 1. Direct "digital arrest" keywords across 12 scripts
+  const directKeywordRx = /(?:digital\s*arrest|ডিজিটাল\s*অ্যারেস্ট|डिजिटल\s*अरेस्ट|డిజిటల్\s*అరెస్ట్|டிஜிட்டல்\s*அரெஸ்ட்|ડિજિટલ\s*અરેસ્ટ|ڈیجیٹل\s*گرفتاری|ಡಿಜಿಟಲ್\s*ಅರೆಸ್ಟ್|ಡಿಜಾಟಲ್|ଡିଜିଟାଲ\s*ଆରେଷ୍ଟ|ഡിജിറ്റൽ\s*അറസ്|ਡਿਜੀਟਲ\s*ਅਰੈਸਟ)/i
+  if (directKeywordRx.test(t)) return true
+
+  // 2. Video Call markers across 12 scripts
+  const videoCallMarkers = /(?:skype|video\s*call|वीडियो\s*कॉल|वीडियो|व्हिडिओ\s*कॉल|व्हिडिओ|ভিডিও\s*কল|ভিডিও|వీడియో\s*కాల్|వీడియో|வீடியோ\s*கால்|வீடியோ|விடியோ\s*કોલ|વિડીયો\s*કૉલ|વિડીયો\s*કોલ|વિડીયો|ویڈیو\s*کال|ویڈیو|ವೀಡಿಯೊ\s*ಕರೆ|ವೀಡಿಯೋ\s*ಕಾಲ್|ವೀಡಿಯೊ|ವೀಡಿಯೋ|ଭିଡିଓ\s*କଲ|ଭିଡିଓ|വീഡിയോ\s*കോൾ|വീഡിയോ\s*കോളിൽ|വീഡിയോ|ਵੀਡੀਓ\s*ਕਾਲ|ਵੀਡੀਓ)/i
+
+  // Authority & Agency markers across all 12 languages
+  const authorityMarkers = /(?:cbi|police|customs?|cyber\s*cell|supreme\s*court|narcotics|सीबीआई|सीबीआय|সিবিআই|సిబిఐ|சிபிஐ|સીબીઆઈ|سی\s*بی\s*آئی|ಸಿಬಿಐ|ସିବିଆଇ|സിബിഐ|ਸੀਬੀਆਈ|\bed\b|ईडी|ইডি|ఈడీ|ஈடி|ઈડી|ای\s*ڈی|ಇಡಿ|ଇଡି|ഇഡി|ਈਡੀ|அமலாக்கத்துறை|पुलिस|पोलीस|পুলিশ|పోలీస్|పోలీసులు|காவல்துறை|போலீஸ்|પોલીસ|پولیس|ಪೊಲೀಸ್|ପୋଲିସ|പോലീസ്|ਪੁਲਿਸ|कस्टम|कस्टम्स|কাস্টমস|కస్టమ్స్|சுங்கத்துறை|சுங்க|કસ્ટમ|કસ્ટમ્સ|کسٹمز|ಕಸ್ಟಮ್ಸ್|କଷ୍ଟମ|കസ്റ്റംസ്|ਕਸਟਮ|ड्रग्स|নশীলা|মাদক|డ్రగ్స్|మత్తు|போதைப்பொருள்|મનશીયાત|منشیات|ಅಮಲು|ନିଶାଦ୍ରବ୍ୟ|മയക്കുമരുന്ന്|ਨਸ਼ੇ|ਨਸ਼ੀਲੇ|आरबीआई|আরবিআই|ఆర్బీఐ|ஆர்பிஐ|આરબીઆઈ|ಆರ್‌ಬಿಐ|ଆରବିଆଇ|ആർബിഐ|ਆਰਬੀਆਈ|آر\s*بی\s*آئی|वारंट|ওয়ারেন্ট|వారంట్|வாரண்ட்|વોરંટ|وارنٹ|ವಾರಂಟ್|ୱାରେଣ୍ଟ|വാറണ്ട്|ਵਾਰੰਟ|arrest|jail|गिरफ्तारी|ধৰপકડ|கைது|ಬಂಧನ|ଗିରଫ|അറസ്റ്റ്|ਗ੍ਰਿਫਤਾਰ)/i
+
+  if (videoCallMarkers.test(t) && authorityMarkers.test(t)) {
+    return true
+  }
+
+  // 3. Narcotics / Illegal Parcel + Arrest / Law enforcement
+  const parcelMarkers = /(?:parcel|पार्सल|পার্সেল|పార్శిల్|பார்சல்|પાર્સલ|پارسل|ಪಾರ್ಸೆಲ್|ପାର୍ସଲ|പാഴ്സൽ|ਪਾਰਸਲ|fedex|courier|कूरियर|কুরিয়ার|కొరియర్|கூரியர்|કુરિયર|ਕੂਰੀਅਰ|കൂറിയർ)/i
+  const contrabandMarkers = /(?:narcotics|drugs?|contraband|ड्रग्स|नशीले|नशीली|নশীলা|মাদক|డ్రగ్స్|మత్తు|போதைப்பொருள்|મનશીયાત|منشیات|ಅಮಲು|ନିଶାଦ୍ରବ୍ୟ|മയക്കുമരുന്ന്|ਨਸ਼ੇ|ਨਸ਼ੀਲੇ)/i
+  const lawEnforcementMarkers = /(?:police|cbi|ed|customs|court|warrant|arrest|jail|सीबीआई|पुलिस|पोलीस|કસ્ટમ|কাস্টমস|சுங்கத்துறை|वारंट|गिरफ्तारी|అరెస్ట్|கைது|ધરપકડ|گرفتاری|ಬಂಧನ|ଗିରଫ|അറസ്റ്റ്|ਗ੍ਰਿਫਤਾਰ)/i
+
+  if (parcelMarkers.test(t) && (contrabandMarkers.test(t) || lawEnforcementMarkers.test(t))) {
+    if (contrabandMarkers.test(t) && lawEnforcementMarkers.test(t)) return true
+    if (videoCallMarkers.test(t)) return true
+  }
+
+  // 4. RBI / Security verification under threat
+  const rbiMarkers = /(?:rbi|reserve\s*bank|सुरक्षा\s*खाता|सत्यापन\s*खाता|ఆర్బీఐ|ஆர்பிஐ|आरबीआई|আরবিআই|આરબીઆઈ|ಆರ್‌ಬಿಐ|ଆରବିଆଇ|ആർബിഐ|ਆਰਬੀਆਈ|آر\s*بی\s*آئی|security\s*account|verification\s*account)/i
+  if (rbiMarkers.test(t) && (lawEnforcementMarkers.test(t) || authorityMarkers.test(t))) {
+    return true
+  }
+
+  return false
+}
+
+export function getDigitalArrestWarning(lang: SupportedLanguage): string {
+  switch (lang) {
+    case 'hi':
+      return '⚠️ महत्वपूर्ण वैधानिक चेतावनी: डिजिटल अरेस्ट एक 100% फर्जीवाड़ा है! भारतीय पुलिस, सीबीआई, ईडी, कस्टम या अदालतें कभी भी स्काइप या व्हाट्सएप वीडियो कॉल पर गिरफ्तारी या सुनवाई नहीं करती हैं, और न ही "आरबीआई सुरक्षा/सत्यापन" खातों में पैसे भेजने को कहती हैं। तुरंत कॉल काटें और 1930 पर शिकायत करें।'
+    case 'bn':
+      return '⚠️ গুরুত্বপূর্ণ বিধিবদ্ধ সতর্কতা: ডিজিটাল অ্যারেস্ট একটি প্রতারণা! ভারতীয় পুলিশ, সিবিআই, ইডি বা আদালত কখনো ভিডিও কলে কাউকে গ্রেপ্তার করে না বা "আরবিআই ভেরিফিকেশন" অ্যাকাউন্টে টাকা পাঠাতে বলে না। অবিলম্বে কল কেটে দিন এবং ১৯৩০ নম্বরে কল করুন।'
+    case 'mr':
+      return '⚠️ महत्त्वाची वैधानिक चेतावणी: डिजिटल अरेस्ट ही पूर्णपणे फसवणूक आहे! भारतीय पोलीस, सीबीआय, ईडी किंवा न्यायालये कधीही व्हिडिओ कॉलवर अटक करत नाहीत किंवा "आरबीआय पडताळणी" खात्यात पैसे भरण्यास सांगत नाहीत. त्वरित कॉल बंद करा आणि १९३० वर तक्रार नोंदवा.'
+    case 'te':
+      return '⚠️ చట్టబద్ధమైన హెచ్చరిక: డిజిటల్ అరెస్ట్ అనేది మోసం! భారతీయ పోలీసులు, సీబీఐ, ఈడీ లేదా కోర్టులు ఎప్పుడూ వీడియో కాల్ ద్వారా అరెస్టులు చేయవు, లేదా "ఆర్‌బీఐ వెరిఫికేషన్" ఖాతాలలో డబ్బు జమ చేయమని అడగవు. వెంటనే కాల్ కట్ చేసి 1930కు కాల్ చేయండి.'
+    case 'ta':
+      return '⚠️ முக்கியமான எச்சரிக்கை: டிஜிட்டல் அரெஸ்ட் என்பது ஒரு மோசடி! இந்தியக் காவல்துறை, சிபிஐ, அமலாக்கத்துறை அல்லது நீதிமன்றங்கள் ஒருபோதும் வீடியோ அழைப்பு மூலம் கைது செய்வதில்லை, மேலும் "ஆர்பிஐ சரிபார்ப்பு" கணக்குகளுக்குப் பணம் அனுப்பக் கோருவதில்லை. உடனடியாக அழைப்பைத் துண்டித்து 1930-ஐ அழைக்கவும்.'
+    case 'gu':
+      return '⚠️ મહત્વપૂર્ણ વૈધાનિક ચેતવણી: ડિજિટલ અરેસ્ટ સંપૂર્ણપણે છેતરપિંડી છે! ભારતીય પોલીસ, સીબીઆઈ, ઈડી અથવા અદાલતો ક્યારેય વિડીયો કોલ દ્વારા ધરપકડ કરતી નથી, કે "આરબીઆઈ વેરિફિકેશન" ખાતામાં નાણાં જમા કરાવવાનું કહેતી નથી. તરત જ કોલ કાપો અને 1930 પર કોલ કરો.'
+    case 'ur':
+      return '⚠️ اہم قانونی انتباہ: ڈیجیٹل گرفتاری ایک مکمل دھوکہ ہے! ہندوستانی پولیس، سی بی آئی، ای ڈی یا عدالتیں کبھی ویڈیو کال پر گرفتاری نہیں کرتیں اور نہ ہی "آر بی آئی تصدیقی" کھاتوں میں رقم منتقل کرنے کو کہتی ہیں۔ فوری کال کاٹیں اور 1930 پر رابطہ کریں۔'
+    case 'kn':
+      return '⚠️ ಪ್ರಮುಖ ಶಾಸನಬದ್ಧ ಎಚ್ಚರಿಕೆ: ಡಿಜಿಟಲ್ ಅರೆಸ್ಟ್ ಸಂಪೂರ್ಣ ವಂಚನೆಯಾಗಿದೆ! ಭಾರತೀಯ ಪೊಲೀಸರು, ಸಿಬಿಐ, ಇಡಿ ಅಥವಾ ನ್ಯಾಯಾಲಯಗಳು ಎಂದಿಗೂ ವೀಡಿಯೊ ಕಾಲ್ ಮೂಲಕ ಬಂಧಿಸುವುದಿಲ್ಲ ಅಥವಾ "ಆರ್‌ಬಿಐ ಪರಿಶೀಲನಾ" ಖಾತೆಗಳಿಗೆ ಹಣ ವರ್ಗಾಯಿಸಲು ಕೇಳುವುದಿಲ್ಲ. ತಕ್ಷಣ ಕರೆಯನ್ನು ಕಡಿತಗೊಳಿಸಿ ಮತ್ತು 1930 ಗೆ ಕರೆ ಮಾಡಿ.'
+    case 'or':
+      return '⚠️ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ ସତର୍କତା: ଡିଜିଟାଲ ଆରେଷ୍ଟ ଏକ ସମ୍ପୂର୍ଣ୍ଣ ଠକେଇ! ଭାରତୀୟ ପୋଲିସ, ସିବିଆଇ କିମ୍ବା କୋର୍ଟ କେବେହେଲେ ଭିଡିଓ କଲରେ ଗିରଫ କରନ୍ତି ନାହିଁ କିମ୍ବା "ଆରବିଆଇ ଯାଞ୍ଚ" ଖାତାରେ ଟଙ୍କା ଜମା କରିବାକୁ କୁହନ୍ତି ନାହିଁ। ତୁରନ୍ତ କଲ୍ କାଟନ୍ତୁ ଏବଂ ୧୯୩୦ ରେ ଯୋଗାଯୋଗ କରନ୍ତୁ।'
+    case 'ml':
+      return '⚠️ പ്രധാന നിയമാനുസൃത മുന്നറിയിപ്പ്: ഡിജിറ്റൽ അറസ്റ്റ് പൂർണ്ണമായും തട്ടിപ്പാണ്! ഇന്ത്യൻ പോലീസോ സിബിഐയോ കോടതികളോ ഒരിക്കലും വീഡിയോ കോളിലൂടെ അറസ്റ്റ് ചെയ്യുകയോ "ആർ‌ബി‌ഐ വെരിഫിക്കേഷൻ" അക്കൗണ്ടുകളിലേക്ക് പണം അയക്കാൻ ആവശ്യപ്പെടുകയോ ഇല്ല. ഉടൻ തന്നെ കോൾ വിച്ഛേദിച്ച് 1930-ൽ വിളിക്കുക.'
+    case 'pa':
+      return '⚠️ ਮਹੱਤਵਪੂਰਨ ਕਾਨੂੰਨੀ ਚੇਤਾਵਨੀ: ਡਿਜੀਟਲ ਅਰੈਸਟ ਇੱਕ ਵੱਡਾ ਧੋਖਾ ਹੈ! ਭਾਰਤੀ ਪੁਲਿਸ, ਸੀਬੀਆਈ, ਈਡੀ ਜਾਂ ਅਦਾਲਤਾਂ ਕਦੇ ਵੀ ਵੀਡੀਓ ਕਾਲ ਰਾਹੀਂ ਗ੍ਰਿਫਤਾਰੀ ਨਹੀਂ ਕਰਦੀਆਂ ਅਤੇ ਨਾ ਹੀ "ਆਰਬੀਆਈ ਜਾਂਚ ਖਾਤੇ" ਵਿੱਚ ਪੈਸੇ ਟਰਾਂਸਫਰ ਕਰਨ ਲਈ ਕਹਿੰਦੀਆਂ ਹਨ। ਤੁਰੰਤ ਕਾਲ ਕੱਟੋ ਅਤੇ 1930 ਤੇ ਸੰਪਰਕ ਕਰੋ।'
+    default:
+      return '⚠️ CRITICAL STATUTORY WARNING: DIGITAL ARREST IS A FRAUD! Indian Law Enforcement (Police, CBI, ED, Customs) and Judiciary NEVER conduct arrests, trials, or interrogations via Skype or WhatsApp video call, nor do they ever demand funds for "RBI verification" or "clearance" accounts. Disconnect immediately and dial 1930.'
+  }
+}
+
+// 16. Bharatiya Nyaya Sanhita (BNS 2023) Legal Mapper
+export function getApplicableBNSLaws(
+  fraudType: FraudType,
+  isDigitalArrest: boolean,
+  lang: SupportedLanguage = 'en',
+  incidentText?: string
+): ApplicableLaw[] {
+  const laws: ApplicableLaw[] = []
+
+  // 1. Cyber Personation (IT Act Section 66D)
+  laws.push({
+    section: 'Section 66D IT Act 2000',
+    title: 'Cheating by personation using a computer resource',
+    titleHi: 'कंप्यूटर संसाधन का उपयोग करके प्रतिरूपण द्वारा धोखाधड़ी',
+    reason: 'Offender impersonated an authentic entity/official using digital communication to cheat.',
+    reasonHi: 'अपराधी ने डिजिटल संचार का उपयोग कर धोखे से धन प्राप्त करने हेतु प्रतिरूपण किया।',
+  })
+
+  // 2. BNS Section 318(4) (Cheating and dishonestly inducing delivery of property - replaces IPC 420)
+  laws.push({
+    section: 'Section 318(4) Bharatiya Nyaya Sanhita (BNS) 2023',
+    title: 'Cheating and dishonestly inducing delivery of property',
+    titleHi: 'धोखाधड़ी और संपत्ति की बेईमानी से सुपुर्दगी',
+    reason: 'Dishonestly inducing victim to transfer funds or property under deception.',
+    reasonHi: 'पीड़ित को धोखे में रखकर बेईमानी से धन या संपत्ति स्थानांतरित करने के लिए प्रेरित किया।',
+  })
+
+  // 3. Extortion / Criminal Intimidation / Digital Arrest (BNS 308 & 351(2) - replaces IPC 384/385 & 506)
+  if (fraudType === 'Extortion & Blackmail' || isDigitalArrest) {
+    laws.push({
+      section: 'Section 308 Bharatiya Nyaya Sanhita (BNS) 2023',
+      title: 'Extortion and putting person in fear of injury in order to commit extortion',
+      titleHi: 'जबरन वसूली (एक्सटॉर्शन) और नुकसान का भय दिखाकर वसूली',
+      reason: 'Putting victim in fear of arrest, injury, or exposure to unlawfully extort funds.',
+      reasonHi: 'पीड़ित को गिरफ्तारी या बदनामी के डर में डालकर गैरकानूनी तरीके से धन वसूलना।',
+    })
+    laws.push({
+      section: 'Section 351(2) Bharatiya Nyaya Sanhita (BNS) 2023',
+      title: 'Criminal intimidation',
+      titleHi: 'आपराधिक धमकी (क्रिमिनल इंटिमिडेशन)',
+      reason: 'Threatening victim with injury to reputation, liberty, or legal prosecution.',
+      reasonHi: 'पीड़ित को प्रतिष्ठा, स्वतंत्रता या कानूनी कार्रवाई की धमकी देना।',
+    })
+  }
+
+  // 4. Personation under BNS 319(2) (replaces IPC 419)
+  const hasPersonation = incidentText
+    ? /(?:impersonat|impost|personat|स्वांग|प्रतिरूपण|बहरूपिया|তোতয়া|তোতয়গিরি|তোতয়|সেজে|तोतया|तोतयागिरी|నకిలీ రూపం|ప్రతిరూపణ|ஆள்மாறாட்டம்|வேடமிட்டு|ઢોંગ|બહેરૂપિયા|بہروپیا|جعل سازی|ಸೋಗು|ପ୍ରତିରୂପଣ|ആൾമാറാട്ടം|ചമഞ്ഞ്|ਭੇਸ ਬਦਲ)/i.test(incidentText)
+    : false
+
+  if (isDigitalArrest || fraudType === 'Identity Theft' || fraudType === 'Women/Children Related Crime' || hasPersonation) {
+    laws.push({
+      section: 'Section 319(2) Bharatiya Nyaya Sanhita (BNS) 2023',
+      title: 'Cheating by personation',
+      titleHi: 'प्रतिरूपण (पहचान बदलकर) द्वारा धोखाधड़ी',
+      reason: 'Pretending to be a public servant, police officer, or other person to commit fraud.',
+      reasonHi: 'सरकारी अधिकारी, पुलिस या अन्य व्यक्ति होने का दिखावा कर अपराध करना।',
+    })
+  }
+
+  // 5. IT Act 66C (Identity theft)
+  if (fraudType === 'Identity Theft' || fraudType === 'Financial Fraud') {
+    laws.push({
+      section: 'Section 66C IT Act 2000',
+      title: 'Identity theft — fraudulent use of password, digital signature, or unique ID',
+      titleHi: 'पहचान की चोरी — पासवर्ड, डिजिटल हस्ताक्षर या अद्वितीय पहचान का धोखाधड़ीपूर्ण उपयोग',
+      reason: 'Fraudulent utilization of victim authentication credentials, OTP, or identity.',
+      reasonHi: 'पीड़ित के प्रमाणीकरण क्रेडेंशियल्स, ओटीपी या पहचान का धोखाधड़ीपूर्ण उपयोग।',
+    })
+  }
+
+  return laws
 }

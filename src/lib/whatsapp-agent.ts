@@ -21,6 +21,11 @@ import {
   extractMultilingualUTR,
   extractMultilingualBank,
   extractMultilingualAccount,
+  extractMultilingualUPI,
+  extractMultilingualIFSC,
+  detectDigitalArrest,
+  getDigitalArrestWarning,
+  getApplicableBNSLaws,
   isAdditionalAmount,
   inferCategoryFromMultilingualText,
   getRegionalComplaintDraft,
@@ -272,19 +277,24 @@ export function quickExtract(text: string) {
   const amountMatch = normText.match(/(?:rs\.?|inr|₹|amount|rupees|rupaye)?\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+)(?:\s*(?:rs|rupees|inr|hazar|k|lakh))?/i)
   const utrRes = extractMultilingualUTR(text)
   const phoneMatch = normText.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})/i)
+  const detectedUpi = extractMultilingualUPI(text)
   const upiMatch = normText.match(/[\w.-]+@[\w.-]+/i)
   const detectedFraudster = extractMultilingualFraudster(text)
   const bank = extractMultilingualBank(text)
   const account = extractMultilingualAccount(text)
+  const ifsc = extractMultilingualIFSC(text)
+  const isDigitalArrest = detectDigitalArrest(text)
 
   return {
     amount: multilingualAmount ?? (amountMatch ? parseInt(amountMatch[1].replace(/,/g, ''), 10) : undefined),
     utr: utrRes.utr || undefined,
     phone: phoneMatch ? phoneMatch[1] : undefined,
-    upi: upiMatch ? upiMatch[0] : undefined,
+    upi: detectedUpi || (upiMatch ? upiMatch[0] : undefined),
     fraudster: detectedFraudster !== 'Not Identified' ? detectedFraudster : undefined,
     bankName: bank || undefined,
     accountNumber: account || undefined,
+    ifscCode: ifsc || undefined,
+    isDigitalArrest,
   }
 }
 
@@ -755,15 +765,17 @@ async function extractUpdateDetailsWithAI(note: string) {
     }
   }
 
-  // Accused / fraudster correction regex: e.g. "his name is not amrit vijal its amruth vishal and he is from tapmi manipal"
   const fraudsterCorrectionMatch = note.match(/(?:his name is not|his name is|not [a-z0-9\s]+ (?:it's|its|it is)|correct name is|accused is|fraudster is)\s*([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?(?:\s+(?:from|at)\s+[A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)?)/i)
   const detectedFraudsterInNote = extractMultilingualFraudster(note)
+  const detectedUpiInNote = extractMultilingualUPI(note)
+  const detectedIfscInNote = extractMultilingualIFSC(note)
 
   const fallback = {
     utr: utrRes.utr,
     bankName: bank,
-    upiId: upiMatch ? upiMatch[0] : null,
-    fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (detectedFraudsterInNote !== 'Not Identified' ? detectedFraudsterInNote : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null)),
+    upiId: detectedUpiInNote || (upiMatch ? upiMatch[0] : null),
+    ifscCode: detectedIfscInNote,
+    fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (detectedFraudsterInNote !== 'Not Identified' ? detectedFraudsterInNote : (phoneMatch ? phoneMatch[1] : detectedUpiInNote || (upiMatch ? upiMatch[0] : null))),
     accountNumber: account,
     amount: extractMultilingualAmount(note) || null,
     amountIsAdditional: isAdditional,
@@ -1159,8 +1171,11 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
 
   if (lang !== 'en' && lang !== 'hi') {
     summaryRegional = `${meta.nativeName}: ${detectedCategory} — ₹${amount.toLocaleString('en-IN')} WhatsApp AI Triage incident report.`
-    complaintDraftRegional = getRegionalComplaintDraft(lang, complainantName, onBehalfOfTarget, detectedCategory, text || detectedCategory, amount, ext.utr)
+    complaintDraftRegional = getRegionalComplaintDraft(lang, complainantName, onBehalfOfTarget, detectedCategory, text || detectedCategory, amount, ext.utr, ext.upi, ext.ifscCode)
   }
+
+  const isDigitalArrest = Boolean(ext.isDigitalArrest)
+  const digitalArrestAdvisory = isDigitalArrest ? getDigitalArrestWarning(lang) : undefined
 
   return {
     incidentId,
@@ -1169,22 +1184,25 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
     complainantName,
     amount,
     urgencyLevel: 'CRITICAL',
-    summary: `${detectedCategory} involving ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.`,
-    summaryHi: `व्हाट्सएप बॉट के माध्यम से ${detectedCategory} (₹${amount.toLocaleString('en-IN')}) दर्ज की गई।`,
+    summary: `${detectedCategory} involving ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.${isDigitalArrest ? ' High-priority Digital Arrest scam detected.' : ''}`,
+    summaryHi: `व्हाट्सएप बॉट के माध्यम से ${detectedCategory} (₹${amount.toLocaleString('en-IN')}) दर्ज की गई।${isDigitalArrest ? ' डिजिटल अरेस्ट जबरन वसूली का मामला पहचाना गया।' : ''}`,
     summaryRegional,
     complaintDraft: `To The Station House Officer / Cyber Crime Cell,
-${draftOpenerEn} an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from ${onBehalfOfTarget ? `${onBehalfOfTarget}'s account` : 'my account'}. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.${namedComplainant ? '' : '\n\n[Complainant address / city — to be provided]'}`,
+${draftOpenerEn} an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from ${onBehalfOfTarget ? `${onBehalfOfTarget}'s account` : 'my account'}. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}${ext.upi ? `, UPI: ${ext.upi}` : ''}${ext.ifscCode ? `, IFSC: ${ext.ifscCode}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66D of Information Technology Act and Section 318(4) of Bharatiya Nyaya Sanhita (BNS 2023).${namedComplainant ? '' : '\n\n[Complainant address / city — to be provided]'}`,
     complaintDraftHi: `थाना प्रभारी / साइबर अपराध शाखा,
-${draftOpenerHi} ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।${namedComplainant ? '' : '\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]'}`,
+${draftOpenerHi} ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत। आरोपी का पहचानकर्ता ${fraudster} है${ext.utr ? ` (यूटीआर: ${ext.utr})` : ''}${ext.upi ? ` (यूपीआई: ${ext.upi})` : ''}। कृपया आईटी अधिनियम की धारा 66D एवं भारतीय न्याय संहिता (BNS 2023) की धारा 318(4) के तहत कार्रवाई करें।${namedComplainant ? '' : '\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]'}`,
     complaintDraftRegional,
     language: lang,
-    frauderContact: ext.utr ? `Ref UTR: ${ext.utr}; Contact: ${ext.phone || 'Not Provided'}` : (ext.phone || 'Not Provided'),
+    frauderContact: ext.utr ? `Ref UTR: ${ext.utr}${ext.upi ? `; UPI: ${ext.upi}` : ''}; Contact: ${ext.phone || 'Not Provided'}` : (ext.phone || (ext.upi ? `UPI: ${ext.upi}` : 'Not Provided')),
     bankName: ext.bankName || 'Bank Nodal Desk',
     accountNumber: ext.accountNumber || 'Not Provided',
     upiId: ext.upi || 'Not Provided',
+    ifscCode: ext.ifscCode,
+    isDigitalArrest: isDigitalArrest || undefined,
+    digitalArrestAdvisory,
     timeline: new Date().toLocaleString(),
     freezeSteps: defaultFreezeSteps,
-    applicableLaws: defaultLaws,
+    applicableLaws: getApplicableBNSLaws(detectedCategory, isDigitalArrest, lang),
     recommendedChannel: channelInfo.channel,
     recommendedChannelTarget: channelInfo.target,
   }

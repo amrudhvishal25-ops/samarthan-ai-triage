@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert, Sparkles } from 'lucide-react'
+import { Phone, Share2, Printer, RotateCcw, Edit3, ShieldAlert, Sparkles, AlertTriangle } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
 import UrgencyBadge from '@/components/UrgencyBadge'
 import FreezeStepper from '@/components/FreezeStepper'
@@ -274,6 +274,7 @@ function DashboardContent() {
         ...(extracted?.bankName ? { bankName: extracted.bankName } : {}),
         ...(extracted?.accountNumber ? { accountNumber: extracted.accountNumber } : {}),
         ...(extracted?.upiId ? { upiId: extracted.upiId } : {}),
+        ...(extracted?.ifscCode ? { ifscCode: extracted.ifscCode } : {}),
         ...(extracted?.fraudsterIdentifier ? { fraudsterIdentifier: extracted.fraudsterIdentifier } : {}),
         amount: updatedAmount,
         ...(extracted?.complainantName ? { complainantName: extracted.complainantName } : {}),
@@ -293,6 +294,7 @@ function DashboardContent() {
       if (extracted?.utr) filledSummary.push(`UTR (${extracted.utr})`)
       if (extracted?.bankName) filledSummary.push(`Bank (${extracted.bankName})`)
       if (extracted?.upiId) filledSummary.push(`UPI (${extracted.upiId})`)
+      if (extracted?.ifscCode) filledSummary.push(`IFSC (${extracted.ifscCode})`)
       if (extracted?.accountNumber) filledSummary.push(`Account (${extracted.accountNumber})`)
       if (extracted?.complainantName) filledSummary.push(`Complainant (${extracted.complainantName})`)
       if (extracted?.amount) {
@@ -475,6 +477,23 @@ function DashboardContent() {
           )}
         </AnimatePresence>
 
+        {/* Digital Arrest High-Harm Statutory Warning Banner */}
+        {(r.isDigitalArrest || r.digitalArrestAdvisory) && (
+          <div className="mb-5 sm:mb-6 p-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-700 to-red-800 text-white shadow-lg border border-red-400 flex items-start gap-3">
+            <AlertTriangle className="w-6 h-6 text-amber-300 flex-shrink-0 mt-0.5 animate-pulse" />
+            <div className="space-y-1 text-xs sm:text-sm">
+              <p className="font-bold tracking-wide uppercase text-amber-200">
+                {language === 'hi' ? 'महत्वपूर्ण वैधानिक चेतावनी: डिजिटल अरेस्ट फर्जीवाड़ा' : 'Critical Statutory Warning: Digital Arrest Fraud'}
+              </p>
+              <p className="leading-relaxed opacity-95">
+                {r.digitalArrestAdvisory || (language === 'hi'
+                  ? 'भारतीय पुलिस, सीबीआई, ईडी या अदालतें कभी भी वीडियो कॉल पर गिरफ्तारी नहीं करती हैं और न ही पैसे ट्रांसफर करने को कहती हैं। तुरंत कॉल काटें और 1930 पर शिकायत करें।'
+                  : 'Indian Law Enforcement (Police, CBI, ED, Customs) and courts NEVER conduct arrests or trials over video calls, nor do they demand money in verification accounts. Disconnect immediately and call 1930.')}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
 
           {/* ── LEFT COLUMN ── */}
@@ -563,6 +582,34 @@ function DashboardContent() {
                     onChange={(e) => handleUpdate('frauderContact', e.target.value)}
                     className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   />
+                </div>
+
+                {/* UPI ID & Bank IFSC */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="upi-id" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                      Beneficiary UPI / VPA
+                    </label>
+                    <input
+                      id="upi-id"
+                      type="text" value={r.upiId || ''}
+                      onChange={(e) => handleUpdate('upiId', e.target.value)}
+                      placeholder="e.g. fraudster@okhdfcbank"
+                      className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="ifsc-code" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+                      Beneficiary IFSC Code
+                    </label>
+                    <input
+                      id="ifsc-code"
+                      type="text" value={r.ifscCode || ''}
+                      onChange={(e) => handleUpdate('ifscCode', e.target.value.toUpperCase())}
+                      placeholder="e.g. SBIN0001234"
+                      className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all font-mono uppercase"
+                    />
+                  </div>
                 </div>
 
                 {/* Complaint Draft with Dual-Draft Tabs (English / Regional) */}

@@ -81,6 +81,9 @@ export interface TriageResult {
   bankName: string
   accountNumber: string
   upiId?: string
+  ifscCode?: string
+  isDigitalArrest?: boolean
+  digitalArrestAdvisory?: string
   timeline: string
   language?: SupportedLanguage
   complaintDraft: string
@@ -112,10 +115,6 @@ export interface Scenario {
 }
 
 // Whitelist of IT Act 2000 sections the AI may cite in applicableLaws.
-// It cannot invent a section not in this list — see TRIAGE_SYSTEM_PROMPT in
-// src/app/api/triage/route.ts. Restricted to IT Act only until BNS 2023
-// section numbers are independently verified (do not add BNS entries here
-// without confirming the exact section number against a trusted source).
 export const IT_ACT_SECTIONS: Record<string, { title: string; titleHi: string }> = {
   '43': { title: 'Penalty for unauthorized access/damage to a computer system', titleHi: 'कंप्यूटर सिस्टम तक अनधिकृत पहुंच/क्षति के लिए दंड' },
   '66': { title: 'Computer-related offences (hacking)', titleHi: 'कंप्यूटर संबंधी अपराध (हैकिंग)' },
@@ -126,6 +125,40 @@ export const IT_ACT_SECTIONS: Record<string, { title: string; titleHi: string }>
   '67': { title: 'Publishing or transmitting obscene material in electronic form', titleHi: 'इलेक्ट्रॉनिक रूप में अश्लील सामग्री प्रकाशित या प्रसारित करना' },
   '67A': { title: 'Publishing or transmitting sexually explicit material', titleHi: 'यौन रूप से स्पष्ट सामग्री प्रकाशित या प्रसारित करना' },
   '67B': { title: 'Publishing/transmitting material depicting children in a sexually explicit act', titleHi: 'बच्चों को यौन रूप से स्पष्ट कृत्य में दर्शाने वाली सामग्री प्रकाशित/प्रसारित करना' },
+}
+
+// Bharatiya Nyaya Sanhita (BNS) 2023 penal sections that replaced the Indian Penal Code (IPC) on July 1, 2024.
+export const BNS_SECTIONS: Record<string, { title: string; titleHi: string; replacesIpc: string }> = {
+  '318(4)': {
+    title: 'Cheating and dishonestly inducing delivery of property',
+    titleHi: 'धोखाधड़ी और संपत्ति की बेईमानी से सुपुर्दगी',
+    replacesIpc: 'IPC Section 420',
+  },
+  '319(2)': {
+    title: 'Cheating by personation',
+    titleHi: 'प्रतिरूपण (पहचान बदलकर) द्वारा धोखाधड़ी',
+    replacesIpc: 'IPC Section 419',
+  },
+  '308': {
+    title: 'Extortion and putting person in fear of injury in order to commit extortion',
+    titleHi: 'जबरन वसूली (एक्सटॉर्शन) और नुकसान का भय दिखाकर वसूली',
+    replacesIpc: 'IPC Section 384/385',
+  },
+  '351(2)': {
+    title: 'Criminal intimidation',
+    titleHi: 'आपराधिक धमकी (क्रिमिनल इंटिमिडेशन)',
+    replacesIpc: 'IPC Section 506',
+  },
+  '336': {
+    title: 'Forgery',
+    titleHi: 'जालसाजी (फॉर्जरी)',
+    replacesIpc: 'IPC Section 465',
+  },
+  '338': {
+    title: 'Forgery of valuable security, will, or electronic record',
+    titleHi: 'मूल्यवान सुरक्षा, वसीयत या इलेक्ट्रॉनिक रिकॉर्ड की जालसाजी',
+    replacesIpc: 'IPC Section 467',
+  },
 }
 
 // NCRP-style acknowledgement number: 14-digit numeric, no letters/dashes.
