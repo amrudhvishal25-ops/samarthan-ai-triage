@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import {
+  extractMultilingualUTR,
+  extractMultilingualBank,
+  extractMultilingualAccount,
+  extractMultilingualAmount,
+  isAdditionalAmount,
+  extractMultilingualFraudster,
+  extractMultilingualComplainant,
+  normalizeIndicNumerals,
+} from '@/lib/i18n/multilingualRegex'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -11,26 +21,35 @@ export interface ExtractedFollowupFields {
   upiId: string | null
   fraudsterIdentifier: string | null
   amount: number | null
+  amountIsAdditional: boolean
   complainantName: string | null
   timeline: string | null
 }
 
 function fallbackExtract(text: string): ExtractedFollowupFields {
-  const utrMatch = text.match(/\b([0-9]{12})\b/) || text.match(/(?:utr|ref|txn|reference)[\s:#-]*([0-9A-Za-z]{8,18})/i)
-  const upiMatch = text.match(/[\w.-]+@[\w.-]+/i)
-  const phoneMatch = text.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
-  const bankMatch = text.match(/\b(hdfc|sbi|state bank(?: of india)?|icici|axis|pnb|punjab national bank|kotak|bob|bank of baroda|canara|union bank|indusind|yes bank|idfc|paytm payments bank|airtel payments bank)\b/i)
-  const amountMatch = text.match(/(?:rs\.?|inr|₹|amount|rupees|rupaye)?\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+)(?:\s*(?:rs|rupees|inr|hazar|k|lakh))?/i)
-  const accountMatch = text.match(/(?:a\/c|acc|account|acct|khata)[\s:#-]*([0-9]{9,18})/i)
+  const normalized = normalizeIndicNumerals(text)
+  const utrRes = extractMultilingualUTR(text)
+  const bank = extractMultilingualBank(text)
+  const account = extractMultilingualAccount(text)
+  const upiMatch = normalized.match(/[\w.-]+@[\w.-]+/i)
+  const phoneMatch = normalized.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
+  const detectedFraudster = extractMultilingualFraudster(text)
+  const detectedComplainant = extractMultilingualComplainant(text)
+  const amt = extractMultilingualAmount(text)
+  const isAdditional = isAdditionalAmount(text)
 
   return {
-    utr: utrMatch ? utrMatch[1] : null,
-    bankName: bankMatch ? bankMatch[0] : null,
+    utr: utrRes.utr,
+    bankName: bank,
     upiId: upiMatch ? upiMatch[0] : null,
-    fraudsterIdentifier: phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null,
-    accountNumber: accountMatch ? accountMatch[1] : null,
-    amount: amountMatch && parseInt(amountMatch[1].replace(/,/g, ''), 10) > 0 ? parseInt(amountMatch[1].replace(/,/g, ''), 10) : null,
-    complainantName: null,
+    fraudsterIdentifier:
+      detectedFraudster !== 'Not Identified'
+        ? detectedFraudster
+        : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null),
+    accountNumber: account,
+    amount: amt > 0 ? amt : null,
+    amountIsAdditional: isAdditional,
+    complainantName: detectedComplainant,
     timeline: null,
   }
 }
@@ -46,6 +65,7 @@ YOUR TASKS:
    - "upiId": scammer's or beneficiary's UPI VPA (containing @) (string or null)
    - "fraudsterIdentifier": fraudster's name, phone, handle, or identity (string or null)
    - "amount": disputed fraud amount in INR if updated (number or null)
+   - "amountIsAdditional": boolean. Set to TRUE if the user describes a NEW/FURTHER/SECOND debit or extra loss on top of existing ("another 10k debited", "और 5000 ले लिए", "आणखी 15000"). Set to FALSE if user is CORRECTING the total amount ("actually 80k not 60k", "एकूण 50000").
    - "complainantName": complainant's name if stated (string or null)
    - "timeline": date or time of incident if mentioned (string or null)
 
@@ -64,6 +84,7 @@ Return STRICT JSON matching this schema:
     "upiId": null,
     "fraudsterIdentifier": null,
     "amount": null,
+    "amountIsAdditional": false,
     "complainantName": null,
     "timeline": null
   },
@@ -147,7 +168,11 @@ NEW UPDATE FROM VICTIM:
       upiId: parsed.extracted?.upiId || fbExtracted.upiId || null,
       fraudsterIdentifier: parsed.extracted?.fraudsterIdentifier || fbExtracted.fraudsterIdentifier || null,
       amount: typeof parsed.extracted?.amount === 'number' ? parsed.extracted.amount : fbExtracted.amount,
-      complainantName: parsed.extracted?.complainantName || null,
+      amountIsAdditional:
+        typeof parsed.extracted?.amountIsAdditional === 'boolean'
+          ? parsed.extracted.amountIsAdditional
+          : fbExtracted.amountIsAdditional,
+      complainantName: parsed.extracted?.complainantName || fbExtracted.complainantName || null,
       timeline: parsed.extracted?.timeline || null,
     }
 

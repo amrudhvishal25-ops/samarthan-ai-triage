@@ -7,6 +7,9 @@ import {
   extractMultilingualOnBehalfOf,
   extractMultilingualAmount,
   extractMultilingualFraudster,
+  extractMultilingualUTR,
+  extractMultilingualBank,
+  extractMultilingualAccount,
   inferCategoryFromMultilingualText,
   normalizeCategoryHint,
   getRegionalComplaintDraft
@@ -186,6 +189,9 @@ export async function POST(req: NextRequest) {
     const detectedFraudster = extractMultilingualFraudster(userText)
     const detectedComplainant = extractMultilingualComplainant(userText) || 'Anonymous Complainant'
     const detectedOnBehalfOf = extractMultilingualOnBehalfOf(userText)
+    const detectedUtr = extractMultilingualUTR(userText).utr
+    const detectedBank = extractMultilingualBank(userText) || 'N/A'
+    const detectedAccount = extractMultilingualAccount(userText) || 'N/A'
 
     return {
       incidentId: generateId(),
@@ -194,20 +200,22 @@ export async function POST(req: NextRequest) {
       fraudType: inferredCategory as any,
       recommendedChannel: mockChannel,
       recommendedChannelTarget: mockChannelTarget,
-      frauderContact: detectedFraudster !== 'Not Identified' ? detectedFraudster : 'Unknown',
+      frauderContact: detectedUtr
+        ? (detectedFraudster !== 'Not Identified' ? `${detectedFraudster} (Ref/UTR: ${detectedUtr})` : `UTR: ${detectedUtr}`)
+        : (detectedFraudster !== 'Not Identified' ? detectedFraudster : 'Unknown'),
       amount: cleanAmt,
-      bankName: 'N/A',
-      accountNumber: 'N/A',
+      bankName: detectedBank,
+      accountNumber: detectedAccount,
       upiId: undefined,
       timeline: new Date().toLocaleString('en-IN'),
       language: (targetLanguage || 'en') as SupportedLanguage,
       summary: `AI triage summary generated for ${inferredCategory}.`,
       summaryHi: `${inferredCategory} के लिए AI ट्रायज सारांश।`,
       summaryRegional: `${inferredCategory} - AI Triage Summary`,
-      complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI am filing this complaint regarding a cyber incident (${inferredCategory}). Please investigate this matter and take appropriate action.\n\n[Complainant address / city — to be provided]`,
-      complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं ${inferredCategory} से संबंधित एक साइबर घटना की औपचारिक शिकायत दर्ज कर रहा हूँ। कृपया मामले की जांच करें और उचित कार्रवाई करें।\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]`,
+      complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI am filing this complaint regarding a cyber incident (${inferredCategory}). ${cleanAmt > 0 ? `Financial loss: ₹${cleanAmt.toLocaleString('en-IN')}. ` : ''}${detectedUtr ? `Transaction UTR: ${detectedUtr}. ` : ''}Please investigate this matter and take appropriate action.\n\n[Complainant address / city — to be provided]`,
+      complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं ${inferredCategory} से संबंधित एक साइबर घटना की औपचारिक शिकायत दर्ज कर रहा हूँ। ${cleanAmt > 0 ? `नुकसान राशि: ₹${cleanAmt.toLocaleString('en-IN')}। ` : ''}${detectedUtr ? `यूटीआर नंबर: ${detectedUtr}। ` : ''}कृपया मामले की जांच करें और उचित कार्रवाई करें।\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]`,
       complaintDraftRegional: (targetLanguage && targetLanguage !== 'en')
-        ? getRegionalComplaintDraft(targetLanguage as SupportedLanguage, detectedComplainant, detectedOnBehalfOf, inferredCategory, userText || inferredCategory, cleanAmt)
+        ? getRegionalComplaintDraft(targetLanguage as SupportedLanguage, detectedComplainant, detectedOnBehalfOf, inferredCategory, userText || inferredCategory, cleanAmt, detectedUtr || undefined)
         : `Formal Cybercrime Complaint regarding ${inferredCategory}.\n\n[Official Police Complaint Draft in selected language]`,
       freezeSteps: [
         {
@@ -229,7 +237,7 @@ export async function POST(req: NextRequest) {
           reasonHi: 'साइबर धोखाधड़ी और ऑनलाइन धोखाधड़ी के लिए लागू धारा।',
         }
       ],
-      urgencyLevel: 'HIGH'
+      urgencyLevel: detectedUtr ? 'CRITICAL' : 'HIGH'
     }
   }
 
@@ -497,6 +505,11 @@ In addition to the mandatory English "complaintDraft" (which is required by Cent
     const parsedAmt = num(parsed.amount)
     const finalAmount = parsedAmt > 0 ? parsedAmt : extractMultilingualAmount(userText)
 
+    const detectedUtr = extractMultilingualUTR(userText).utr
+    const detectedBank = extractMultilingualBank(userText)
+    const detectedAccount = extractMultilingualAccount(userText)
+    const detectedFraudsterInText = extractMultilingualFraudster(userText)
+
     const normalizedCategoryHint = normalizeCategoryHint(categoryHint)
     const resolvedFraudType = (VALID_FRAUD_TYPES.includes(parsed.fraudType)
       ? parsed.fraudType
@@ -504,13 +517,18 @@ In addition to the mandatory English "complaintDraft" (which is required by Cent
 
     const safe: TriageResult = {
       incidentId: str(parsed.incidentId, generateId()),
-      fraudsterIdentifier: str(parsed.fraudsterIdentifier, 'Not Identified'),
+      fraudsterIdentifier: str(parsed.fraudsterIdentifier, detectedFraudsterInText !== 'Not Identified' ? detectedFraudsterInText : 'Not Identified'),
       complainantName: str(parsed.complainantName, 'Anonymous Complainant'),
       fraudType: resolvedFraudType,
-      frauderContact: str(parsed.frauderContact, 'Not Provided'),
+      frauderContact: str(
+        parsed.frauderContact,
+        detectedUtr
+          ? (detectedFraudsterInText !== 'Not Identified' ? `${detectedFraudsterInText} (Ref/UTR: ${detectedUtr})` : `UTR: ${detectedUtr}`)
+          : 'Not Provided'
+      ),
       amount: finalAmount,
-      bankName: str(parsed.bankName, 'Not Provided'),
-      accountNumber: str(parsed.accountNumber, 'Not Provided'),
+      bankName: str(parsed.bankName, detectedBank || 'Not Provided'),
+      accountNumber: str(parsed.accountNumber, detectedAccount || 'Not Provided'),
       upiId: typeof parsed.upiId === 'string' && parsed.upiId.trim() ? parsed.upiId.trim() : undefined,
       timeline: str(parsed.timeline, 'Not Provided'),
       complaintDraft: str(parsed.complaintDraft, `I am filing this complaint regarding a cyber incident (${resolvedFraudType}). ${str(parsed.summary, '')}`.trim()),
@@ -532,7 +550,7 @@ In addition to the mandatory English "complaintDraft" (which is required by Cent
               reasonHi: 'ऑनलाइन धोखाधड़ी और प्रतिरूपण-आधारित साइबर अपराध पर लागू।',
             },
           ],
-      urgencyLevel: parsed.urgencyLevel,
+      urgencyLevel: detectedUtr ? 'CRITICAL' : (parsed.urgencyLevel || 'HIGH'),
       language: (targetLanguage || 'en') as SupportedLanguage,
       complaintDraftRegional: str(
         parsed.complaintDraftRegional,
@@ -545,7 +563,8 @@ In addition to the mandatory English "complaintDraft" (which is required by Cent
                   onBehalfOfTarget,
                   resolvedFraudType,
                   userText || resolvedFraudType,
-                  finalAmount
+                  finalAmount,
+                  detectedUtr || undefined
                 )
               : str(parsed.complaintDraft, ''))
       ),

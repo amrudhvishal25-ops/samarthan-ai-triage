@@ -18,6 +18,10 @@ import {
   extractMultilingualComplainant,
   extractMultilingualOnBehalfOf,
   extractMultilingualFraudster,
+  extractMultilingualUTR,
+  extractMultilingualBank,
+  extractMultilingualAccount,
+  isAdditionalAmount,
   inferCategoryFromMultilingualText,
   getRegionalComplaintDraft,
   MULTILINGUAL_GREETINGS_OR_NAV_REGEX
@@ -266,17 +270,21 @@ export function quickExtract(text: string) {
   const normText = normalizeIndicNumerals(text)
   const multilingualAmount = extractMultilingualAmount(normText)
   const amountMatch = normText.match(/(?:rs\.?|inr|₹|amount|rupees|rupaye)?\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+)(?:\s*(?:rs|rupees|inr|hazar|k|lakh))?/i)
-  const utrMatch = normText.match(/(?:utr|ref|reference|txn|transaction|imps|neft|upi\s*ref)[\s:#-]*([0-9]{12})/i)
+  const utrRes = extractMultilingualUTR(text)
   const phoneMatch = normText.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})/i)
   const upiMatch = normText.match(/[\w.-]+@[\w.-]+/i)
   const detectedFraudster = extractMultilingualFraudster(text)
+  const bank = extractMultilingualBank(text)
+  const account = extractMultilingualAccount(text)
 
   return {
     amount: multilingualAmount ?? (amountMatch ? parseInt(amountMatch[1].replace(/,/g, ''), 10) : undefined),
-    utr: utrMatch ? utrMatch[1] : undefined,
+    utr: utrRes.utr || undefined,
     phone: phoneMatch ? phoneMatch[1] : undefined,
     upi: upiMatch ? upiMatch[0] : undefined,
     fraudster: detectedFraudster !== 'Not Identified' ? detectedFraudster : undefined,
+    bankName: bank || undefined,
+    accountNumber: account || undefined,
   }
 }
 
@@ -719,11 +727,13 @@ export async function processWhatsAppTurn(
 
 // Helper: Extract structured update fields using GPT-4o-mini
 async function extractUpdateDetailsWithAI(note: string) {
-  const utrMatch = note.match(/\b([0-9]{12})\b/) || note.match(/(?:utr|ref|txn)[\s:#-]*([0-9A-Za-z]{8,18})/i)
-  const bankMatch = note.match(/\b(hdfc|sbi|state bank(?: of india)?|icici|axis|pnb|punjab national bank|kotak|bob|bank of baroda|canara|union bank|indusind|yes bank|idfc|paytm payments bank|airtel payments bank)\b/i)
-  const upiMatch = note.match(/[\w.-]+@[\w.-]+/)
-  const phoneMatch = note.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
-  const accountMatch = note.match(/(?:a\/c|acc|account)[\s:#-]*([0-9]{9,18})/i)
+  const normalized = normalizeIndicNumerals(note)
+  const utrRes = extractMultilingualUTR(note)
+  const bank = extractMultilingualBank(note)
+  const account = extractMultilingualAccount(note)
+  const isAdditional = isAdditionalAmount(note)
+  const upiMatch = normalized.match(/[\w.-]+@[\w.-]+/)
+  const phoneMatch = normalized.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
   let updateComplainantName: string | null = extractMultilingualComplainant(note)
   if (!updateComplainantName) {
     const explicitNameMatch = note.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
@@ -750,13 +760,13 @@ async function extractUpdateDetailsWithAI(note: string) {
   const detectedFraudsterInNote = extractMultilingualFraudster(note)
 
   const fallback = {
-    utr: utrMatch ? utrMatch[1] : null,
-    bankName: bankMatch ? bankMatch[0] : null,
+    utr: utrRes.utr,
+    bankName: bank,
     upiId: upiMatch ? upiMatch[0] : null,
     fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (detectedFraudsterInNote !== 'Not Identified' ? detectedFraudsterInNote : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null)),
-    accountNumber: accountMatch ? accountMatch[1] : null,
-    amount: extractMultilingualAmount(note) ?? null,
-    amountIsAdditional: false,
+    accountNumber: account,
+    amount: extractMultilingualAmount(note) || null,
+    amountIsAdditional: isAdditional,
     complainantName: updateComplainantName,
   }
 
@@ -793,12 +803,12 @@ Return JSON: utr (string|null), bankName (string|null), upiId (string|null), fra
       upiId: parsed.upiId || fallback.upiId,
       fraudsterIdentifier: parsed.fraudsterIdentifier || fallback.fraudsterIdentifier,
       accountNumber: parsed.accountNumber || fallback.accountNumber,
-      amount: typeof parsed.amount === 'number' ? parsed.amount : null,
-      amountIsAdditional: parsed.amountIsAdditional === true,
+      amount: typeof parsed.amount === 'number' ? parsed.amount : fallback.amount,
+      amountIsAdditional: typeof parsed.amountIsAdditional === 'boolean' ? parsed.amountIsAdditional : fallback.amountIsAdditional,
       complainantName: parsed.complainantName || fallback.complainantName,
     }
   } catch {
-    return { ...fallback, amountIsAdditional: false }
+    return fallback
   }
 }
 
@@ -1149,7 +1159,7 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
 
   if (lang !== 'en' && lang !== 'hi') {
     summaryRegional = `${meta.nativeName}: ${detectedCategory} — ₹${amount.toLocaleString('en-IN')} WhatsApp AI Triage incident report.`
-    complaintDraftRegional = getRegionalComplaintDraft(lang, complainantName, onBehalfOfTarget, detectedCategory, text || detectedCategory, amount)
+    complaintDraftRegional = getRegionalComplaintDraft(lang, complainantName, onBehalfOfTarget, detectedCategory, text || detectedCategory, amount, ext.utr)
   }
 
   return {
@@ -1169,8 +1179,8 @@ ${draftOpenerHi} ₹${amount.toLocaleString('en-IN')} की अनधिकृ�
     complaintDraftRegional,
     language: lang,
     frauderContact: ext.utr ? `Ref UTR: ${ext.utr}; Contact: ${ext.phone || 'Not Provided'}` : (ext.phone || 'Not Provided'),
-    bankName: 'Bank Nodal Desk',
-    accountNumber: 'Not Provided',
+    bankName: ext.bankName || 'Bank Nodal Desk',
+    accountNumber: ext.accountNumber || 'Not Provided',
     upiId: ext.upi || 'Not Provided',
     timeline: new Date().toLocaleString(),
     freezeSteps: defaultFreezeSteps,

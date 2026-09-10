@@ -613,3 +613,107 @@ export function getRegionalComplaintDraft(
       return `To,\nThe Station House Officer,\nCyber Crime Police Station.\n\nSubject: Formal Cybercrime Complaint regarding ${fraudType}\n\nRespected Sir/Madam,\n\nI, ${complainantName}${onBehalfOf ? ` (on behalf of ${onBehalfOf})` : ''}, am lodging this formal complaint regarding cyber fraud. ${lossText ? `Financial loss incurred: ${lossText} ${utrText}.` : ''}\n\nIncident Details:\n${incidentDetails}\n\nPlease take immediate legal action under Section 66D of the IT Act 2000.\n\nYours faithfully,\n${complainantName}`
   }
 }
+
+// 9. Multilingual Bank Name Directory mapping regional spellings to standard names
+export const REGIONAL_BANK_PATTERNS: { name: string; regex: RegExp }[] = [
+  { name: 'SBI', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(sbi|state bank|स्टेट बँक|स्टेट बैंक|एसबीआई|एसबीआय|এসবিআই|ఎస్బిఐ|எஸ்பிஐ|એસબીઆઈ|ಎಸ್‌ಬಿಐ|ଏସବିଆଇ|എസ്ബിഐ|ਐਸਬੀਆਈ|ایس بی آئی)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'HDFC Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(hdfc|एचडीएफसी|এইচডিএফসি|హెచ్‌డిఎఫ్‌సి|எச்டிஎப்சி|એચડીએફસી|ಎಚ್‌ಡಿಎಫ್‌ಸಿ|ଏଚଡିଏଫସି|എച്ച്ഡിഎഫ്സി|ਐਚਡੀਐਫਸੀ|ایچ ڈی ایف سی)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'ICICI Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(icici|आयसीआयसीआय|आईसीआईसीआई|আইসিআইসিআই|ఐసిఐసిఐ|ஐசிஐசிஐ|આઈસીઆઈસીઆઈ|ಐಸಿಐಸಿಐ|ଆଇସିଆଇସିଆଇ|ഐസിഐസിഐ|ਆਈਸੀઆਈਸੀਆਈ|آئی سی آئی سی آئی)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Axis Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(axis|अ‍ॅक्सिस|एक्सिस|অ্যাক্সিস|యాక్సిస్|ஆக்சிஸ்|એક્સિસ|ಆಕ್ಸಿಸ್|ଆକ୍ସିସ|ആക്സിസ്|ਐਕਸਿਸ|ایکسس)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Punjab National Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(pnb|punjab national|पंजाब नेशनल|ਪੰਜਾਬ ਨੈਸ਼ਨਲ|পাঞ্জাব ন্যাশনাল|పంజాబ్ నేషనల్|பஞ்சாப் நேஷனல்|ਪੰਜਾਬ ਨੈਸ਼ນਲ|پنجاب نیشنل)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Bank of Baroda', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(bob|bank of baroda|बँक ऑफ बडोदा|बैंक ऑफ बड़ौदा|બેંક ઓફ બરોડા|بینک آف بڑودہ|ಬ್ಯಾಂಕ್ ಆಫ್ ಬರೋಡಾ|ബാങ്ക് ഓഫ് ബറോഡ)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Kotak Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(kotak|कोटक|কোটাক|కోటక్|கோடக்|કોટક|ಕೋಟಕ್|ਕੋਟਕ|کوٹک)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Canara Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(canara|कॅनरा|केनरा|ಕೆನರಾ|கனரா|കനറാ|କାନାରା|ਕੈਨਰਾ)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Union Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(union bank|युनियन बँक|यूनियन बैंक|యూనియన్ బ్యాంక్|யூனியன் வங்கி)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Paytm Payments Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(paytm|पेटीएम|পেমেন্ট ব্যাংক|പേടിഎം|ਪੇਟੀਐਮ|પેટીએમ|పేటీఎం|பேடிஎம்|ಪೇಟಿಎಂ|ପେଟିଏମ)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'IndusInd Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(indusind|इंडसइंड|ಇಂಡಸ್‌ಇಂಡ್)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'Yes Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(yes bank|यस बैंक|યસ બેંક)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+  { name: 'IDFC First Bank', regex: new RegExp('(?:^|[^\\p{L}\\p{N}])(idfc|आईडीएफसी|ഐഡിഎഫ്സി)(?:[^\\p{L}\\p{N}]|$)', 'iu') },
+]
+
+export function extractMultilingualBank(text: string): string | null {
+  if (!text) return null
+  for (const b of REGIONAL_BANK_PATTERNS) {
+    if (b.regex.test(text)) return b.name
+  }
+  return null
+}
+
+// 10. Universal Multilingual UTR / Transaction Reference Extractor
+export function extractMultilingualUTR(text: string): { utr: string | null; allUtrs: string[] } {
+  if (!text) return { utr: null, allUtrs: [] }
+  const normalized = normalizeIndicNumerals(text)
+
+  const utrs = new Set<string>()
+
+  // Regional prefixes across all 12 languages
+  const prefixRegex =
+    /(?:utr|txn|txnid|transaction(?:\s*(?:id|no|number))?|ref|reference|imps|neft|upi\s*(?:ref|reference)?|आईएमपीएस|रेफरेंस|नेफ्ट|আইএমপিএস|রেফারেন্স|নেফ্ট|ఐఎంపిఎస్|ஐஎம்பிஎஸ்|આઈએમપીએસ|ಐಎಂಪಿಎಸ್|ଆଇଏମପିଏସ|ഐഎംപിഎസ്|ਆਈਐਮਪੀਐਸ|ریفرنس|ইউটিআর|লেনদেন\s*(?:আইডি|নম্বর)|ইউটিআর\s*নং|ইউপিআই\s*রেফ|यूटीआर|व्यवहार\s*(?:क्रमांक|आयडी)|ट्रान्झॅक्शन\s*आयडी|संबोध\s*क्रमांक|ಯುಟಿಆರ್|ವಹಿವಾಟು\s*(?:ಐಡಿ|ಸಂಖ್ಯೆ)|యుటిఆర్|లావాదేవీ\s*(?:సంఖ్య|ఐడి)|யுடிஆர்|பரிவர்த்தனை\s*(?:ஐடி|எண்)|குறிப்பு\s*எண்|યુટીઆર|ટ્રાન્ઝેક્શન\s*આઈડી|વ્યવહાર\s*નંબર|સંદર્ભ\s*નંબર|یو\s*ٹی\s*آر|ٹرانزیکشن\s*(?:آئی\s*ڈی|نمबर)|حوالہ\s*نمبر|ୟୁଟିଆର୍|ଟ୍ରାଞ୍ଜାକସନ\s*ଆଇଡି|କାରବାର\s*ନମ୍ବର|യുടിആർ|ഇടപാട്\s*നമ്പർ|ട്രാൻസാക്ഷൻ\s*ഐഡി|ਯੂਟੀआर|ਲੈਣ-ਦੇਣ\s*ਨੰਬਰ|ਟ੍ਰਾਂਜੈਕਸ਼ਨ\s*ਆਈਡੀ|ਹਵਾਲਾ\s*ਨੰਬਰ)\s*(?:no\.?|number|संख्या|क्रमांक|નંબર|नंबर|ਨੰਬਰ|నంబర్|எண்|നമ്പർ|ਨੰਬਰ)?\s*[:#-]?\s*([A-Za-z0-9/_-]{8,24})/gi
+
+  let m: RegExpExecArray | null = null
+  while ((m = prefixRegex.exec(normalized)) !== null) {
+    let clean = m[1].replace(/^[/-]+|[/-]+$/g, '').trim()
+    if (
+      clean.length >= 8 &&
+      !/^(number|hai|ahe|chhe|undi|undennu|haye|kare|kela|kiti|panna|mila|mili)$/i.test(clean)
+    ) {
+      utrs.add(clean)
+    }
+  }
+
+  // Standalone alphanumeric banking reference codes (e.g. IMPS/624519082341, UPI/CR/123456789012, CMS12345678901)
+  const standaloneAlphaRx = /\b(?:IMPS|UPI|NEFT|CMS|TXN|REF)[A-Za-z0-9/_-]{6,22}\b/gi
+  while ((m = standaloneAlphaRx.exec(normalized)) !== null) {
+    let clean = m[0].replace(/^[/-]+|[/-]+$/g, '').trim()
+    if (clean.length >= 8) {
+      utrs.add(clean)
+    }
+  }
+
+  // Account words lookaround to avoid confusing bank account numbers with 12-digit UTRs
+  const accountPrefixLookbehind =
+    /(?:a\/c|acc|account|acct|khata|खाते|खाता|ఖాతా|கணக்கு|ખાતા|کھاتہ|ಖಾತೆ|ଖାତା|അക്കൗണ്ട്|ਖਾਤਾ)\s*(?:no\.?|number|संख्या|क्रमांक|નંબર|नंबर|నంబర్|எண்|നമ്പർ|ਨੰਬਰ)?\s*[:#-]?\s*$/i
+  const standalone12Rx = /\b([0-9]{12})\b/gi
+  while ((m = standalone12Rx.exec(normalized)) !== null) {
+    const matchIndex = m.index
+    const preText = normalized.substring(Math.max(0, matchIndex - 35), matchIndex)
+    const isAccount = accountPrefixLookbehind.test(preText)
+    if (!isAccount) {
+      let alreadyCaptured = false
+      utrs.forEach((existing) => {
+        if (existing.includes(m![1])) {
+          alreadyCaptured = true
+        }
+      })
+      if (!alreadyCaptured) {
+        utrs.add(m[1])
+      }
+    }
+  }
+
+  const allUtrs = Array.from(utrs)
+  return {
+    utr: allUtrs.length > 0 ? allUtrs.join(', ') : null,
+    allUtrs,
+  }
+}
+
+// 11. Multilingual Bank Account Number Extractor
+export function extractMultilingualAccount(text: string): string | null {
+  if (!text) return null
+  const normalized = normalizeIndicNumerals(text)
+  const rx =
+    /(?:a\/c|acc|account|acct|khata|खाते|खाता|ఖాతా|கணக்கு|ખાતા|کھاتہ|ಖಾತೆ|ଖାତା|അക്കൗണ്ട്|ਖਾਤਾ)\s*(?:no\.?|number|संख्या|क्रमांक|નંબર|नंबर|నంబర్|எண்|നമ്പർ|ਨੰਬਰ)?\s*[:#-]?\s*([0-9]{9,18})/i
+  const m = normalized.match(rx)
+  return m ? m[1] : null
+}
+
+// 12. Multilingual Additional vs Replacement Amount Detector
+export function isAdditionalAmount(text: string): boolean {
+  if (!text) return false
+  const additionalMarkers = new RegExp(
+    '(?:आणखी|आणखिन|अतिरिक्त|और|दुसरा|दुसऱ्या|दुसरे|दूसरे|আরও|উল্টো আরও|మరింత|అదనంగా|கூடுதலாக|બીજા|વધારાના|మరో|ಮತ್ತಷ್ಟು|ಹೆಚ್ಚುವರಿ|ଆଉ|ଅଧିକ|കൂടുതൽ|അധികമായി|ਹੋਰ|ਵਾਧੂ|اور|مزید|another|more|additional|further|second)',
+    'iu'
+  )
+  return additionalMarkers.test(text)
+}

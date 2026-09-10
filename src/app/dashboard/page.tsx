@@ -250,6 +250,23 @@ function DashboardContent() {
       const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })
       const fallbackDraft = (triageResult.complaintDraft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nI further report the following fresh evidence/update: ${note}`
       const fallbackDraftHi = (triageResult.complaintDraftHi || '') + `\n\n[पूरक बयान — ${timeStr}]\nमैं आगे निम्नलिखित नया साक्ष्य/अपडेट रिपोर्ट करता हूँ: ${note}`
+      const fallbackDraftRegional = (triageResult.complaintDraftRegional || triageResult.complaintDraft || '') + `\n\n[SUPPLEMENTARY STATEMENT — ${timeStr}]\nUpdate: ${note}`
+
+      // Handle additional vs replacement amount
+      const prevAmt = triageResult.amount || 0
+      const updatedAmount = extracted?.amount
+        ? (extracted.amountIsAdditional ? prevAmt + extracted.amount : extracted.amount)
+        : prevAmt
+
+      // Clean multi-UTR merging
+      let updatedContact = triageResult.frauderContact
+      if (extracted?.utr) {
+        if (!updatedContact || updatedContact.toLowerCase().includes('not provided') || updatedContact.toLowerCase() === 'unknown') {
+          updatedContact = `UTR: ${extracted.utr}`
+        } else if (!updatedContact.includes(extracted.utr)) {
+          updatedContact = `${updatedContact}, UTR: ${extracted.utr}`
+        }
+      }
 
       // Auto-update complaint sections with newly extracted fields
       const newTriage = {
@@ -258,15 +275,14 @@ function DashboardContent() {
         ...(extracted?.accountNumber ? { accountNumber: extracted.accountNumber } : {}),
         ...(extracted?.upiId ? { upiId: extracted.upiId } : {}),
         ...(extracted?.fraudsterIdentifier ? { fraudsterIdentifier: extracted.fraudsterIdentifier } : {}),
-        ...(extracted?.amount ? { amount: extracted.amount } : {}),
+        amount: updatedAmount,
         ...(extracted?.complainantName ? { complainantName: extracted.complainantName } : {}),
-        ...(extracted?.utr ? {
-          frauderContact: triageResult.frauderContact && !triageResult.frauderContact.toLowerCase().includes('not provided')
-            ? `${triageResult.frauderContact}; UTR: ${extracted.utr}`
-            : `UTR: ${extracted.utr}`
-        } : {}),
+        frauderContact: updatedContact,
         complaintDraft: updatedDraft || fallbackDraft,
         complaintDraftHi: updatedDraftHi || fallbackDraftHi,
+        complaintDraftRegional: fallbackDraftRegional,
+        // If an update provides a UTR, elevate urgency to CRITICAL for immediate golden-hour account freeze
+        ...(extracted?.utr ? { urgencyLevel: 'CRITICAL' as const } : {}),
       }
 
       setTriageResult(newTriage)
@@ -279,7 +295,13 @@ function DashboardContent() {
       if (extracted?.upiId) filledSummary.push(`UPI (${extracted.upiId})`)
       if (extracted?.accountNumber) filledSummary.push(`Account (${extracted.accountNumber})`)
       if (extracted?.complainantName) filledSummary.push(`Complainant (${extracted.complainantName})`)
-      if (extracted?.amount) filledSummary.push(`Amount (₹${extracted.amount.toLocaleString('en-IN')})`)
+      if (extracted?.amount) {
+        filledSummary.push(
+          extracted.amountIsAdditional
+            ? `+₹${extracted.amount.toLocaleString('en-IN')} (Total ₹${updatedAmount.toLocaleString('en-IN')})`
+            : `₹${extracted.amount.toLocaleString('en-IN')}`
+        )
+      }
 
       if (filledSummary.length > 0) {
         setAutoFillBanner(
