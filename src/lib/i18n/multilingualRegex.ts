@@ -47,35 +47,78 @@ export function extractMultilingualAmount(text: string): number {
   if (!text) return 0
   const normalized = normalizeIndicNumerals(text)
 
-  // 1. Currency Suffix across all 12 languages (Priority 1: exact monetary units)
-  const suffixRegex = /([\d,]+)\s*(?:₹|rs\.?|inr|rupees|rupaye|रुपये|रुपया|रूपये|টাকা|રૂપિયા|રૂપિયો|రూపాయలు|రూపాయల|రూపాయి|ரூபாய்|ರೂಪಾಯಿ|ರೂಪಾಯಿಗಳು|ଟଙ୍କା|രൂപ|ਰੁਪਏ|ਰੁਪਈਆ|روپے|روپیہ)/i
-  const mSuffix = normalized.match(suffixRegex)
-  if (mSuffix && mSuffix[1]) {
-    const clean = parseInt(mSuffix[1].replace(/,/g, ''), 10)
-    if (Number.isFinite(clean) && clean > 0) return clean
+  // Priority 0: Total / Cumulative loss indicator ("total X debited", "মোট ১৫,০০০", "કુલ ₹૧૫,૦૦૦", "एकूण")
+  const totalRegex = /(?:total|mot|motto|kull|kul|ekun|mottam|moththam|ottu|motam|মোট|કુલ|एकूण|మొత్తం|மொத்தம்|ಒಟ್ಟು|ମୋଟ|ആകെ|ਕੁੱਲ)\s*(?:of\s*)?(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  const mTotal = normalized.match(totalRegex)
+  if (mTotal && mTotal[1]) {
+    const val = parseInt(mTotal[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(val) && val > 0) return val
+  }
+
+  // Priority 1: Fee / Processing / Deposit charges in fake lottery / winnings
+  const feeRegex = /(?:fee|charges|processing|deposit|ট্যাক্স|ফি|शुल्क|फीस|फी|ఫీజు|கட்டணம்|ચાર્જ|ಶುಲ್ಕ|ଫି|ഫീസ്|ਫੀਸ)\s*(?:క్రింద|તરીકે|म्हणून|হিসেবে|ஆக)?\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  const mFee = normalized.match(feeRegex)
+  if (mFee && mFee[1]) {
+    const val = parseInt(mFee[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(val) && val > 0) return val
+  }
+  const feeRegex2 = /(?:₹|rs\.?|inr)\s*([\d,]+)\s*(?:fee|charges|processing|deposit|ফি|शुल्क|ఫీజు|கட்டணம்|ચાર્જ|ಶುಲ್ಕ|ଫି|ഫീസ്|ਫੀਸ)/i
+  const mFee2 = normalized.match(feeRegex2)
+  if (mFee2 && mFee2[1]) {
+    const val = parseInt(mFee2[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(val) && val > 0) return val
+  }
+
+  // Priority 2: Secondary / further extortion or withdrawal payment in betting / prize scams
+  const secondaryPaymentRegex = /(?:आणखी|উল্টো আরও|আরও|మరింత|అదనంగా|கூடுதலாக|બીજા|మరో|ಮತ್ತಷ್ಟು|ଆଉ|കൂടുതൽ|ਹੋਰ)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  const mSec = normalized.match(secondaryPaymentRegex)
+  if (mSec && mSec[1]) {
+    const val = parseInt(mSec[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(val) && val > 0) return val
+  }
+
+  // Priority 3: Task scam pattern: "first X profit, then Y deposit"
+  const taskScamRegex = /(?:first|modhalil|prathame|firstly|প্রথমে|प्रारंभంలో|முதலில்|પહેલા|முதல்ல|ಮೊದಲು)\s*(?:₹|rs\.?|inr)?\s*[\d,]+.*?(?:পরে|ಆ తర్వాత|ఆ తర్వాత|பிறகு|પછી|त्यानंतर|नंतर)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  const mTask = normalized.match(taskScamRegex)
+  if (mTask && mTask[1]) {
+    const val = parseInt(mTask[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(val) && val > 0) return val
+  }
+
+  const candidates: number[] = []
+
+  // 1. Currency Suffix across all 12 languages
+  const suffixRx = /([\d,]+)\s*(?:₹|rs\.?|inr|rupees|rupaye|रुपये|रुपया|रूपये|টাকা|રૂપિયા|રૂપિયો|రూపాయలు|రూపాయల|రూపాయి|ரூபாய்|ರೂಪಾಯಿ|ರೂಪಾಯಿಗಳು|ଟଙ୍କା|രൂപ|ਰੁਪਏ|ਰੁਪਈਆ|روپے|روپیہ)/gi
+  let mSuffixMatch: RegExpExecArray | null = null
+  while ((mSuffixMatch = suffixRx.exec(normalized)) !== null) {
+    const clean = parseInt(mSuffixMatch[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(clean) && clean > 0) candidates.push(clean)
   }
 
   // 2. Currency Prefix (₹, rs, inr, etc.)
-  const prefixRegex = /(?:₹|rs\.?|inr|amount|amt|balance)\s*([\d,]+)/i
-  const mPrefix = normalized.match(prefixRegex)
-  if (mPrefix && mPrefix[1]) {
-    const clean = parseInt(mPrefix[1].replace(/,/g, ''), 10)
-    if (Number.isFinite(clean) && clean > 0) return clean
+  const prefixRx = /(?:₹|rs\.?|inr|amount|amt|balance)\s*([\d,]+)/gi
+  let mPrefixMatch: RegExpExecArray | null = null
+  while ((mPrefixMatch = prefixRx.exec(normalized)) !== null) {
+    const clean = parseInt(mPrefixMatch[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(clean) && clean > 0) candidates.push(clean)
   }
 
-  // 3. Multipliers: lakh / crore / hazar
-  const multiplierRegex = /([\d,]+)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)/i
-  const mMulti = normalized.match(multiplierRegex)
-  if (mMulti && mMulti[1]) {
-    const clean = parseFloat(mMulti[1].replace(/,/g, ''))
-    if (Number.isFinite(clean) && clean > 0) return Math.round(clean * 100000)
-  }
+  // 3. Multipliers: lakh / crore
+  const isLotteryPrompt = /(?:lottery|kbc|prize|won|জিতেছিলাম|जिंकलेले|గెలుచుకున్నారని|గెలిచిన|ஜித்த|જીતેલા|ಗೆದ್ದ|ଜିତିଥିଲି)/i.test(normalized)
+  if (!isLotteryPrompt) {
+    const multiplierRegex = /([\d,]+)\s*(?:lakh|lakhs|লাখ|लाख|લાખ|లక్ష|లక్షల|லட்சம்|لاکھ|ಲಕ್ಷ|ଲକ୍ଷ|ലക്ഷം|ਲੱਖ)/i
+    const mMulti = normalized.match(multiplierRegex)
+    if (mMulti && mMulti[1]) {
+      const clean = parseFloat(mMulti[1].replace(/,/g, ''))
+      if (Number.isFinite(clean) && clean > 0) candidates.push(Math.round(clean * 100000))
+    }
 
-  const croreRegex = /([\d,]+)\s*(?:crore|crores|কোটি|करोड़|કરોડ|కోట్లు|కోటి|கோடி|کروڑ|ಕೋಟಿ|କୋଟି|കോടി|ਕਰੋੜ)/i
-  const mCrore = normalized.match(croreRegex)
-  if (mCrore && mCrore[1]) {
-    const clean = parseFloat(mCrore[1].replace(/,/g, ''))
-    if (Number.isFinite(clean) && clean > 0) return Math.round(clean * 10000000)
+    const croreRegex = /([\d,]+)\s*(?:crore|crores|কোটি|करोड़|કરોડ|కోట్లు|కోటి|கோடி|کروڑ|ಕೋಟಿ|କୋଟି|കോടി|ਕਰੋੜ)/i
+    const mCrore = normalized.match(croreRegex)
+    if (mCrore && mCrore[1]) {
+      const clean = parseFloat(mCrore[1].replace(/,/g, ''))
+      if (Number.isFinite(clean) && clean > 0) candidates.push(Math.round(clean * 10000000))
+    }
   }
 
   // 4. Standalone figure after transaction words
@@ -83,10 +126,123 @@ export function extractMultilingualAmount(text: string): number {
   const mTxn = normalized.match(txnRegex)
   if (mTxn && mTxn[1]) {
     const clean = parseInt(mTxn[1].replace(/,/g, ''), 10)
-    if (Number.isFinite(clean) && clean > 0 && clean < 1000000000) return clean
+    if (Number.isFinite(clean) && clean > 0 && clean < 1000000000) candidates.push(clean)
+  }
+
+  if (candidates.length > 0) {
+    // If multiple candidates exist, prefer the realistic loss over small bait (e.g. 500 profit vs 70,000 deposit)
+    const largeLoss = candidates.filter(c => c >= 2000)
+    if (largeLoss.length > 0) {
+      return largeLoss[largeLoss.length - 1]
+    }
+    return candidates[0]
   }
 
   return 0
+}
+
+// 4b. Multilingual Fraudster Identifier Extractor
+export function extractMultilingualFraudster(text: string): string {
+  if (!text) return 'Not Identified'
+
+  // 1. Social handle (@username)
+  const handleMatch = text.match(/@([a-zA-Z0-9_.-]+)/)
+  if (handleMatch && handleMatch[0]) {
+    return handleMatch[0]
+  }
+
+  // 2. UPI ID
+  const upiMatch = text.match(/[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+/)
+  if (upiMatch && upiMatch[0] && !upiMatch[0].includes('@gmail') && !upiMatch[0].includes('@yahoo')) {
+    return upiMatch[0]
+  }
+
+  // 3. Official / Impersonation Title + Name:
+  // e.g. "ইন্সপেক্টর ভার্মা", "इन्स्पेक्टर शर्मा", "ఇన్స్పెక్టర్ వర్మ", "இன்ஸ்பெக்டர் வர்மா", "ઇન્સ્પેક્ટર વર્મા", "ಇನ್ಸ್‌ಪೆಕ್ಟರ್ ವರ್ಮಾ", "ଇନ୍ସପେକ୍ଟର ବର୍ମା", "ਇੰਸਪੈਕਟਰ ਵਰਮਾ"
+  const titleRegex = new RegExp(
+    `(?:ভুয়ো|बनावट|నకిలీ|போலி|બનાવટી|جعلی|ನಕಲಿ|ନକଲି|വ്യാജ|ਨਕਲੀ)?\\s*(?:সিবিআই|सीबीआय|సిబిఐ|சிபிஐ|સીબીઆઈ|سی بی آئی|ಸಿಬಿಐ|ସିବିଆଇ|സിബിഐ|ਸੀਬੀਆਈ)?\\s*(?:অফিসার|अधिकारी|అధికారి|அதிகாரி|અધિકારી|افسر|ಅಧಿಕಾರಿ|ଅଫିସର|ഓഫീസർ|ਅਫਸਰ|ইন্সপেক্টর|इन्स्पेक्टर|ఇన్స్పెక్టర్|இன்ஸ்பெக்டர்|ઇન્સ્પેક્ટર|انسپکٹر|ಇನ್‌ಸ್ಪೆಕ್ಟರ್|ଇନ୍ସପେକ୍ଟର|ਇੰਸਪੈਕਟਰ|ఆర్మీ ఆఫీసర్|আর্মি অফিসার|आर्मी ऑफिसर|ராணுவ அதிகாரி)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`,
+    'i'
+  )
+  const mTitle = text.match(titleRegex)
+  if (mTitle && mTitle[1]) {
+    const candidate = mTitle[1].replace(/[।.,!?;:]+$/, '').trim()
+    if (candidate.length > 1 && !/^(ফোন|फोन|ఫోన్|போன்|ફોન|ಫೋನ್|ਫੋਨ)$/.test(candidate)) {
+      return candidate
+    }
+  }
+
+  // 4. "Name [postposition]" patterns across all languages
+  const namedRegex = new RegExp(
+    `(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)\\s*(?:নামের|নামে|नावाच्या|नावाने|याने|అనే|పేరుతో|என்ற|என்பவர்|નામના|નામે|نامی|نام کے|ಎಂಬ|ಹೆಸರಿನ|ନାମକ|ନାମରେ|എന്ന്|എന്ന വ്യക്തി|ਨਾਮ ਦਾ|ਨਾਮੀ)`,
+    'i'
+  )
+  const mNamed = text.match(namedRegex)
+  if (mNamed && mNamed[1]) {
+    const candidate = mNamed[1].replace(/^(?:একা|एक|ఒక|ஒரு|એક|ایک|ಒಬ್ಬ|ଜଣେ|ഒരു|ਇੱਕ)\s+/, '').replace(/[।.,!?;:]+$/, '').trim()
+    const stopwords = new Set(['আমার', 'আমি', 'माझे', 'मी', 'ना', 'నేను', 'என்', 'நான்', 'મારું', 'હું', 'میरा', 'میں', 'ನನ್ನ', 'ನಾನು', 'ମୋ', 'ମୁଁ', 'എന്റെ', 'ഞാൻ', 'ਮੇਰਾ', 'ਮੈਂ'])
+    if (candidate.length > 1 && !stopwords.has(candidate)) {
+      return candidate
+    }
+  }
+
+  // 5. Fraudulent Entity/App/Courier Mention (FedEx, Dhani, Loan App, StockPro, etc.)
+  const entityMatch = text.match(/\b(stockpro|tradexpro|trademax|fedex|dhani|speedrupee|কুইক লোন|লোন ॲप|क्रेडिट એપ|फेडेक्स|ಫೆಡೇಕ್ಸ್|ஃபெடெக்ஸ்|فیڈیکس|ਫੈਡੇਕਸ|ଧନୀ|ధని|தானி)\b/i)
+  if (entityMatch && entityMatch[0]) {
+    return entityMatch[0]
+  }
+
+  // 6. Phone number
+  const phoneMatch = text.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})/)
+  if (phoneMatch && phoneMatch[1]) {
+    return phoneMatch[1]
+  }
+
+  return 'Not Identified'
+}
+
+// 4c. Infer Crime Category from Multilingual Narrative
+export function inferCategoryFromMultilingualText(text: string): FraudType {
+  if (!text) return 'Other Cyber Crime'
+  const t = text.toLowerCase()
+
+  // 1. Other Cyber Crime: Hacking, Ransomware, DDoS
+  const hackRegex = /(?:hack|हॅक|হ্যাক|హ్యాక్|ஹேக்|હેક|ہیک|ಹ್ಯಾಕ್|ହ୍ୟାକ|ഹാക്ക്|ਹੈਕ|ddos|ransomware|র‍্যানসমওয়্যার|रॅन्समवेअर|రాన్సమ్‌వేర్|ரான்சம்வேர்|રેન્સમવેર|رینسم ویئر|ರ್ಯಾನ್ಸಮ್‌ವೇರ್|ରାନ୍ସମୱେୟାର|റാൻസംവെയർ|ਰੈਂਸਮਵੇਅਰ|ডিডস|डीडॉस|website|ওয়েবসাইট|वेबसाइट|వెబ్‌సైట్|வலைத்தளம்|ವೆಬ್‌ಸೈಟ್)/i
+  if (hackRegex.test(t)) {
+    return 'Other Cyber Crime'
+  }
+
+  // 2. Women/Children Related Crime: Morphing, stalking, fake woman profile, matrimonial fraud (Checked before generic extortion)
+  const womenRegex = /(?:matrimon|shaadi|ম্যাট্রিমোনিয়াল|ম্যাট্রিমনি|मॅट्रिमोनियल|मॅट्रिमनी|మ్యాట్రిమోని|மேட்ரிமோனி|મેટ્રિમોનિ|میٹریمونی|ಮ್ಯಾಟ್ರಿಮೋನಿ|ମ୍ୟାଟ୍ରିମୋନି|മാട്രിമോണി|ਮੈਟ੍ਰੀਮੋਨੀ|morph|আপত্তিকর ছবি|घाणेरडे फोटो|മോർഫ്|மார்ஃபிங்|મોર્ફ|مارفنگ|ಅಶ್ಲೀಲ ಫೋಟೋ|ମର୍ଫ|മോർഫിംഗ്|ਅਸ਼ਲੀਲ ਫੋਟੋ|fake profile|ভুয়ো প্রোফাইল|बनावट प्रोफाइल|నకిలీ ప్రొఫైల్|போலி சுயவிவரம்|બોગસ પ્રોફાઇલ|جعلی پروفائل|ನಕಲಿ ಪ್ರೊಫೈಲ್|ନକଲି ପ୍ରୋଫାଇଲ|വ്യാജ പ്രൊഫൈൽ|ਨਕਲੀ ਪ੍ਰੋਫਾਈਲ|ছবি এডিট|অশ্লীল মেসেজ|অশ্লীল ছবি|অশ্লীল|अश्लील मेसेज|अश्लील|నగ్న|ஆபாச|അശ്ലീല|ਔਰਤ|മകൾ|മహిଳ|மகளிர்|സ്ത്രീ|സ്ത്രീകൾ)/i
+  if (womenRegex.test(t)) {
+    return 'Women/Children Related Crime'
+  }
+
+  // 3. Identity Theft: SIM swap, PAN, Aadhaar, driving license, fake loan on stolen ID
+  const idRegex = /(?:pan card|aadhaar|pan|sim swap|tafcop|identity|driving license|লাইসেন্স|लायसन्स|లైసెన్స్|લાયસન્સ|لائسنس|ಲೈಸೆನ್ಸ್|ଲାଇସେନ୍ସ|ലൈസൻസ്|ਲਾਇਸੈਂਸ|লাইসেন্স|সিম সোয়াপ|डुप्लिकेट सिम|सिम कार्ड|సిమ్ స్వాప్|సిమ్ కార్డు|சிம் ஸ்வாப்|சிம் கார்டு|સિમ સ્વેપ|સિમ કાર્ડ|سم تبدیل|ಸಿಮ್ ಸ್ವಾಪ್|ସିମ ସ୍ୱାପ|സിം സ്വാപ്പ്|ਸਿਮ ਸਵੈਪ|প্যান কার্ড|আধার|पॅन कार्ड|आधार कार्ड|પાન કાર્ડ|આધાર કાર્ડ|పాన్ కార్డు|ఆధార్|பான் கார்டு|ஆதார்|پین کارڈ|آدھار|ಪ್ಯಾನ್ ಕಾರ್ಡ್|ಆಧಾರ್|ପାନ କାର୍ଡ|ଆଧାର|പാൻ കാർഡ്|ആധാർ|ਪੈਨ ਕਾਰਡ|ਆਧਾਰ)/i
+  if (idRegex.test(t)) {
+    return 'Identity Theft'
+  }
+
+  // 4. Extortion & Blackmail: Digital arrest, CBI, police arrest, courier narcotics/drugs parcel police fear, loan app blackmail, voice clone, nude video blackmail
+  const extortionRegex = /(?:digital arrest|ডিজিটাল অ্যারেস্ট|डिजिटल अरेस्ट|డిజిటల్ అరెస్ట్|டிஜிட்டல் அரெஸ்ட்|ડિજિટલ અરેસ્ટ|ڈیجیٹل گرفتاری|ಡಿಜಿಟಲ್ ಅರೆஸ்ட்|ଡିଜିଟାଲ ଆରେଷ୍ଟ|ഡിജിറ്റൽ അറസ്റ്റ്|ਡਿਜੀਟਲ ਅਰੈਸਟ|voice clone|ভয়েস ক্লোন|व्हॉइस क्लोन|వాయిస్ క్లోన్|குரல் குளோனிங்|વોઈસ ક્લોન|وائس کلون|ಧ್ವನಿ ಕ್ಲೋನ್|ଭଏସ କ୍ଲୋନ|വോയ്സ് ക്ലോൺ|ਵੌਇਸ ਕਲੋਨ|आवाजाची नक्कल|নকল গলা|ವಾಯ್ಸ್|narcotics|drugs|ড্রাগস|ड्रग्ज|డ్రగ్స్|டிரக்ஸ்|ડ્રગ્સ|ڈرگز|ಡ್ರಗ್ಸ್|ଡ୍ରଗ୍ସ|ഡ്രഗ്സ്|ਡਰੱਗਜ਼|নারকোটিক্স|अमली पदार्थ|నార్కోటిక్స్|போதைப்பொருள்|માદક દ્રવ્યો|منشیات|ಮಾದಕ ವಸ್ತು|ନାର୍କୋଟିକ୍ସ|മയക്കുമരുന്ന്|ਨਸ਼ੀਲੇ ਪਦਾਰਥ|loan app|speedrupee|dhani|লোন অ্যাপ|লোন ॲप|লোন ऐप|లోన్ యాప్|கடன் செயலி|ક્રેડિટ એપ|لون ایپ|ಲೋನ್ ಆಪ್|ଲୋନ ଆପ|ലോൺ ആപ്പ്|ਲੋਨ ਐਪ|వీడియో కాల్|ভিডিও কল|व्हिडिओ कॉल|વિડીયો કૉલ|ویڈیو کال|ವೀಡಿಯೋ ಕಾಲ್|ଭିଡିଓ କଲ|വീഡിയോ കോൾ|ਵੀਡੀਓ ਕਾਲ)/i
+  if (extortionRegex.test(t)) {
+    return 'Extortion & Blackmail'
+  }
+
+  // 5. E-Commerce Scams: OLX, marketplace, ads, fake products, non-delivery, courier
+  const ecomRegex = /(?:olx|ওএলএক্স|ओएलएक्स|ఒఎల్‌ఎక్స్|ஓஎல்எக்ஸ்|ઓએલએક્સ|او ایل ایکس|ಒಎಲ್‌ఎక్స్|ଓଏଲଏକ୍ସ|ഒഎൽഎക്സ്|ਓਐਲਐਕਸ|marketplace|মার্কেটপ্লেস|मार्केटप्लेस|మార్కెట్‌ప్లేస్|மார்க்கெட்பிளேஸ்|માર્કેટપ્લેસ|বিজ্ঞাপন|जाहिरात|ప్రకటన|விளம்பரம்|જાહેરાત|shoes|জুতো|बूटा|షూస్|காலணிகள்|બૂਟ|ਜੁੱਤੇ|fake product|নকল পণ্য|खोटी वस्तू|నకిలీ వస్తువు|போலி பொருள்|નકલી વસ્તુ|ਨਕલી ਸਮਾਨ|courier|delivery|parcel|পার্সেল|কুরিয়ার|ઓર્ડર|డెలిවరీ|டெலிவரி|ഡെലിവറി)/i
+  if (ecomRegex.test(t)) {
+    return 'E-Commerce Scams'
+  }
+
+  // 6. Investment Scam: Betting, crypto, trading, stockpro, task jobs, youtube like
+  const investRegex = /(?:betting|জুয়ার অ্যাপ|बेटिंग ॲप|బెట్టింగ్ యాప్|சூதாட்ட செயலி|સટ્ટાબાજી|جوئے کی ایپ|ಬೆಟ್ಟಿಂಗ್ ಆಪ್|ଜୁଆ ଆପ|ബെറ്റിംഗ് ആപ്പ്|ਸੱਟੇਬਾਜ਼ੀ|stockpro|tradexpro|trademax|crypto|bitcoin|trading|telegram|part-time|part time|youtube like|task|ট্রেডিং|টেলিগ্রাম|শেয়ার বাজার|পার্ট-টাইম|লাইক জব|ट्रेडिंग|टेलिग्राम|शेअर बाजार|क्रिप्टो|ટેલિગ્રામ|રોકાણ|షేర్ మార్కెట్|ట్రేడింగ్|టెలిగ్రామ్|பங்குச் சந்தை|டிரேடிங்|டெலிகிராம்|کرپٹو|ٹریڈنگ|ٹیلیگرام|ಷೇರು ಮಾರುಕಟ್ಟೆ|ಟ್ರೇಡಿಂಗ್|ಟೆಲಿಗ್ರಾಂ|ଟ୍ରେଡିଂ|ଟେଲିଗ୍ରାମ|ഷെയർ മാർക്കറ്റ്|ട്രേഡിംഗ്|ਟੈਲੀਗ੍ਰਾਮ|ਕ੍ਰਿਪਟੋ|লাইক জব|લાઈક જોਬ|లైక్ జాబ్|லைக் வேலை|ಲೈಕ್ ಜಾಬ್|ଲାଇକ ଜବ|ലൈക്ക് ജോലി|ਲਾਈਕ ਜੌਬ)/i
+  if (investRegex.test(t)) {
+    return 'Investment Scam'
+  }
+
+  // 7. Fallback: Financial Fraud
+  return 'Financial Fraud'
 }
 
 // 4. Multilingual Complainant Name Extractor

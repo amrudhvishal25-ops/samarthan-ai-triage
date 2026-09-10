@@ -16,6 +16,10 @@ import {
   normalizeIndicNumerals,
   extractMultilingualAmount,
   extractMultilingualComplainant,
+  extractMultilingualOnBehalfOf,
+  extractMultilingualFraudster,
+  inferCategoryFromMultilingualText,
+  getRegionalComplaintDraft,
   MULTILINGUAL_GREETINGS_OR_NAV_REGEX
 } from '@/lib/i18n/multilingualRegex'
 
@@ -265,12 +269,14 @@ export function quickExtract(text: string) {
   const utrMatch = normText.match(/(?:utr|ref|reference|txn|transaction|imps|neft|upi\s*ref)[\s:#-]*([0-9]{12})/i)
   const phoneMatch = normText.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})/i)
   const upiMatch = normText.match(/[\w.-]+@[\w.-]+/i)
+  const detectedFraudster = extractMultilingualFraudster(text)
 
   return {
     amount: multilingualAmount ?? (amountMatch ? parseInt(amountMatch[1].replace(/,/g, ''), 10) : undefined),
     utr: utrMatch ? utrMatch[1] : undefined,
     phone: phoneMatch ? phoneMatch[1] : undefined,
     upi: upiMatch ? upiMatch[0] : undefined,
+    fraudster: detectedFraudster !== 'Not Identified' ? detectedFraudster : undefined,
   }
 }
 
@@ -741,12 +747,13 @@ async function extractUpdateDetailsWithAI(note: string) {
 
   // Accused / fraudster correction regex: e.g. "his name is not amrit vijal its amruth vishal and he is from tapmi manipal"
   const fraudsterCorrectionMatch = note.match(/(?:his name is not|his name is|not [a-z0-9\s]+ (?:it's|its|it is)|correct name is|accused is|fraudster is)\s*([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?(?:\s+(?:from|at)\s+[A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)?)/i)
+  const detectedFraudsterInNote = extractMultilingualFraudster(note)
 
   const fallback = {
     utr: utrMatch ? utrMatch[1] : null,
     bankName: bankMatch ? bankMatch[0] : null,
     upiId: upiMatch ? upiMatch[0] : null,
-    fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null),
+    fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (detectedFraudsterInNote !== 'Not Identified' ? detectedFraudsterInNote : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null)),
     accountNumber: accountMatch ? accountMatch[1] : null,
     amount: extractMultilingualAmount(note) ?? null,
     amountIsAdditional: false,
@@ -957,36 +964,8 @@ COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a rea
       const fraudType = (parsed.fraudType || 'Financial Fraud') as any
       const channelInfo = inferChannelFromFraudType(fraudType)
 
-      let onBehalfOfTarget: string | null = null
-      const behalfAfterMatch = incidentText.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-      if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
-        onBehalfOfTarget = behalfAfterMatch[1].trim()
-      }
-      if (!onBehalfOfTarget) {
-        const behalfBeforeMatch = incidentText.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
-        if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
-          onBehalfOfTarget = behalfBeforeMatch[1].trim()
-        }
-      }
-
-      let selfIntroName: string | null = null
-      const explicitNameMatch = incidentText.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-      if (explicitNameMatch && explicitNameMatch[1]) {
-        const candidate = explicitNameMatch[1].trim()
-        if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
-          selfIntroName = candidate
-        }
-      }
-      if (!selfIntroName) {
-        const iAmMatch = incidentText.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-        if (iAmMatch && iAmMatch[1]) {
-          const candidate = iAmMatch[1].trim()
-          const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
-          if (!isVerbOrGrammar) {
-            selfIntroName = candidate
-          }
-        }
-      }
+      const onBehalfOfTarget: string | null = extractMultilingualOnBehalfOf(incidentText)
+      const selfIntroName: string | null = extractMultilingualComplainant(incidentText)
 
       const rawComplainant = (parsed.complainantName && typeof parsed.complainantName === 'string' && parsed.complainantName.trim()) || ''
       const isVictimName = Boolean(
@@ -1145,41 +1124,16 @@ COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a rea
 
 function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtract>, lang: SupportedLanguage = 'en'): TriageResult {
   const incidentId = generateId()
-  const amount = ext.amount || 45000
-  const fraudster = ext.upi || ext.phone || 'Fraudulent Entity'
+  const amount = ext.amount || extractMultilingualAmount(text) || 45000
+  const detectedFraudster = extractMultilingualFraudster(text)
+  const fraudster = detectedFraudster !== 'Not Identified' ? detectedFraudster : (ext.upi || ext.phone || 'Fraudulent Entity')
 
-  let onBehalfOfTarget: string | null = null
-  const behalfAfterMatch = text.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-  if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
-    onBehalfOfTarget = behalfAfterMatch[1].trim()
-  }
-  if (!onBehalfOfTarget) {
-    const behalfBeforeMatch = text.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
-    if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
-      onBehalfOfTarget = behalfBeforeMatch[1].trim()
-    }
-  }
-
-  let namedComplainant: string | null = null
-  const explicitNameMatch = text.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-  if (explicitNameMatch && explicitNameMatch[1]) {
-    const candidate = explicitNameMatch[1].trim()
-    if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
-      namedComplainant = candidate
-    }
-  }
-  if (!namedComplainant) {
-    const iAmMatch = text.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-    if (iAmMatch && iAmMatch[1]) {
-      const candidate = iAmMatch[1].trim()
-      const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
-      if (!isVerbOrGrammar) {
-        namedComplainant = candidate
-      }
-    }
-  }
-
+  const onBehalfOfTarget = extractMultilingualOnBehalfOf(text)
+  const namedComplainant = extractMultilingualComplainant(text)
   const complainantName = namedComplainant || 'Anonymous Complainant'
+  const detectedCategory = inferCategoryFromMultilingualText(text)
+  const channelInfo = inferChannelFromFraudType(detectedCategory)
+
   const draftOpenerEn = onBehalfOfTarget
     ? `${namedComplainant ? `I, ${namedComplainant}, am` : 'I am'} filing this formal complaint on behalf of ${onBehalfOfTarget} regarding`
     : (namedComplainant ? `I, ${namedComplainant}, am filing a formal complaint regarding` : 'I am filing a formal complaint regarding')
@@ -1194,19 +1148,19 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
   let complaintDraftRegional: string | undefined = undefined
 
   if (lang !== 'en' && lang !== 'hi') {
-    summaryRegional = `${meta.nativeName}: ₹${amount.toLocaleString('en-IN')} WhatsApp AI Triage incident report.`
-    complaintDraftRegional = `Formal cybercrime complaint in ${meta.name} (${meta.nativeName}):\n${draftOpenerEn} an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from ${onBehalfOfTarget ? `${onBehalfOfTarget}'s account` : 'my account'}. Fraudster identifier: ${fraudster}. Registered under Section 66C and 66D IT Act 2000.`
+    summaryRegional = `${meta.nativeName}: ${detectedCategory} — ₹${amount.toLocaleString('en-IN')} WhatsApp AI Triage incident report.`
+    complaintDraftRegional = getRegionalComplaintDraft(lang, complainantName, onBehalfOfTarget, detectedCategory, text || detectedCategory, amount)
   }
 
   return {
     incidentId,
-    fraudType: 'Financial Fraud',
+    fraudType: detectedCategory,
     fraudsterIdentifier: fraudster,
     complainantName,
     amount,
     urgencyLevel: 'CRITICAL',
-    summary: `Unauthorized financial debit of ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.`,
-    summaryHi: `व्हाट्सएप बॉट के माध्यम से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी दर्ज की गई।`,
+    summary: `${detectedCategory} involving ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.`,
+    summaryHi: `व्हाट्सएप बॉट के माध्यम से ${detectedCategory} (₹${amount.toLocaleString('en-IN')}) दर्ज की गई।`,
     summaryRegional,
     complaintDraft: `To The Station House Officer / Cyber Crime Cell,
 ${draftOpenerEn} an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from ${onBehalfOfTarget ? `${onBehalfOfTarget}'s account` : 'my account'}. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.${namedComplainant ? '' : '\n\n[Complainant address / city — to be provided]'}`,
@@ -1221,8 +1175,8 @@ ${draftOpenerHi} ₹${amount.toLocaleString('en-IN')} की अनधिकृ�
     timeline: new Date().toLocaleString(),
     freezeSteps: defaultFreezeSteps,
     applicableLaws: defaultLaws,
-    recommendedChannel: 'bank',
-    recommendedChannelTarget: 'Bank Nodal Officer',
+    recommendedChannel: channelInfo.channel,
+    recommendedChannelTarget: channelInfo.target,
   }
 }
 

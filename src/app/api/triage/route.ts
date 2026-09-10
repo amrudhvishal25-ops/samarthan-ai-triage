@@ -6,6 +6,8 @@ import {
   extractMultilingualComplainant,
   extractMultilingualOnBehalfOf,
   extractMultilingualAmount,
+  extractMultilingualFraudster,
+  inferCategoryFromMultilingualText,
   normalizeCategoryHint,
   getRegionalComplaintDraft
 } from '@/lib/i18n/multilingualRegex'
@@ -175,21 +177,24 @@ export async function POST(req: NextRequest) {
     const normalizedHint = normalizeCategoryHint(categoryHint)
     const inferredCategory = normalizedHint || ((categoryHint && categoryHint !== 'auto') 
       ? categoryHint 
-      : 'Other Cyber Crime')
+      : inferCategoryFromMultilingualText(userText))
     
     const { channel: mockChannel, target: mockChannelTarget } =
       inferChannelFromFraudType(inferredCategory as any)
 
     const cleanAmt = extractMultilingualAmount(userText) || (inferredCategory === 'Financial Fraud' ? 10000 : 0)
+    const detectedFraudster = extractMultilingualFraudster(userText)
+    const detectedComplainant = extractMultilingualComplainant(userText) || 'Anonymous Complainant'
+    const detectedOnBehalfOf = extractMultilingualOnBehalfOf(userText)
 
     return {
       incidentId: generateId(),
-      fraudsterIdentifier: 'Not Identified',
-      complainantName: 'Anonymous Complainant',
+      fraudsterIdentifier: detectedFraudster,
+      complainantName: detectedComplainant,
       fraudType: inferredCategory as any,
       recommendedChannel: mockChannel,
       recommendedChannelTarget: mockChannelTarget,
-      frauderContact: 'Unknown',
+      frauderContact: detectedFraudster !== 'Not Identified' ? detectedFraudster : 'Unknown',
       amount: cleanAmt,
       bankName: 'N/A',
       accountNumber: 'N/A',
@@ -202,7 +207,7 @@ export async function POST(req: NextRequest) {
       complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI am filing this complaint regarding a cyber incident (${inferredCategory}). Please investigate this matter and take appropriate action.\n\n[Complainant address / city — to be provided]`,
       complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं ${inferredCategory} से संबंधित एक साइबर घटना की औपचारिक शिकायत दर्ज कर रहा हूँ। कृपया मामले की जांच करें और उचित कार्रवाई करें।\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]`,
       complaintDraftRegional: (targetLanguage && targetLanguage !== 'en')
-        ? getRegionalComplaintDraft(targetLanguage as SupportedLanguage, 'Anonymous Complainant', null, inferredCategory, userText || inferredCategory, cleanAmt)
+        ? getRegionalComplaintDraft(targetLanguage as SupportedLanguage, detectedComplainant, detectedOnBehalfOf, inferredCategory, userText || inferredCategory, cleanAmt)
         : `Formal Cybercrime Complaint regarding ${inferredCategory}.\n\n[Official Police Complaint Draft in selected language]`,
       freezeSteps: [
         {

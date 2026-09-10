@@ -17,6 +17,8 @@ import {
   extractMultilingualComplainant,
   extractMultilingualOnBehalfOf,
   extractMultilingualAmount,
+  extractMultilingualFraudster,
+  inferCategoryFromMultilingualText,
   normalizeCategoryHint,
   getRegionalComplaintDraft
 } from '@/lib/i18n/multilingualRegex'
@@ -70,15 +72,16 @@ function IntakeContent() {
       const detectedSelfName = extractMultilingualComplainant(finalTxt)
       const detectedName = detectedSelfName || user?.name || 'Parichay Prabhu'
 
-      const rawCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
-      const mappedCat = normalizeCategoryHint(rawCat) || 'Financial Fraud'
+      const rawCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : inferCategoryFromMultilingualText(finalTxt)
+      const mappedCat = normalizeCategoryHint(rawCat) || inferCategoryFromMultilingualText(finalTxt)
       const cleanAmount = extractMultilingualAmount(finalTxt)
+      const detectedFraudster = extractMultilingualFraudster(finalTxt)
       const idNum = generateId()
       const inferred = inferChannelFromFraudType(mappedCat)
 
       return {
         incidentId: idNum,
-        fraudsterIdentifier: 'Not Identified',
+        fraudsterIdentifier: detectedFraudster,
         complainantName: detectedName,
         fraudType: mappedCat,
         recommendedChannel: inferred.channel,
@@ -86,7 +89,7 @@ function IntakeContent() {
           inferred.channel === 'bank'
             ? (finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'the bank')
             : inferred.target,
-        frauderContact: 'Unknown',
+        frauderContact: detectedFraudster !== 'Not Identified' ? detectedFraudster : 'Unknown',
         amount: cleanAmount || (mappedCat === 'Financial Fraud' ? 15000 : 0),
         bankName: finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'N/A',
         accountNumber: 'N/A',
