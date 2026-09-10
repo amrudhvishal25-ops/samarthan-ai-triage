@@ -9,6 +9,12 @@ import {
 import { useComplaints, SavedComplaint } from '@/hooks/useComplaints'
 import { useTriage } from '@/context/TriageContext'
 import { COMPLAINT_STATUS_LABELS } from '@/data/scenarios'
+import {
+  COMPLAINT_STATUS_LABELS_12,
+  CRIME_CATEGORY_LABELS_12,
+  LOST_LABEL_12,
+  URGENCY_LABELS_12,
+} from '@/lib/i18n/componentTranslations'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
 import Navbar from '@/components/Navbar'
 import { getTranslation } from '@/lib/i18n/translations'
@@ -154,13 +160,15 @@ export default function ComplaintsPage() {
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                     <span className="text-xs font-mono font-bold text-zinc-900">{c.incidentId}</span>
                     <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${URGENCY_COLORS[c.urgencyLevel] || URGENCY_COLORS.MEDIUM}`}>
-                      {c.urgencyLevel}
+                      {URGENCY_LABELS_12[c.urgencyLevel]?.[language] || c.urgencyLevel}
                     </span>
                     <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded border bg-zinc-50 text-zinc-600 border-zinc-200">
-                      {hi ? COMPLAINT_STATUS_LABELS[c.status ?? 'SUBMITTED'].hi : COMPLAINT_STATUS_LABELS[c.status ?? 'SUBMITTED'].en}
+                      {COMPLAINT_STATUS_LABELS_12[c.status ?? 'SUBMITTED']?.[language] || COMPLAINT_STATUS_LABELS_12[c.status ?? 'SUBMITTED']?.en || c.status}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-zinc-900 mb-1">{c.fraudType}</p>
+                  <p className="text-sm font-semibold text-zinc-900 mb-1">
+                    {CRIME_CATEGORY_LABELS_12[c.fraudType]?.[language] || c.fraudType}
+                  </p>
                   <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
                     {c.summaryRegional && language !== 'en' && language !== 'hi' ? c.summaryRegional : (hi ? (c.summaryHi || c.summary) : c.summary)}
                   </p>
@@ -171,7 +179,7 @@ export default function ComplaintsPage() {
                     </div>
                     {c.amount > 0 && (
                       <span className="text-xs text-zinc-700 font-semibold">
-                        ₹{(Number(c.amount) || 0).toLocaleString('en-IN')} lost
+                        ₹{(Number(c.amount) || 0).toLocaleString('en-IN')} {LOST_LABEL_12[language] || 'lost'}
                       </span>
                     )}
                   </div>

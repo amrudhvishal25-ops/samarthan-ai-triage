@@ -3,15 +3,20 @@
 import React, { useRef, useState } from 'react'
 import { ShieldCheck, Lock, Plus, X, Loader2, ImageOff } from 'lucide-react'
 import { EvidenceImage } from '@/hooks/useComplaints'
+import { SupportedLanguage } from '@/lib/i18n/languages'
+import { EVIDENCE_VAULT_I18N } from '@/lib/i18n/componentTranslations'
 
 interface EvidenceVaultProps {
-  hi: boolean
+  hi?: boolean
+  language?: SupportedLanguage
   images: EvidenceImage[]
   onAdd: (file: File) => Promise<void> | void
   onRemove: (imageId: string) => Promise<void> | void
 }
 
-export default function EvidenceVault({ hi, images, onAdd, onRemove }: EvidenceVaultProps) {
+export default function EvidenceVault({ hi, language, images, onAdd, onRemove }: EvidenceVaultProps) {
+  const lang: SupportedLanguage = language || (hi ? 'hi' : 'en')
+  const loc = EVIDENCE_VAULT_I18N[lang] || EVIDENCE_VAULT_I18N.en
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<EvidenceImage | null>(null)
@@ -38,17 +43,15 @@ export default function EvidenceVault({ hi, images, onAdd, onRemove }: EvidenceV
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
-            {hi ? 'साक्ष्य वॉल्ट' : 'Evidence Vault'}
+            {loc.header}
           </h3>
           <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-            {hi ? 'सुरक्षित' : 'Secured'}
+            {loc.badge}
           </span>
         </div>
 
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-sm leading-relaxed">
-          {hi
-            ? 'स्क्रीनशॉट, चैट और अन्य सबूत यहाँ जोड़ें और देखें।'
-            : 'Add screenshots, chats, and other evidence here. Stored with your complaint.'}
+          {loc.subtitle}
         </p>
 
         <input
@@ -69,7 +72,7 @@ export default function EvidenceVault({ hi, images, onAdd, onRemove }: EvidenceV
           >
             {uploading ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <ImageOff className="w-5 h-5" />}
             <span className="text-xs font-medium">
-              {uploading ? (hi ? 'अपलोड हो रहा है…' : 'Uploading…') : (hi ? 'साक्ष्य जोड़ें' : 'Add evidence')}
+              {uploading ? loc.uploading : loc.addEvidence}
             </span>
           </button>
         ) : (

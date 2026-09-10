@@ -5,12 +5,15 @@ import {
 } from 'lucide-react'
 import { RecommendedChannel } from '@/data/scenarios'
 import { getEscalationChannel } from '@/data/escalationChannels'
+import { SupportedLanguage } from '@/lib/i18n/languages'
+import { SMART_ACTIONS_I18N } from '@/lib/i18n/componentTranslations'
 
 interface SmartActionsProps {
   bankName: string
   incidentId: string
   amount: number
-  hi: boolean
+  hi?: boolean
+  language?: SupportedLanguage
   fraudsterIdentifier?: string
   summary?: string
   recommendedChannel?: RecommendedChannel
@@ -30,10 +33,12 @@ const BANK_EMAIL_MAP: Record<string, string> = {
 }
 
 export default function SmartActions({
-  bankName, incidentId, amount, hi, fraudsterIdentifier, summary,
+  bankName, incidentId, amount, hi, language, fraudsterIdentifier, summary,
   recommendedChannel, recommendedChannelTarget,
   followUpPoints = [], onBankNotified, onPlatformReported, onPoliceRouted,
 }: SmartActionsProps) {
+  const lang: SupportedLanguage = language || (hi ? 'hi' : 'en')
+  const loc = SMART_ACTIONS_I18N[lang] || SMART_ACTIONS_I18N.en
   const [locating, setLocating] = useState(false)
   const [policeStation, setPoliceStation] = useState<string | null>(null)
   const [primaryDone, setPrimaryDone] = useState(false)
@@ -97,15 +102,15 @@ export default function SmartActions({
 
   const primaryAction = kind === 'bank' ? handleBankEmail : handlePlatformOrAgencyReport
   const primaryDoneText = kind === 'bank'
-    ? (hi ? 'बैंक को सूचित किया गया (डेमो)' : 'Bank nodal officer notified (demo)')
-    : (hi ? 'रिपोर्ट का मसौदा तैयार — क्लिपबोर्ड पर कॉपी (डेमो)' : 'Report drafted & copied to clipboard (demo)')
+    ? loc.bankActionDone
+    : (lang === 'hi' ? 'रिपोर्ट का मसौदा तैयार — क्लिपबोर्ड पर कॉपी (डेमो)' : 'Report drafted & copied to clipboard (demo)')
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 shadow-sm">
       <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1 uppercase tracking-wide">
-        {hi ? 'स्मार्ट कार्रवाई' : 'Smart Escalation'}
+        {loc.header}
       </h3>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">{hi ? ch.descHi : ch.desc}</p>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">{lang === 'hi' ? ch.descHi : ch.desc}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Primary channel-driven action */}
@@ -129,9 +134,9 @@ export default function SmartActions({
           </div>
           <div>
             <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm mb-1 flex items-center gap-1.5">
-              {hi ? ch.titleHi : ch.title}
+              {kind === 'bank' ? loc.bankActionTitle : (lang === 'hi' ? ch.titleHi : ch.title)}
               <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/60 rounded-sm px-1.5 py-0.5">
-                {hi ? 'डेमो' : 'Simulated'}
+                {loc.simulatedBadge}
               </span>
             </h4>
             {primaryDone ? (
@@ -139,8 +144,8 @@ export default function SmartActions({
             ) : (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {kind === 'bank'
-                  ? (hi ? `${bankName} के नोडल अधिकारी को ड्राफ्ट ईमेल खोलें (डेमो पता)` : `Opens a drafted email to a demo nodal-officer address for ${bankName}`)
-                  : (hi ? `${recommendedChannelTarget || 'प्लेटफ़ॉर्म'} के लिए रिपोर्ट का मसौदा तैयार करें` : `Drafts a takedown report for ${recommendedChannelTarget || 'the platform'}`)}
+                  ? (lang === 'hi' ? `${bankName} के नोडल अधिकारी को ड्राफ्ट ईमेल खोलें (डेमो पता)` : `Opens a drafted email to a demo nodal-officer address for ${bankName}`)
+                  : (lang === 'hi' ? `${recommendedChannelTarget || 'प्लेटफ़ॉर्म'} के लिए रिपोर्ट का मसौदा तैयार करें` : `Drafts a takedown report for ${recommendedChannelTarget || 'the platform'}`)}
               </p>
             )}
           </div>
@@ -171,17 +176,17 @@ export default function SmartActions({
           </div>
           <div>
             <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm mb-1 flex items-center gap-1.5">
-              {hi ? 'पुलिस स्टेशन भेजें' : 'Route to Police'}
+              {loc.routePoliceTitle}
               <span className="text-[9px] font-mono font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/60 rounded-sm px-1.5 py-0.5">
-                {hi ? 'डेमो' : 'Simulated'}
+                {loc.simulatedBadge}
               </span>
             </h4>
             {locating ? (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">{hi ? 'लोकेशन ट्रैक कर रहा है (डेमो)...' : 'Fetching GPS location (demo)...'}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{loc.routePoliceLocating}</p>
             ) : policeStation ? (
               <p className="text-xs text-green-700 dark:text-green-400 font-medium">Routed to: {policeStation} (demo)</p>
             ) : (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">{hi ? 'नजदीकी साइबर सेल को रिपोर्ट भेजें (डेमो)' : 'Simulates finding the nearest Cyber Cell'}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{loc.routePoliceDesc}</p>
             )}
           </div>
         </button>
@@ -191,24 +196,24 @@ export default function SmartActions({
       {(ch.hotline || ch.portalUrl) && (
         <div className="mt-4 pt-4 border-t border-dashed border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mr-1">
-            {hi ? 'असली संपर्क' : 'Real contacts'}
+            {loc.realContacts}
           </span>
           {ch.hotline && (
             <a href={`tel:${ch.hotline}`} className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors shadow-xs">
               <Phone className="w-3.5 h-3.5" />
-              {hi ? ch.hotlineLabelHi : ch.hotlineLabel}
+              {ch.hotline === '1930' ? loc.call1930 : (lang === 'hi' ? ch.hotlineLabelHi : ch.hotlineLabel)}
             </a>
           )}
           {ch.hotline2 && (
             <a href={`tel:${ch.hotline2}`} className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors shadow-xs">
               <Phone className="w-3.5 h-3.5" />
-              {hi ? ch.hotline2LabelHi : ch.hotline2Label}
+              {lang === 'hi' ? ch.hotline2LabelHi : ch.hotline2Label}
             </a>
           )}
           {ch.portalUrl && (
             <a href={ch.portalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
               <ExternalLink className="w-3.5 h-3.5" />
-              {hi ? ch.portalLabelHi : ch.portalLabel}
+              {ch.portalUrl.includes('cybercrime.gov.in') ? loc.openCybercrime : (lang === 'hi' ? ch.portalLabelHi : ch.portalLabel)}
             </a>
           )}
         </div>

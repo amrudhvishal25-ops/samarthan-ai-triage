@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { PhoneCall, X, Headset, CheckCircle2 } from 'lucide-react'
 
 import { ComplaintUpdate } from '@/hooks/useComplaints'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 interface CallOperatorModalProps {
   open: boolean
   onClose: () => void
   hotline: string
   hi: boolean
+  language?: SupportedLanguage
   incidentId: string
   fraudType: string
   amount: number
@@ -22,7 +24,7 @@ interface CallOperatorModalProps {
 type Step = 'connecting' | 'connected'
 
 export default function CallOperatorModal({
-  open, onClose, hotline, hi, incidentId, fraudType, amount, summary, followUpPoints = [], updates = [],
+  open, onClose, hotline, hi, language, incidentId, fraudType, amount, summary, followUpPoints = [], updates = [],
 }: CallOperatorModalProps) {
   const [step, setStep] = useState<Step>('connecting')
 

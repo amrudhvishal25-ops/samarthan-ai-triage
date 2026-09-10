@@ -20,6 +20,7 @@ import { useComplaints, EvidenceImage, ComplaintUpdate } from '@/hooks/useCompla
 import { ComplaintStatus } from '@/data/scenarios'
 import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
 import { getTranslation } from '@/lib/i18n/translations'
+import { DASHBOARD_EXTRA_I18N, CRIME_CATEGORY_LABELS_12 } from '@/lib/i18n/componentTranslations'
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -36,6 +37,7 @@ function DashboardContent() {
   const paramId = searchParams?.get('id')
   const { triageResult, setTriageResult, language, setLanguage, reset, sharedImage } = useTriage()
   const t = getTranslation(language)
+  const dashLoc = DASHBOARD_EXTRA_I18N[language] || DASHBOARD_EXTRA_I18N.en
   const meta = LANGUAGE_MAP[language] || LANGUAGE_MAP.en
   const [activeDraftTab, setActiveDraftTab] = useState<'english' | 'regional'>(language === 'en' ? 'english' : 'regional')
   const { save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage, addUpdate } = useComplaints()
@@ -323,7 +325,7 @@ function DashboardContent() {
             <ShieldAlert className="w-7 h-7 text-primary" />
           </div>
           <h2 className="text-base font-bold text-zinc-900">
-            {hi ? 'आधिकारिक शिकायत लोड हो रही है...' : 'Retrieving Official Complaint Report...'}
+            {dashLoc.retrievingReport}
           </h2>
           <p className="text-xs text-zinc-500 mt-1.5 font-mono bg-zinc-100 px-3 py-1 rounded-md border border-zinc-200">
             Incident ID: {paramId}
@@ -397,8 +399,7 @@ function DashboardContent() {
               {t.dashboard.title}
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              {hi ? 'AI द्वारा विवरण निकाला गया। संपादित करें और तुरंत कार्रवाई करें।'
-                : 'Details extracted by AI. Review, edit, and take action immediately.'}
+              {dashLoc.subtitle}
             </p>
           </div>
           <button
@@ -406,7 +407,7 @@ function DashboardContent() {
             className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 border border-zinc-200 hover:bg-zinc-50 rounded-md px-3 py-1.5 transition-colors cursor-pointer min-h-[36px]"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            {hi ? 'फिर से' : 'New Report'}
+            {dashLoc.newReportBtn}
           </button>
         </motion.div>
 
@@ -463,7 +464,7 @@ function DashboardContent() {
               <div className="px-4 sm:px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
                 <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                  {hi ? 'शिकायत विवरण' : 'Complaint Details'}
+                  {dashLoc.complaintDetailsHeader}
                 </p>
               </div>
               <div className="px-4 sm:px-5 py-4 sm:py-5 space-y-4">
@@ -471,7 +472,7 @@ function DashboardContent() {
                 {/* Category */}
                 <div>
                   <label htmlFor="crime-category" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
-                    {hi ? 'अपराध श्रेणी' : 'Crime Category'}
+                    {dashLoc.crimeCategoryLabel}
                   </label>
                   <select
                     id="crime-category"
@@ -479,12 +480,12 @@ function DashboardContent() {
                     onChange={(e) => handleUpdate('fraudType', e.target.value)}
                     className="w-full border border-zinc-200 rounded-md p-3 text-base sm:text-sm text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all"
                   >
-                    <option value="Financial Fraud">Financial Fraud</option>
-                    <option value="Women/Children Related Crime">Women/Children Related Crime</option>
-                    <option value="Extortion & Blackmail">Extortion & Blackmail</option>
-                    <option value="Identity Theft">Identity Theft</option>
-                    <option value="E-Commerce Scams">E-Commerce Scams</option>
-                    <option value="Other Cyber Crime">Other Cyber Crime</option>
+                    <option value="Financial Fraud">{CRIME_CATEGORY_LABELS_12['Financial Fraud']?.[language] || 'Financial Fraud'}</option>
+                    <option value="Women/Children Related Crime">{CRIME_CATEGORY_LABELS_12['Women/Children Related Crime']?.[language] || 'Women/Children Related Crime'}</option>
+                    <option value="Extortion & Blackmail">{CRIME_CATEGORY_LABELS_12['Extortion & Blackmail']?.[language] || 'Extortion & Blackmail'}</option>
+                    <option value="Identity Theft">{CRIME_CATEGORY_LABELS_12['Identity Theft']?.[language] || 'Identity Theft'}</option>
+                    <option value="E-Commerce Scams">{CRIME_CATEGORY_LABELS_12['E-Commerce Scams']?.[language] || 'E-Commerce Scams'}</option>
+                    <option value="Other Cyber Crime">{CRIME_CATEGORY_LABELS_12['Other Cyber Crime']?.[language] || 'Other Cyber Crime'}</option>
                   </select>
                 </div>
 
@@ -532,7 +533,7 @@ function DashboardContent() {
                 {/* Fraudster Contact */}
                 <div>
                   <label htmlFor="fraudster-contact" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
-                    {hi ? 'आरोपी का संपर्क' : 'Fraudster Contact'}
+                    {dashLoc.fraudsterContactLabel}
                   </label>
                   <input
                     id="fraudster-contact"
@@ -548,7 +549,7 @@ function DashboardContent() {
                     <label htmlFor="complaint-draft" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider">
                       <span>{t.dashboard.formalComplaintTitle}</span>
                     </label>
-                    <span className="text-zinc-400 text-xs font-normal">{hi ? 'संपादन योग्य' : 'Editable'}</span>
+                    <span className="text-zinc-400 text-xs font-normal">{dashLoc.editableLabel}</span>
                   </div>
 
                   {language !== 'en' && (
@@ -607,6 +608,7 @@ function DashboardContent() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
               <EvidenceVault
                 hi={hi}
+                language={language}
                 images={evidenceImages}
                 onAdd={handleAddEvidence}
                 onRemove={handleRemoveEvidence}
@@ -615,7 +617,7 @@ function DashboardContent() {
 
             {/* Complaint Updates */}
             <motion.div id="updates-section" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
-              <ComplaintUpdates hi={hi} updates={updates} onAdd={handleAddUpdate} />
+              <ComplaintUpdates hi={hi} language={language} updates={updates} onAdd={handleAddUpdate} />
             </motion.div>
 
             {/* Action buttons (left column) */}
@@ -626,10 +628,10 @@ function DashboardContent() {
               >
                 <div className="flex items-center gap-2">
                   <Phone className="w-5 h-5" />
-                  {hi ? '1930 कॉल करें' : 'Call 1930 Helpline'}
+                  {dashLoc.call1930Btn}
                 </div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-white/20 rounded-sm px-1.5 py-0.5 mt-0.5">
-                  Live Emergency
+                  {dashLoc.liveEmergencyBadge}
                 </span>
               </button>
               
@@ -640,10 +642,10 @@ function DashboardContent() {
                 >
                   <div className="flex items-center gap-1.5">
                     <Share2 className="w-4 h-4" />
-                    {hi ? 'स्थिति साझा करें' : 'Share Status'}
+                    {dashLoc.shareStatusBtn}
                   </div>
                   <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded-sm px-1.5 py-0.5">
-                    Live
+                    {dashLoc.liveBadge}
                   </span>
                 </button>
                 <button
@@ -655,14 +657,14 @@ function DashboardContent() {
                     <span>{t.dashboard.savePdfBtn}</span>
                   </div>
                   <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded-sm px-1.5 py-0.5">
-                    Live
+                    {dashLoc.liveBadge}
                   </span>
                 </button>
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <ApplicableLaws laws={r.applicableLaws} hi={hi} />
+              <ApplicableLaws laws={r.applicableLaws} hi={hi} language={language} />
             </motion.div>
 
           </div>
@@ -689,18 +691,18 @@ function DashboardContent() {
               <div className="flex items-center gap-2 mb-1">
                 <ShieldAlert className="w-4 h-4 text-red-500" />
                 <h2 className="text-sm font-semibold text-zinc-900 uppercase tracking-wider">
-                  {hi ? 'कार्रवाई और ट्रैकिंग' : 'Action & Tracking'}
+                  {dashLoc.actionTrackingHeader}
                 </h2>
               </div>
               <p className="text-xs text-zinc-500">
-                {hi ? 'नीचे दिए गए कदम क्रम से उठाएं।' : 'Execute the next steps immediately.'}
+                {dashLoc.actionTrackingDesc}
               </p>
             </motion.div>
 
             {/* Smart Actions */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               <SmartActions
-                bankName={r.bankName} incidentId={r.incidentId} amount={r.amount} hi={hi}
+                bankName={r.bankName} incidentId={r.incidentId} amount={r.amount} hi={hi} language={language}
                 fraudsterIdentifier={r.fraudsterIdentifier} summary={hi ? r.summaryHi : r.summary}
                 recommendedChannel={r.recommendedChannel}
                 recommendedChannelTarget={r.recommendedChannelTarget}
@@ -713,7 +715,7 @@ function DashboardContent() {
 
             {/* FIR Tracker */}
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <FIRTracker hi={hi} status={status} onAdvance={handleAdvanceStatus} />
+              <FIRTracker hi={hi} language={language} status={status} onAdvance={handleAdvanceStatus} />
             </motion.div>
 
             {/* Freeze Steps */}
@@ -721,10 +723,10 @@ function DashboardContent() {
               className="border border-zinc-200 rounded-lg bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                  {hi ? 'तत्काल सुझाई गई कार्रवाई' : 'Recommended Immediate Actions'}
+                  {dashLoc.recommendedImmediateHeader}
                 </p>
                 <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 rounded-sm px-1.5 py-0.5">
-                  Live Guidance
+                  {dashLoc.liveGuidanceBadge}
                 </span>
               </div>
               <FreezeStepper steps={r.freezeSteps} language={language} onHotlineClick={setCallModalHotline} />

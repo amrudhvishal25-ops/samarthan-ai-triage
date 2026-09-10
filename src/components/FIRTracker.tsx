@@ -1,17 +1,22 @@
 import React, { useState } from 'react'
 import { ChevronRight, Loader2 } from 'lucide-react'
-import { COMPLAINT_STATUSES, COMPLAINT_STATUS_LABELS, ComplaintStatus } from '@/data/scenarios'
+import { COMPLAINT_STATUSES, ComplaintStatus } from '@/data/scenarios'
+import { SupportedLanguage } from '@/lib/i18n/languages'
+import { COMPLAINT_STATUS_LABELS_12, FIR_TRACKER_I18N } from '@/lib/i18n/componentTranslations'
 
 interface FIRTrackerProps {
-  hi: boolean
+  hi?: boolean
+  language?: SupportedLanguage
   status: ComplaintStatus
   onAdvance: () => Promise<void> | void
 }
 
-export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
+export default function FIRTracker({ hi, language, status, onAdvance }: FIRTrackerProps) {
   const [advancing, setAdvancing] = useState(false)
   const currentIdx = COMPLAINT_STATUSES.indexOf(status)
   const isFinal = currentIdx === COMPLAINT_STATUSES.length - 1
+  const lang: SupportedLanguage = language || (hi ? 'hi' : 'en')
+  const loc = FIR_TRACKER_I18N[lang] || FIR_TRACKER_I18N.en
 
   const handleAdvance = async () => {
     setAdvancing(true)
@@ -25,12 +30,11 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 shadow-sm">
       <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-6 uppercase tracking-wider">
-        {hi ? 'शिकायत स्थिति ट्रैकर' : 'Complaint Status Tracker'}
+        {loc.header}
       </h3>
 
       <div className="relative border-l-2 border-zinc-200 dark:border-zinc-800 ml-3 space-y-6">
         {COMPLAINT_STATUSES.map((s, idx) => {
-          const label = COMPLAINT_STATUS_LABELS[s]
           const isCompleted = idx < currentIdx
           const isCurrent = idx === currentIdx
           const isPending = idx > currentIdx
@@ -57,10 +61,10 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
                       : 'text-zinc-500 dark:text-zinc-400'
                   }`}
                 >
-                  <span>{hi ? label.hi : label.en}</span>
-                  {label.simulated && (
+                  <span>{COMPLAINT_STATUS_LABELS_12[s]?.[lang] || COMPLAINT_STATUS_LABELS_12[s]?.en || s}</span>
+                  {s !== 'SUBMITTED' && (
                     <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-800/80 rounded-full px-2 py-0.5">
-                      {hi ? 'सक्रिय' : 'Live'}
+                      {loc.liveBadge}
                     </span>
                   )}
                 </h4>
@@ -72,7 +76,7 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
 
       <div className="mt-6 pt-5 border-t border-dashed border-zinc-200 dark:border-zinc-800">
         <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2.5">
-          {hi ? 'डेमो नियंत्रण' : 'Demo Controls'}
+          {loc.demoControls}
         </p>
         <button
           type="button"
@@ -85,9 +89,7 @@ export default function FIRTracker({ hi, status, onAdvance }: FIRTrackerProps) {
           ) : (
             <ChevronRight className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400" />
           )}
-          {isFinal
-            ? (hi ? 'शिकायत का समाधान हो गया' : 'Complaint resolved')
-            : (hi ? 'अगले चरण पर बढ़ें' : 'Advance to next stage')}
+          {isFinal ? loc.resolvedBtn : loc.advanceBtn}
         </button>
       </div>
     </div>
