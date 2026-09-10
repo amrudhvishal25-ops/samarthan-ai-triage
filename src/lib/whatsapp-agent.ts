@@ -141,18 +141,18 @@ export function detectLanguage(text: string): SupportedLanguage {
 
   if (topLang) return topLang
 
-  // Romanized transliteration heuristics
-  if (/\b(?:amar|amader|taka|hoyche|hoyechhe|geche|katlo|katse|thokano|bengali|bangla)\b/i.test(trimmed)) return 'bn'
-  if (/\b(?:majhe|mazhe|pese|paise|jhale|gela|gele|fusavli|takraar|marathi)\b/i.test(trimmed)) return 'mr'
-  if (/\b(?:naa|naku|dabbulu|poyayi|jarigindi|mosam|chudandi|telugu)\b/i.test(trimmed)) return 'te'
-  if (/\b(?:ennoda|panam|pochu|yematram|kaasu|tamil)\b/i.test(trimmed)) return 'ta'
-  if (/\b(?:maru|mara|paisa|thaya|chhe|khata|thagi|gujarati)\b/i.test(trimmed)) return 'gu'
-  if (/\b(?:urdu)\b/i.test(trimmed)) return 'ur'
-  if (/\b(?:nanna|hana|kaledu|hoyithu|mosam|kannada)\b/i.test(trimmed)) return 'kn'
-  if (/\b(?:mora|tanka|katigala|odia|oriya)\b/i.test(trimmed)) return 'or'
-  if (/\b(?:ente|panam|poyi|thattippu|malayalam)\b/i.test(trimmed)) return 'ml'
-  if (/\b(?:mera|mere|paise|katte|kaddhe|punjabi)\b/i.test(trimmed) && /\b(?:punjabi|pind|gall)\b/i.test(trimmed)) return 'pa'
-  if (/\b(?:mera|meri|gaya|gaye|paisa|paise|karo|bhai|sahab|khata|kat|gayi|dhokha|thagi|kya|hua|hain|maine|apne)\b/i.test(trimmed)) return 'hi'
+  // Romanized transliteration heuristics for code-switched text
+  if (/\b(?:maru naam|maru name|chhe|lidhu|lidha|thaya|karyu|mate|mathi|aavya|khata|koi e|padavi|gujarati)\b/i.test(trimmed)) return 'gu'
+  if (/\b(?:nanna hesaru|nanna name|nanna|hesaru|kottu|thagond|madidare|madi|antha|bedirisi|madisidare|aamele|hana|kaledu|hoyithu|kannada)\b/i.test(trimmed)) return 'kn'
+  if (/\b(?:ente peru|ente name|ente|ninnu|cheythu|cheyyan|undennu|paranju|thattipp|eduthu|panam|poyi|malayalam)\b/i.test(trimmed)) return 'ml'
+  if (/\b(?:na peru|naa peru|dabbulu|poyayi|jarigindi|chudandi|chesaru|cheyinchukunnaru|ichi|pettincharu|chesindi|unnaru|vyakthi|naku|telugu)\b/i.test(trimmed)) return 'te'
+  if (/\b(?:en peyar|en peyer|ennoda|panam|pochu|yematram|kaasu|pannala|panniduvaanga|thiruditaanga|solli|vandhuchu|pannitan|pannaanga|tamil)\b/i.test(trimmed)) return 'ta'
+  if (/\b(?:mora nama|mora na|mora|tanka|katigala|karichanti|kariba|karuchi|threat dei|odia|oriya)\b/i.test(trimmed)) return 'or'
+  if (/\b(?:amar name|amar naam|amar|amader|ekta|kore|korche|hoyechhe|hoyeche|geche|katlo|katse|thokano|niyechhe|bengali|bangla)\b/i.test(trimmed)) return 'bn'
+  if (/\b(?:da misuse|ton|kadheya|mang leya|de naa te|ban ke|laaye|pind|gall|ch paise|chite|kiti|punjabi)\b/i.test(trimmed)) return 'pa'
+  if (/\b(?:majhe naav|mazhe naav|majhe|mazhe|ahe|aahe|kela|pathvun|maagat|ahet|sathi|chori|jhale|gela|gele|fusavli|takraar|karnyachya|marathi)\b/i.test(trimmed)) return 'mr'
+  if (/\b(?:tariq|zeeshan|arshad|faraad|khuda|shukriya|janab|urdu)\b/i.test(trimmed)) return 'ur'
+  if (/\b(?:mera naam|mera name|kiya|diya|liya|huye|hua|hai|hain|tha|thi|paise|karo|bhai|sahab|dhokha|thagi|maine|apne|karwaya)\b/i.test(trimmed)) return 'hi'
 
   return 'en'
 }

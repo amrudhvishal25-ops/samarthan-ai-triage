@@ -48,7 +48,7 @@ export function extractMultilingualAmount(text: string): number {
   const normalized = normalizeIndicNumerals(text)
 
   // Priority 0: Total / Cumulative loss indicator ("total X debited", "মোট ১৫,০০০", "કુલ ₹૧૫,૦૦૦", "एकूण")
-  const totalRegex = /(?:total|mot|motto|kull|kul|ekun|mottam|moththam|ottu|motam|মোট|કુલ|एकूण|మొత్తం|மொத்தம்|ಒಟ್ಟು|ମୋଟ|ആകെ|ਕੁੱਲ)\s*(?:of\s*)?(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  const totalRegex = /(?:\b(?:total|mot|motto|kull|kul|ekun|mottam|moththam|ottu|motam)\b|মোট|કુલ|एकूण|మొత్తం|மொத்தம்|ಒಟ್ಟು|ମୋଟ|ആകെ|ਕੁੱਲ)\s*(?:of\s*)?(?:₹|rs\.?|inr)?\s*([\d,]+)/i
   const mTotal = normalized.match(totalRegex)
   if (mTotal && mTotal[1]) {
     const val = parseInt(mTotal[1].replace(/,/g, ''), 10)
@@ -70,18 +70,24 @@ export function extractMultilingualAmount(text: string): number {
   }
 
   // Priority 2: Secondary / further extortion or withdrawal payment in betting / prize scams
-  const secondaryPaymentRegex = /(?:आणखी|উল্টো আরও|আরও|మరింత|అదనంగా|கூடுதலாக|બીજા|మరో|ಮತ್ತಷ್ಟು|ଆଉ|കൂടുതൽ|ਹੋਰ)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  const secondaryPaymentRegex = /(?:आणखी|উল্টো আরও|আরও|మరింత|అదనంగా|கூடுதலாக|બીજા|మరో|ಮತ್ತಷ್ಟು|ଆଉ|കൂടുതൽ|ਹੋਰ|additional)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i
   const mSec = normalized.match(secondaryPaymentRegex)
   if (mSec && mSec[1]) {
     const val = parseInt(mSec[1].replace(/,/g, ''), 10)
     if (Number.isFinite(val) && val > 0) return val
   }
 
-  // Priority 3: Task scam pattern: "first X profit, then Y deposit"
-  const taskScamRegex = /(?:first|modhalil|prathame|firstly|প্রথমে|प्रारंभంలో|முதலில்|પહેલા|முதல்ல|ಮೊದಲು)\s*(?:₹|rs\.?|inr)?\s*[\d,]+.*?(?:পরে|ಆ తర్వాత|ఆ తర్వాత|பிறகு|પછી|त्यानंतर|नंतर)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i
+  // Priority 3: Task scam pattern: "first X profit, then Y deposit" OR "X profit ... Y deposit"
+  const taskScamRegex = /(?:first|modhalil|prathame|firstly|প্রথমে|प्रारंभంలో|முதலில்|પહેલા|முதல்ல|ಮೊದಲು)?\s*(?:₹|rs\.?|inr)?\s*[\d,]+\s*(?:profit|লাভ|नफा|లాభం|லாபம்|લાભ|നഷ്ടം|ਲਾਭ)?.*?(?:পরে|ಆ తర్వాత|ఆ తర్వాత|பிறகு|પછી|त्यानंतर|नंतर|then|aamele|pinne|tarvaatha|baad)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i
   const mTask = normalized.match(taskScamRegex)
   if (mTask && mTask[1]) {
     const val = parseInt(mTask[1].replace(/,/g, ''), 10)
+    if (Number.isFinite(val) && val > 0) return val
+  }
+  const profitDepositRegex = /(?:₹|rs\.?|inr)?\s*[\d,]+\s*profit.*?(?:₹|rs\.?|inr)?\s*([\d,]+)\s*deposit/i
+  const mProfDep = normalized.match(profitDepositRegex)
+  if (mProfDep && mProfDep[1]) {
+    const val = parseInt(mProfDep[1].replace(/,/g, ''), 10)
     if (Number.isFinite(val) && val > 0) return val
   }
 
@@ -171,6 +177,14 @@ export function extractMultilingualFraudster(text: string): string {
     }
   }
 
+  // 3b. English / Code-switched official impersonation
+  const titleRegexEn = /(?:fake\s+)?(?:cbi|police|army)?\s*(?:officer|inspector|commissioner|official)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i
+  const mTitleEn = text.match(titleRegexEn)
+  if (mTitleEn && mTitleEn[1]) {
+    const cand = mTitleEn[1].trim()
+    if (!/^(called|and|is|threatened|arrest|digital)$/i.test(cand)) return cand
+  }
+
   // 4. "Name [postposition]" patterns across all languages
   const namedRegex = new RegExp(
     `(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)\\s*(?:নামের|নামে|नावाच्या|नावाने|याने|అనే|పేరుతో|என்ற|என்பவர்|નામના|નામે|نامی|نام کے|ಎಂಬ|ಹೆಸರಿನ|ନାମକ|ନାମରେ|എന്ന്|എന്ന വ്യക്തി|ਨਾਮ ਦਾ|ਨਾਮੀ)`,
@@ -183,6 +197,14 @@ export function extractMultilingualFraudster(text: string): string {
     if (candidate.length > 1 && !stopwords.has(candidate)) {
       return candidate
     }
+  }
+
+  // 4b. English / Code-switched named person
+  const namedRegexEn = /(?:scammer|fraudster|person|named|profile)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i
+  const mNamedEn = text.match(namedRegexEn)
+  if (mNamedEn && mNamedEn[1]) {
+    const cand = mNamedEn[1].trim()
+    if (!/^(called|sent|fake|and|is)$/i.test(cand)) return cand
   }
 
   // 5. Fraudulent Entity/App/Courier Mention (FedEx, Dhani, Loan App, StockPro, etc.)
@@ -206,20 +228,20 @@ export function inferCategoryFromMultilingualText(text: string): FraudType {
   const t = text.toLowerCase()
 
   // 1. Other Cyber Crime: Hacking, Ransomware, DDoS
-  const hackRegex = /(?:hack|हॅक|হ্যাক|హ్యాక్|ஹேக்|હેક|ہیک|ಹ್ಯಾಕ್|ହ୍ୟାକ|ഹാക്ക്|ਹੈਕ|ddos|ransomware|র‍্যানসমওয়্যার|रॅन्समवेअर|రాన్సమ్‌వేర్|ரான்சம்வேர்|રેન્સમવેર|رینسم ویئر|ರ್ಯಾನ್ಸಮ್‌ವೇರ್|ରାନ୍ସମୱେୟାର|റാൻസംവെയർ|ਰੈਂਸਮਵੇਅਰ|ডিডস|डीडॉस|website|ওয়েবসাইট|वेबसाइट|వెబ్‌సైట్|வலைத்தளம்|ವೆಬ್‌ಸೈಟ್)/i
-  if (hackRegex.test(t)) {
+  const hackRegex = /(?:hack|हॅक|হ্যাক|హ్యాక్|ஹேக்|હેક|ہیک|ಹ್ಯಾಕ್|ହ୍ୟାକ|ഹാക്ക്|ਹੈਕ|ddos|ransomware|র‍্যানসমওয়্যার|रॅन्समवेअर|రాన్సమ్‌వేర్|ரான்சம்வேர்|રેન્સમવેર|رینسم ویئر|ರ್ಯಾನ್ಸಮ್‌వేರ್|ରାନ୍ସମୱେୟାର|റാൻസംവെയർ|ਰੈਂਸਮਵੇਅਰ|ডিডস|डीडॉस|website|ওয়েবসাইট|वेबसाइट|వెబ్‌సైట్|வலைத்தளம்|ವೆಬ್‌ಸೈಟ್)/i
+  if (hackRegex.test(t) && !/extort|threat|blackmail|loan/i.test(t)) {
     return 'Other Cyber Crime'
   }
 
-  // 2. Women/Children Related Crime: Morphing, stalking, fake woman profile, matrimonial fraud (Checked before generic extortion)
-  const womenRegex = /(?:matrimon|shaadi|ম্যাট্রিমোনিয়াল|ম্যাট্রিমনি|मॅट्रिमोनियल|मॅट्रिमनी|మ్యాట్రిమోని|மேட்ரிமோனி|મેટ્રિમોનિ|میٹریمونی|ಮ್ಯಾಟ್ರಿಮೋನಿ|ମ୍ୟାଟ୍ରିମୋନି|മാട്രിമോണി|ਮੈਟ੍ਰੀਮੋਨੀ|morph|আপত্তিকর ছবি|घाणेरडे फोटो|മോർഫ്|மார்ஃபிங்|મોર્ફ|مارفنگ|ಅಶ್ಲೀಲ ಫೋಟೋ|ମର୍ଫ|മോർഫിംഗ്|ਅਸ਼ਲੀਲ ਫੋਟੋ|fake profile|ভুয়ো প্রোফাইল|बनावट प्रोफाइल|నకిలీ ప్రొఫైల్|போலி சுயவிவரம்|બોગસ પ્રોફાઇલ|جعلی پروفائل|ನಕಲಿ ಪ್ರೊಫೈಲ್|ନକଲି ପ୍ରୋଫାଇଲ|വ്യാജ പ്രൊഫൈൽ|ਨਕਲੀ ਪ੍ਰੋਫਾਈਲ|ছবি এডিট|অশ্লীল মেসেজ|অশ্লীল ছবি|অশ্লীল|अश्लील मेसेज|अश्लील|నగ్న|ஆபாச|അശ്ലീല|ਔਰਤ|മകൾ|മహిଳ|மகளிர்|സ്ത്രീ|സ്ത്രീകൾ)/i
-  if (womenRegex.test(t)) {
+  // 2. Women/Children Related Crime: Morphing, stalking, fake woman profile, matrimonial fraud, photo editing blackmail (when not loan app contacts extortion)
+  const womenRegex = /(?:matrimon|shaadi|ম্যাট্রিমোনিয়াল|ম্যাট্রিমনি|मॅट्रिमोनियल|मॅट्रिमनी|మ్యాట్రిమోని|மேட்ரிமோனி|મેટ્રિમોનિ|میٹریمونی|ಮ್ಯಾಟ್ರಿಮೋನಿ|ମ୍ୟାଟ୍ରିମୋନି|മാട്രിമോണി|ਮੈਟ੍ਰੀਮੋਨੀ|morph|photo edit|private photos?|আপত্তিকর ছবি|घाणेरडे फोटो|മോർഫ്|மார்ஃபிங்|મોર્ફ|مارفنگ|ಅಶ್ಲೀಲ ಫೋಟೋ|ମର୍ଫ|മോർഫിംഗ്|ਅਸ਼ਲੀਲ ਫੋਟੋ|fake profile|ভুয়ো প্রোফাইল|बनावट प्रोफाइल|నకిలీ ప్రొఫైల్|போலி சுயவிவரம்|બોગસ પ્રોફાઇલ|جعلی پروفائل|ನಕಲಿ ಪ್ರೊಫೈಲ್|ନକଲି ପ୍ରୋఫైલ|വ്യാജ പ്രൊഫൈൽ|ਨਕਲੀ ਪ੍ਰੋਫਾਈਲ|ছবি এডিট|অশ্লীল মেসেজ|অশ্লীল ছবি|অশ্লীল|अश्लील मेसेज|अश्लील|నగ్న|ஆபாச|അശ്ലീല|ਔਰਤ|മകൾ|മహిଳ|மகளிர்|സ്ത്രീ|സ്ത്രീകൾ)/i
+  if (womenRegex.test(t) && !/contacts.*(?:photo|hack|access|morph)|loan app/i.test(t)) {
     return 'Women/Children Related Crime'
   }
 
   // 3. Identity Theft: SIM swap, PAN, Aadhaar, driving license, fake loan on stolen ID
-  const idRegex = /(?:pan card|aadhaar|pan|sim swap|tafcop|identity|driving license|লাইসেন্স|लायसन्स|లైసెన్స్|લાયસન્સ|لائسنس|ಲೈಸೆನ್ಸ್|ଲାଇସେନ୍ସ|ലൈസൻസ്|ਲਾਇਸੈਂਸ|লাইসেন্স|সিম সোয়াপ|डुप्लिकेट सिम|सिम कार्ड|సిమ్ స్వాప్|సిమ్ కార్డు|சிம் ஸ்வாப்|சிம் கார்டு|સિમ સ્વેપ|સિમ કાર્ડ|سم تبدیل|ಸಿಮ್ ಸ್ವಾಪ್|ସିମ ସ୍ୱାପ|സിം സ്വാപ്പ്|ਸਿਮ ਸਵੈਪ|প্যান কার্ড|আধার|पॅन कार्ड|आधार कार्ड|પાન કાર્ડ|આધાર કાર્ડ|పాన్ కార్డు|ఆధార్|பான் கார்டு|ஆதார்|پین کارڈ|آدھار|ಪ್ಯಾನ್ ಕಾರ್ಡ್|ಆಧಾರ್|ପାନ କାର୍ଡ|ଆଧାର|പാൻ കാർഡ്|ആധാർ|ਪੈਨ ਕਾਰਡ|ਆਧਾਰ)/i
-  if (idRegex.test(t)) {
+  const idRegex = /(?:pan card|aadhaar|\bpan\b|sim swap|tafcop|identity|driving license|লাইসেন্স|लायसन्स|లైసెన్స్|લાયસન્સ|لائسنس|ಲೈಸೆನ್ಸ್|ଲାଇସେନ୍ସ|ലൈസൻസ്|ਲਾਇਸੈਂਸ|লাইসেন্স|সিম সোয়াপ|डुप्लिकेट सिम|सिम कार्ड|సిమ్ స్వాప్|సిమ్ కార్డు|சிம் ஸ்வாப்|சிம் கார்டு|સિમ સ્વેપ|સિમ કાર્ડ|سم تبدیل|ಸಿಮ್ ಸ್ವಾಪ್|ସିମ ସ୍ୱାପ|സിം സ്വാപ്പ്|ਸਿਮ ਸਵੈਪ|প্যান কার্ড|আধার|पॅन कार्ड|आधार कार्ड|પાન કાર્ડ|આધાર કાર્ડ|పాన్ కార్డు|ఆధార్|பான் கார்டு|ஆதார்|پین کارڈ|آدھار|ಪ್ಯಾನ್ ಕಾರ್ಡ್|ಆಧಾರ್|ପାନ କାର୍ଡ|ଆଧାର|പാൻ കാർഡ്|ആധാർ|ਪੈਨ ਕਾਰਡ|ਆਧਾਰ)/i
+  if (idRegex.test(t) && !/contacts|threat|blackmail|morph|calling/i.test(t)) {
     return 'Identity Theft'
   }
 
@@ -248,6 +270,7 @@ export function inferCategoryFromMultilingualText(text: string): FraudType {
 // 4. Multilingual Complainant Name Extractor
 const EXPLICIT_NAME_REGEXES = [
   new RegExp(`(?:my name is|name is)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:mera naam|mera name|amar naam|amar name|majhe naav|mazhe naav|naa peru|na peru|en peyar|en peyer|maru naam|maru name|nanna hesaru|nanna name|mora nama|mora na|ente peru|ente name|mera na)\\s*(?:hai|is|ahe|undi|haye|chhe)?\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
   new RegExp(`(?:मेरा नाम)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+है)?`, 'i'),
   new RegExp(`(?:আমার নাম)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
   new RegExp(`(?:माझे नाव)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+आहे)?`, 'i'),
@@ -264,16 +287,16 @@ const EXPLICIT_NAME_REGEXES = [
 // Unicode-friendly first-person intro regexes (without \b)
 const I_AM_REGEXES = [
   new RegExp(`(?:^|[\\s,।.\n])(?:I am|I'm)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:मैं|मै)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+हूँ|\\s+हुँ)?`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:আমি)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:मी)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:నేను)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:நான்)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:હું|હુ)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+છું)?`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:मैं|मै|main|mai)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+हूँ|\\s+हुँ|\\s+hoon)?`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:আমি|ami)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:मी|mee)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:నేను|nenu)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:நான்|naan)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:હું|હુ|hoon)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+છું)?`, 'i'),
   new RegExp(`(?:^|[\\s,।.\n])(?:میں)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+ہوں)?`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:ನಾನು)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:ମୁଁ)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
-  new RegExp(`(?:^|[\\s,।.\n])(?:ഞാൻ)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:ನಾನು|naanu)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:ମୁଁ|mun)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
+  new RegExp(`(?:^|[\\s,।.\n])(?:ഞാൻ|njan)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'),
   new RegExp(`(?:^|[\\s,।.\n])(?:ਮੈਂ)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)(?:\\s+ਹਾਂ)?`, 'i'),
 ]
 
@@ -328,15 +351,15 @@ export function extractMultilingualOnBehalfOf(text: string): string | null {
   if (!text) return null
 
   // Secondary indicator: explicit mention of "her/his name is X" after on-behalf statement:
-  // e.g., "माझ्या आईच्या वतीने... त्यांचे नाव सुनंदा कदम आहे", "त्याचे नाव रोहन मोहिते", "तिचे नाव कविता जाधव", "তাঁর নাম কল্পনা সরকার", "ആമെ పేరు కమలమ్మ"
-  const victimNameMatch = text.match(new RegExp(`(?:त्यांचे नाव|त्याचे नाव|तिचे नाव|त्यांचं नाव|त्यांचा नाव|তাঁর নাম|ആമെ పేరు|వారి పేరు|அவர் பெயர்|அவரது பெயர்|તેમનું નામ|ان کا نام|ಅವರ ಹೆಸರು|ତାଙ୍କ ନାମ|ତାଙ୍କ ନାଁ|അവരുടെ പേര്|അദ്ദേഹത്തിന്റെ പേര്|ਉਹਨਾਂ ਦਾ ਨਾਮ|ਉਸਦਾ ਨਾਮ)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'))
+  // e.g., "माझ्या आईच्या वतीने... त्यांचे नाव सुनंदा कदम आहे", "त्याचे नाव रोहन मोहिते", "तिचे नाव कविता जाधव", "তাঁর নাম কল্পনা সরকার", "ആമെ పేరు కమలమ్మ", "his name is Ramesh"
+  const victimNameMatch = text.match(new RegExp(`(?:त्यांचे नाव|त्याचे नाव|तिचे नाव|त्यांचं नाव|त्यांचा नाव|তাঁর নাম|ആമെ పేరు|వారి పేరు|அவர் பெயர்|அவரது பெயர்|તેમનું નામ|ان کا نام|ಅವರ ಹೆಸರು|ତାଙ୍କ ନାମ|ତାଙ୍କ ନାଁ|അവരുടെ പേര്|അദ്ദേഹത്തിന്റെ പേര്|ਉਹਨਾਂ ਦਾ ਨਾਮ|ਉਸਦਾ ਨਾਮ|his name is|her name is|their name is|unka naam|uski name|uska naam)\\s+(${ALL_INDIC_SCRIPTS_PATTERN}+(?:\\s+${ALL_INDIC_SCRIPTS_PATTERN}+)?)`, 'i'))
   if (victimNameMatch && victimNameMatch[1]) {
     const clean = victimNameMatch[1].replace(/[।.,!?;:]+$/, '').trim()
-    if (clean.length > 1 && !/^(आहे|છે|ਹੈ|ആണ്|არის)$/.test(clean)) return clean
+    if (clean.length > 1 && !/^(आहे|છે|ਹੈ|ആണ്|არის|is|hai|ahe|chhe)$/.test(clean)) return clean
   }
 
-  // Pattern 1: English "on behalf of X"
-  const enMatch = text.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+  // Pattern 1: English "on behalf of X" / "filing for X" / "reporting for X"
+  const enMatch = text.match(/(?:on behalf of|behalf of|reporting for|complaining for|filing for|filing on behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt|mom|dad)\s+)?([A-Za-z\u0900-\u0D7F]+(?:\s+[A-Za-z\u0900-\u0D7F]+)?)/i)
   if (enMatch && enMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(enMatch[1])) {
     return enMatch[1].trim()
   }
