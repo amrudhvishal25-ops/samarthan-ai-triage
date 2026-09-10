@@ -8,65 +8,35 @@ import { useTriage } from '@/context/TriageContext'
 import { RadialBackground } from '@/components/ui/light-theme-tailwind-css-background-snippet'
 import WhatsAppChoiceModal from '@/components/WhatsAppChoiceModal'
 import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
+import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
+import { getTranslation } from '@/lib/i18n/translations'
 
 interface HeroSectionProps {
-  language: 'en' | 'hi'
-}
-
-const EN = {
-  headline: 'Report Cyber Crime Online.',
-  headlineHighlight: 'Action in 60 Seconds.',
-  sub: 'Report cybercrime incidents in your own words via voice or text in Hindi or English. Samarthan drafts a formal complaint, identifies applicable IT Act sections, and guides emergency bank freeze actions in under 60 seconds.',
-  primary: 'Start a report',
-  secondary: 'See how it works',
-  demoHint: 'Try us out: tap the mic and say your report',
-  demoHintDone: 'Report captured: review details or see full report',
-  continueCta: 'Proceed to Formal Filing (Form NCRP-1930) →',
-  orWhatsApp: 'Or check it out on WhatsApp →',
-  reRecord: 'Say it again',
-  youSaid: 'Citizen Statement:',
-  resultTitle: 'Preliminary Incident Dossier (Form NCRP-1930)',
-  fType: 'Fraud Classification',
-  fLaw: 'Applicable Statutory Section',
-  fAction: 'Immediate Golden Hour Action',
-}
-
-const HI = {
-  headline: 'साइबर अपराध की ऑनलाइन रिपोर्ट करें।',
-  headlineHighlight: '60 सेकंड में त्वरित कार्रवाई।',
-  sub: 'हिंदी या अंग्रेजी में अपनी शिकायत बोलकर या लिखकर दर्ज करें। समर्थन औपचारिक शिकायत तैयार करता है, कानूनी धाराओं की पहचान करता है, और बैंक खाता फ्रीज कराने में सहायता करता है।',
-  primary: 'रिपोर्ट शुरू करें',
-  secondary: 'यह कैसे काम करता है',
-  demoHint: 'अभी आज़माएं: माइक दबाएं और अपनी शिकायत बोलें',
-  demoHintDone: 'शिकायत दर्ज: विवरण जांचें या पूरी रिपोर्ट देखें',
-  continueCta: 'औपचारिक शिकायत दर्ज करें (प्रारूप NCRP-1930) →',
-  orWhatsApp: 'या सीधे व्हाट्सएप पर देखें →',
-  reRecord: 'फिर से बोलें',
-  youSaid: 'नागरिक का बयान:',
-  resultTitle: 'प्राथमिक घटना डोजियर (प्रारूप NCRP-1930)',
-  fType: 'धोखाधड़ी का वर्गीकरण',
-  fLaw: 'लागू वैधानिक धारा',
-  fAction: 'गोल्डन ऑवर त्वरित कार्रवाई',
+  language: SupportedLanguage
 }
 
 // Lightweight keyword pass so the hero result card feels alive without a
 // full API round-trip. The real classification happens on /intake.
-function quickRead(text: string, hi: boolean) {
+function quickRead(text: string, lang: SupportedLanguage) {
   const t = text.toLowerCase()
-  if (/invest|trading|stock|crypto|profit|portfolio|मुनाफ़ा|निवेश/.test(t))
-    return { type: hi ? 'निवेश घोटाला' : 'Investment Scam', law: 'IT Act 66D', action: hi ? 'RBI Sachet पोर्टल पर रिपोर्ट करें' : 'Report on RBI Sachet portal', Icon: Wallet }
-  if (/loan app|sextort|blackmail|threat|nude|morph|ब्लैकमेल|धमकी/.test(t))
-    return { type: hi ? 'जबरन वसूली' : 'Extortion & Blackmail', law: 'IT Act 66E + 384 BNS', action: hi ? '1930 पर कॉल करें, स्क्रीनशॉट सुरक्षित रखें' : 'Call 1930, preserve screenshots', Icon: ShieldCheck }
-  if (/upi|bank|otp|debit|credit card|imps|neft|account|बैंक|खाता/.test(t))
-    return { type: hi ? 'वित्तीय धोखाधड़ी' : 'Financial Fraud', law: 'IT Act 66C / 66D', action: hi ? 'बैंक नोडल अधिकारी को सूचित करें + 1930' : 'Notify bank nodal officer + call 1930', Icon: Building2 }
-  if (/instagram|facebook|whatsapp|fake profile|impersonat|फ़र्ज़ी|पहचान/.test(t))
-    return { type: hi ? 'पहचान की चोरी' : 'Identity Theft', law: 'IT Act 66C / 66D', action: hi ? 'प्लेटफ़ॉर्म पर रिपोर्ट करें + NCRP' : 'Report to the platform + NCRP', Icon: Scale }
-  return { type: hi ? 'अन्य साइबर अपराध' : 'Other Cyber Crime', law: 'IT Act 66', action: hi ? '1930 पर कॉल करें' : 'Call the 1930 helpline', Icon: ShieldCheck }
+  const isEn = lang === 'en'
+  const meta = LANGUAGE_MAP[lang] || LANGUAGE_MAP.en
+  if (/invest|trading|stock|crypto|profit|portfolio|मुनाफ़ा|निवेश|বিনিয়োগ|ಹೂಡಿಕೆ|முதலீடு|పెట్టుబడి|રોકાણ|سرمایہ|ਨਿਵੇਸ਼|നിക്ഷേപം|ନିବେଶ/.test(t))
+    return { type: isEn ? 'Investment Scam' : `${meta.nativeName}: Investment Scam`, law: 'IT Act 66D', action: isEn ? 'Report on RBI Sachet portal' : 'Report on RBI Sachet portal + 1930', Icon: Wallet }
+  if (/loan app|sextort|blackmail|threat|nude|morph|ब्लैकमेल|धमकी|হুমকি|ಬ್ಲ್ಯಾಕ್‌ಮೇಲ್|மிரட்டல்|బెదిరింపు|ધમકી|بلیک میل|ਧਮਕੀ|ഭീഷണി|ଧମକ/.test(t))
+    return { type: isEn ? 'Extortion & Blackmail' : `${meta.nativeName}: Extortion & Blackmail`, law: 'IT Act 66E + 384 BNS', action: isEn ? 'Call 1930, preserve screenshots' : 'Call 1930, preserve screenshots', Icon: ShieldCheck }
+  if (/upi|bank|otp|debit|credit card|imps|neft|account|बैंक|खाता|ব্যাঙ্ক|ಬ್ಯಾಂಕ್|வங்கி|బ్యాంకు|બેંક|بینک|ਬੈਂਕ|ബാങ്ക്|ବ୍ୟାଙ୍କ/.test(t))
+    return { type: isEn ? 'Financial Fraud' : `${meta.nativeName}: Financial Fraud`, law: 'IT Act 66C / 66D', action: isEn ? 'Notify bank nodal officer + call 1930' : 'Notify bank nodal officer + call 1930', Icon: Building2 }
+  if (/instagram|facebook|whatsapp|fake profile|impersonat|फ़र्ज़ी|पहचान|ভুয়া|ನಕಲಿ|போலி|నకిలీ|નકલી|جعلی|ਨਕਲੀ|വ്യാജ|ନକଲି/.test(t))
+    return { type: isEn ? 'Identity Theft' : `${meta.nativeName}: Identity Theft`, law: 'IT Act 66C / 66D', action: isEn ? 'Report to the platform + NCRP' : 'Report to the platform + NCRP', Icon: Scale }
+  return { type: isEn ? 'Other Cyber Crime' : `${meta.nativeName}: Cyber Crime`, law: 'IT Act 66', action: isEn ? 'Call the 1930 helpline' : 'Call 1930 Helpline', Icon: ShieldCheck }
 }
 
 export default function HeroSection({ language }: HeroSectionProps) {
-  const c = language === 'hi' ? HI : EN
+  const trans = getTranslation(language)
   const hi = language === 'hi'
+  const isEn = language === 'en'
+  const meta = LANGUAGE_MAP[language] || LANGUAGE_MAP.en
   const router = useRouter()
   const { setScenarioId, setInputType } = useTriage()
 
@@ -77,7 +47,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false)
   const [choicePrefilledText, setChoicePrefilledText] = useState('')
 
-  const result = committed ? quickRead(committed, hi) : null
+  const result = committed ? quickRead(committed, language) : null
 
   const handleAudioReady = async (blob: Blob) => {
     let text = transcript.trim()
@@ -134,7 +104,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
           </span>
           <span className="text-[11px] sm:text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
-            {hi ? 'राष्ट्रीय साइबर अपराध रिपोर्टिंग फ्रेमवर्क (NCRP 1930) • प्रोटोटाइप' : 'National Cybercrime Reporting Framework (NCRP 1930) • Prototype'}
+            {trans.hero.badge}
           </span>
         </div>
 
@@ -142,12 +112,12 @@ export default function HeroSection({ language }: HeroSectionProps) {
           {/* Left: copy */}
           <div>
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-950 dark:text-white leading-[1.12]">
-              <span className="block py-0.5">{c.headline}</span>
-              <span className="block text-primary mt-1 py-0.5">{c.headlineHighlight}</span>
+              <span className="block py-0.5">{trans.hero.headline1}</span>
+              <span className="block text-primary mt-1 py-0.5">{trans.hero.headline2}</span>
             </h1>
 
           <p className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg leading-relaxed">
-            {c.sub}
+            {trans.hero.subtitle}
           </p>
 
           <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -155,14 +125,14 @@ export default function HeroSection({ language }: HeroSectionProps) {
               onClick={goToIntake}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-6 sm:px-7 py-3.5 text-sm font-semibold transition-colors shadow-sm min-h-[44px]"
             >
-              {c.primary}
+              {trans.hero.ctaReport}
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#how-it-works"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-lg px-6 py-3.5 text-sm font-medium transition-colors shadow-2xs min-h-[44px]"
             >
-              {c.secondary}
+              {trans.hero.ctaLearnMore}
               <ArrowDown className="w-4 h-4 text-zinc-400" />
             </a>
           </div>
@@ -213,7 +183,9 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
             <div className="p-4 sm:p-6">
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-4">
-                {committed ? c.demoHintDone : c.demoHint}
+                {committed
+                  ? (isEn ? 'Report captured: review details or see full report' : `${meta.nativeName}: Report captured`)
+                  : (isEn ? 'Try us out: tap the mic and say your report' : `${meta.nativeName}: Speak your report`)}
               </p>
 
               <AudioRecorder
@@ -226,7 +198,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
               {isTranscribing && (
                 <div className="mt-4 p-4 rounded-lg bg-primary-tint border border-primary/20 flex items-center justify-center gap-2.5 text-xs font-semibold text-primary">
                   <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span>{hi ? 'आपकी आवाज़ सुनी जा रही है और रिपोर्ट तैयार हो रही है...' : 'Transcribing what you said and preparing report...'}</span>
+                  <span>{trans.intake.analyzingIncident}</span>
                 </div>
               )}
 
@@ -266,7 +238,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline transition-colors cursor-pointer"
                   >
                     <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600 dark:fill-emerald-500 dark:text-emerald-500" />
-                    <span>{c.orWhatsApp}</span>
+                    <span>{trans.hero.ctaWhatsApp}</span>
                   </button>
                 </div>
               )}
@@ -278,12 +250,12 @@ export default function HeroSection({ language }: HeroSectionProps) {
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500" />
                         <p className="text-[10px] font-mono font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
-                          {c.resultTitle}
+                          {isEn ? 'Preliminary Incident Dossier (Form NCRP-1930)' : `${meta.nativeName} Incident Dossier`}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-                          {hi ? 'डिजीलॉकर प्रमाणित' : 'DIGILOCKER VERIFIED'}
+                          {trans.nav.digiLockerVerified}
                         </span>
                         <button
                           type="button"
@@ -291,32 +263,34 @@ export default function HeroSection({ language }: HeroSectionProps) {
                           className="text-[11px] text-primary hover:underline font-medium flex items-center gap-1"
                         >
                           <RotateCcw className="w-3 h-3" />
-                          <span>{c.reRecord}</span>
+                          <span>{isEn ? 'Say it again' : 'Re-record'}</span>
                         </button>
                       </div>
                     </div>
 
                     <div className="mb-3.5 p-3 rounded-md bg-white border border-zinc-200/90 text-xs text-zinc-800 leading-relaxed font-medium">
-                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">{c.youSaid}</span>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">
+                        {isEn ? 'Citizen Statement:' : 'Statement:'}
+                      </span>
                       &ldquo;{committed}&rdquo;
                     </div>
 
                     <div className="space-y-2.5 text-sm">
-                      <Row label={c.fType} value={
+                      <Row label={isEn ? 'Fraud Classification' : 'Classification'} value={
                         <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
                           <result.Icon className="w-3.5 h-3.5 text-primary" />
                           {result.type}
                         </span>
                       } />
-                      <Row label={c.fLaw} value={<span className="font-mono text-xs text-zinc-700">{result.law}</span>} />
-                      <Row label={c.fAction} value={<span className="text-zinc-700">{result.action}</span>} />
+                      <Row label={isEn ? 'Applicable Law' : 'Section'} value={<span className="font-mono text-xs text-zinc-700">{result.law}</span>} />
+                      <Row label={isEn ? 'Golden Hour Action' : 'Action'} value={<span className="text-zinc-700">{result.action}</span>} />
                     </div>
 
                     <button
                       onClick={goToIntake}
                       className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white rounded-lg px-4 py-3 text-xs font-semibold transition-colors shadow-sm"
                     >
-                      <span>{c.continueCta}</span>
+                      <span>{isEn ? 'Proceed to Formal Filing (Form NCRP-1930) →' : `${meta.nativeName}: Proceed to Filing →`}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
 
@@ -330,7 +304,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline transition-colors py-1 cursor-pointer"
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600 dark:fill-emerald-500 dark:text-emerald-500" />
-                        <span>{c.orWhatsApp}</span>
+                        <span>{trans.hero.ctaWhatsApp}</span>
                       </button>
                     </div>
                   </div>

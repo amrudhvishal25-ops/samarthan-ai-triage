@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CheckCircle2, ArrowRight, ShieldCheck, Sparkles, Circle } from 'lucide-react'
 import { TriageResult } from '@/data/scenarios'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 export interface CompulsoryField {
   key: string
@@ -112,7 +113,7 @@ export function getCompulsoryFields(r: TriageResult): CompulsoryField[] {
 
 interface CompulsoryDetailsReminderProps {
   triageResult: TriageResult
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   onScrollToUpdates?: () => void
 }
 

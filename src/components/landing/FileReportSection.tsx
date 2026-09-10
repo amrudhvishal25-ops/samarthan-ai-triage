@@ -9,9 +9,11 @@ import {
 } from 'lucide-react'
 import WhatsAppChoiceModal from '@/components/WhatsAppChoiceModal'
 import WhatsAppSimulatorModal from '@/components/WhatsAppSimulatorModal'
+import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
+import { getTranslation } from '@/lib/i18n/translations'
 
 interface FileReportSectionProps {
-  language: 'en' | 'hi'
+  language: SupportedLanguage
 }
 
 type Channel = 'web' | 'call' | 'whatsapp'
@@ -19,6 +21,8 @@ type Channel = 'web' | 'call' | 'whatsapp'
 export default function FileReportSection({ language }: FileReportSectionProps) {
   const router = useRouter()
   const hi = language === 'hi'
+  const t = getTranslation(language)
+  const meta = LANGUAGE_MAP[language] || LANGUAGE_MAP.en
   const { setScenarioId, setInputType, setSharedImage } = useTriage()
 
   const [inputText, setInputText] = useState('')
@@ -53,12 +57,12 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
   }, [])
 
   const categories = [
-    { title: 'Financial Fraud', titleHi: 'वित्तीय धोखाधड़ी', desc: 'UPI, banking, and credit-card fraud.', descHi: 'UPI, बैंकिंग और क्रेडिट कार्ड धोखाधड़ी।', icon: <DollarSign className="w-5 h-5" />, iconBg: 'bg-primary-tint text-primary' },
-    { title: 'Women/Children Related Crime', titleHi: 'महिला/बाल अपराध', desc: 'Harassment, cyberbullying, and abuse.', descHi: 'उत्पीड़न, साइबरबुलिंग और दुर्व्यवहार।', icon: <User className="w-5 h-5" />, iconBg: 'bg-pink-50 text-pink-600' },
-    { title: 'Extortion & Blackmail', titleHi: 'जबरन वसूली', desc: 'Loan apps, sextortion, and threats.', descHi: 'ऋण ऐप, ब्लैकमेल और धमकियाँ।', icon: <ShieldAlert className="w-5 h-5" />, iconBg: 'bg-red-50 text-red-600' },
-    { title: 'Identity Theft', titleHi: 'पहचान की चोरी', desc: 'PAN/Aadhaar misuse and fake profiles.', descHi: 'पैन/आधार दुरुपयोग और फर्जी प्रोफाइल।', icon: <Fingerprint className="w-5 h-5" />, iconBg: 'bg-purple-50 text-purple-600' },
-    { title: 'E-Commerce Scams', titleHi: 'ई-कॉमर्स धोखाधड़ी', desc: 'Fake sites, OLX, and delivery fraud.', descHi: 'फर्जी वेबसाइट, OLX और डिलीवरी धोखाधड़ी।', icon: <ShoppingCart className="w-5 h-5" />, iconBg: 'bg-emerald-50 text-emerald-600' },
-    { title: 'Other Cyber Crime', titleHi: 'अन्य साइबर अपराध', desc: 'Hacking, data theft, and other threats.', descHi: 'हैकिंग, डेटा चोरी और अन्य खतरे।', icon: <Briefcase className="w-5 h-5" />, iconBg: 'bg-zinc-100 text-zinc-600' },
+    { title: t.fileReport.categories.financial.title, rawKey: 'Financial Fraud', desc: t.fileReport.categories.financial.desc, icon: <DollarSign className="w-5 h-5" />, iconBg: 'bg-primary-tint text-primary' },
+    { title: t.fileReport.categories.womenChildren.title, rawKey: 'Women/Children Related Crime', desc: t.fileReport.categories.womenChildren.desc, icon: <User className="w-5 h-5" />, iconBg: 'bg-pink-50 text-pink-600' },
+    { title: t.fileReport.categories.extortion.title, rawKey: 'Extortion & Blackmail', desc: t.fileReport.categories.extortion.desc, icon: <ShieldAlert className="w-5 h-5" />, iconBg: 'bg-red-50 text-red-600' },
+    { title: t.fileReport.categories.identityTheft.title, rawKey: 'Identity Theft', desc: t.fileReport.categories.identityTheft.desc, icon: <Fingerprint className="w-5 h-5" />, iconBg: 'bg-purple-50 text-purple-600' },
+    { title: t.fileReport.categories.ecommerce.title, rawKey: 'E-Commerce Scams', desc: t.fileReport.categories.ecommerce.desc, icon: <ShoppingCart className="w-5 h-5" />, iconBg: 'bg-emerald-50 text-emerald-600' },
+    { title: t.fileReport.categories.other.title, rawKey: 'Other Cyber Crime', desc: t.fileReport.categories.other.desc, icon: <Briefcase className="w-5 h-5" />, iconBg: 'bg-zinc-100 text-zinc-600' },
   ]
 
   const handleAutoAnalyze = () => {
@@ -188,7 +192,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
             <div className="rounded-xl border border-zinc-300 bg-white shadow-xs overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
               <textarea
                 className="w-full p-3.5 sm:p-4 min-h-[110px] sm:min-h-[120px] outline-none resize-none text-zinc-800 placeholder:text-zinc-400 text-base sm:text-sm"
-                placeholder={hi ? 'मुझे एक फिशिंग लिंक मिला...' : 'I received a phishing link...'}
+                placeholder={t.fileReport.placeholder}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => {
@@ -203,7 +207,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                     className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-md transition-colors shadow-xs min-h-[40px] cursor-pointer"
                   >
                     <Plus className="w-4 h-4 text-zinc-500" />
-                    <span>{hi ? 'सबूत जोड़ें' : 'Add evidence'}</span>
+                    <span>{t.fileReport.addEvidence}</span>
                   </button>
                   <button
                     type="button"
@@ -216,7 +220,7 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
                     className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-900 bg-white border border-zinc-200 hover:border-zinc-300 rounded-md transition-colors shadow-xs min-h-[40px] cursor-pointer"
                   >
                     <Mic className="w-4 h-4 text-primary" />
-                    <span>{hi ? 'आवाज़' : 'Use voice'}</span>
+                    <span>{t.fileReport.voiceNote}</span>
                   </button>
                 </div>
                 <button
@@ -236,13 +240,13 @@ export default function FileReportSection({ language }: FileReportSectionProps) 
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {categories.map((cat) => (
                 <button
-                  key={cat.title}
-                  onClick={() => handleCategory(cat.title)}
+                  key={cat.rawKey}
+                  onClick={() => handleCategory(cat.rawKey)}
                   className="flex flex-col items-start p-5 rounded-lg bg-white border border-zinc-200/90 hover:border-primary/50 hover:shadow-xs transition-all text-left cursor-pointer"
                 >
                   <div className={`p-2.5 rounded-md mb-3 ${cat.iconBg}`}>{cat.icon}</div>
-                  <h3 className="text-sm font-bold text-foreground mb-1">{hi ? cat.titleHi : cat.title}</h3>
-                  <p className="text-xs text-zinc-500">{hi ? cat.descHi : cat.desc}</p>
+                  <h3 className="text-sm font-bold text-foreground mb-1">{cat.title}</h3>
+                  <p className="text-xs text-zinc-500">{cat.desc}</p>
                 </button>
               ))}
             </div>

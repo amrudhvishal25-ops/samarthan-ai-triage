@@ -4,9 +4,10 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { useTriage } from '@/context/TriageContext'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 interface FooterSectionProps {
-  language: 'en' | 'hi'
+  language: SupportedLanguage
 }
 
 export default function FooterSection({ language }: FooterSectionProps) {

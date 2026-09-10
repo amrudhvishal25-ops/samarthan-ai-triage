@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult, generateId, IT_ACT_SECTIONS } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
+import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
 import OpenAI from 'openai'
 import { Buffer } from 'node:buffer'
 
@@ -81,8 +82,10 @@ CRITICAL INSTRUCTIONS:
   "timeline": "date/time string if mentioned/visible, else 'Not Provided'",
   "summary": "2-sentence English summary of the facts including any specific platforms/details",
   "summaryHi": "2-sentence Hindi summary of the facts",
+  "summaryRegional": "2-sentence summary in the requested regional language (if target language is Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam, or Punjabi)",
   "complaintDraft": "Concise formal English police complaint (1-2 paragraphs) stating facts, timestamps, fraudulent accounts, and requested action.",
   "complaintDraftHi": "Concise Hindi translation of the complaint (1-2 paragraphs).",
+  "complaintDraftRegional": "Concise formal police FIR complaint in the requested regional language matching Indian State Police Cyber Crime Cell format.",
   "freezeSteps": [
     {
       "step": 1,
@@ -127,9 +130,39 @@ export async function GET() {
   return NextResponse.json({ status: 'ok', service: 'samarthan-triage' })
 }
 
+function getOnBehalfOfOpener(lang: string, complainant: string, victim: string): string {
+  switch (lang) {
+    case 'hi':
+      return `मैं, ${complainant}, ${victim} की ओर से यह औपचारिक शिकायत दर्ज करा रहा हूँ`
+    case 'bn':
+      return `আমি, ${complainant}, ${victim}-এর পক্ষ থেকে এই সাইবার ক্রাইম অভিযোগ দায়ের করছি`
+    case 'mr':
+      return `मी, ${complainant}, ${victim} यांच्या वतीने ही औपचारिक सायबर तक्रार दाखल करत आहे`
+    case 'te':
+      return `నేను, ${complainant}, ${victim} తరపున ఈ అధికారిక సైబర్ నేర ఫిర్యాదును దాఖలు చేస్తున్నాను`
+    case 'ta':
+      return `நான், ${complainant}, ${victim} சார்பாக இந்த முறையான இணையக் குற்றப் புகாரைப் பதிவு செய்கிறேன்`
+    case 'gu':
+      return `હું, ${complainant}, ${victim} વતી આ ઔપચારિક સાયબર ફરિયાદ નોંધાવી રહ્યો છું`
+    case 'ur':
+      return `میں، ${complainant}، ${victim} کی جانب سے یہ باضابطہ سائبر کرائم شکایت درج کر رہا ہوں`
+    case 'kn':
+      return `ನಾನು, ${complainant}, ${victim} ಅವರ ಪರವಾಗಿ ಈ ಔಪಚಾರಿಕ ಸೈಬರ್ ಅಪರಾಧ ದೂರನ್ನು ದಾಖಲಿಸುತ್ತಿದ್ದೇನೆ`
+    case 'or':
+      return `ମୁଁ, ${complainant}, ${victim} ଙ୍କ ତରଫରୁ ଏହି ଆନୁଷ୍ଠାନିକ ସାଇବର ଅଭିଯୋଗ ଦାଖଲ କରୁଛି`
+    case 'ml':
+      return `ഞാൻ, ${complainant}, ${victim}-ന് വേണ്ടി ഈ ഔദ്യോഗിക സൈബർ കുറ്റകൃത്യ പരാതി ഫയൽ ചെയ്യുന്നു`
+    case 'pa':
+      return `ਮੈਂ, ${complainant}, ${victim} ਵੱਲੋਂ ਇਹ ਰਸਮੀ ਸਾਈਬਰ ਅਪਰਾਧ ਸ਼ਿਕਾਇਤ ਦਰਜ ਕਰਵਾ ਰਿਹਾ ਹਾਂ`
+    default:
+      return `I, ${complainant}, am filing this formal cybercrime complaint on behalf of ${victim} regarding`
+  }
+}
+
 export async function POST(req: NextRequest) {
   let categoryHint: string | null = null
   let userText = ''
+  let targetLanguage = 'en'
 
   const getDynamicMock = async (): Promise<TriageResult> => {
     const inferredCategory = (categoryHint && categoryHint !== 'auto') 
@@ -152,10 +185,13 @@ export async function POST(req: NextRequest) {
       accountNumber: 'N/A',
       upiId: undefined,
       timeline: new Date().toLocaleString('en-IN'),
+      language: (targetLanguage || 'en') as SupportedLanguage,
       summary: `AI triage summary generated for ${inferredCategory}.`,
       summaryHi: `${inferredCategory} के लिए AI ट्रायज सारांश।`,
+      summaryRegional: `${inferredCategory} - AI Triage Summary`,
       complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI am filing this complaint regarding a cyber incident (${inferredCategory}). Please investigate this matter and take appropriate action.\n\n[Complainant address / city — to be provided]`,
       complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं ${inferredCategory} से संबंधित एक साइबर घटना की औपचारिक शिकायत दर्ज कर रहा हूँ। कृपया मामले की जांच करें और उचित कार्रवाई करें।\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]`,
+      complaintDraftRegional: `Formal Cybercrime Complaint regarding ${inferredCategory}.\n\n[Official Police Complaint Draft in selected language]`,
       freezeSteps: [
         {
           step: 1,
@@ -185,6 +221,7 @@ export async function POST(req: NextRequest) {
     let audioFile: File | null = null
     let imageFile: File | null = null
     let complainantName: string | null = null
+    targetLanguage = 'en'
 
     const contentType = req.headers.get('content-type') || ''
     if (contentType.includes('application/json')) {
@@ -194,6 +231,7 @@ export async function POST(req: NextRequest) {
         userText = (json.text || '').trim()
         categoryHint = json.fraudType || null
         complainantName = json.complainantName || null
+        targetLanguage = (json.language || 'en').toLowerCase()
       } catch { /* ignore parse error */ }
     } else {
       try {
@@ -204,6 +242,7 @@ export async function POST(req: NextRequest) {
         imageFile = formData.get('image') as File | null
         categoryHint = formData.get('fraudType') as string | null
         complainantName = (formData.get('complainantName') as string | null)?.trim() || null
+        targetLanguage = ((formData.get('language') as string | null)?.trim() || 'en').toLowerCase()
       } catch { /* ignore parse error */ }
     }
 
@@ -236,9 +275,13 @@ export async function POST(req: NextRequest) {
           const audioName = audioFile.name || 'recording.webm'
           const fileObj = new File([audioBuffer], audioName, { type: audioFile.type || 'audio/webm' })
 
+          const VALID_WHISPER_LANGS = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'gu', 'ur', 'kn', 'ml', 'pa']
+          const whisperLang = VALID_WHISPER_LANGS.includes(targetLanguage) ? targetLanguage : undefined
+
           const transcription = await openai.audio.transcriptions.create({
             file: fileObj,
             model: 'whisper-1',
+            ...(whisperLang ? { language: whisperLang } : {}),
           })
           return typeof transcription === 'string' ? transcription : (transcription as any).text || ''
         } catch (audioError: any) {
@@ -300,6 +343,14 @@ export async function POST(req: NextRequest) {
       customPrompt += `\n\nCOMPLAINANT IDENTITY: The person filing this complaint is "${complainantName}" (DigiLocker verified). If the user states they are filing on behalf of someone else X (e.g. "on behalf of X"), the complainantName MUST still be "${complainantName}" (the person actually filing), and the complaintDraft must open with "I, ${complainantName}, am filing this formal cybercrime complaint on behalf of [X] regarding...". Otherwise, begin with "I, ${complainantName}, hereby state that..."`
     } else {
       customPrompt += `\n\nCOMPLAINANT IDENTITY: The complainant is filing anonymously and is NOT signed in. If the narrative states a self-intro name ("my name is Y"), use Y. If filing on behalf of X, the complaintDraft must open like "I am filing this complaint on behalf of X regarding...". Set "complainantName" to the person actually complaining (or "Anonymous Complainant" if unnamed).`
+    }
+
+    const langMeta = LANGUAGE_MAP[targetLanguage as SupportedLanguage] || LANGUAGE_MAP.en
+    if (targetLanguage && targetLanguage !== 'en') {
+      customPrompt += `\n\nTARGET REGIONAL LANGUAGE: The citizen has selected ${langMeta.name} (${langMeta.nativeName}, code "${targetLanguage}").
+In addition to the mandatory English "complaintDraft" (which is required by Central NCRP / Bank Nodal Desks), you MUST also provide:
+- "complaintDraftRegional": A complete, formal police FIR complaint written entirely in ${langMeta.name} (${langMeta.nativeName}) following official State Cyber Crime Police Station standards. If filing on behalf of X, begin with: "${getOnBehalfOfOpener(targetLanguage, complainantName || '[Complainant Name]', '[X]')}".
+- "summaryRegional": A 2-sentence summary of the incident in ${langMeta.name} (${langMeta.nativeName}).`
     }
 
     // 2. Structured legal complaint generation. Safety race well below the
@@ -485,8 +536,17 @@ export async function POST(req: NextRequest) {
             },
           ],
       urgencyLevel: parsed.urgencyLevel,
+      language: (targetLanguage || 'en') as SupportedLanguage,
+      complaintDraftRegional: str(
+        parsed.complaintDraftRegional,
+        targetLanguage === 'hi' ? str(parsed.complaintDraftHi, '') : str(parsed.complaintDraft, '')
+      ),
       summary: str(parsed.summary, 'A cyber incident was reported and triaged for immediate action.'),
       summaryHi: str(parsed.summaryHi, 'एक साइबर घटना दर्ज की गई और तत्काल कार्रवाई के लिए ट्रायज की गई।'),
+      summaryRegional: str(
+        parsed.summaryRegional,
+        targetLanguage === 'hi' ? str(parsed.summaryHi, '') : str(parsed.summary, '')
+      ),
       recommendedChannel: parsed.recommendedChannel,
       recommendedChannelTarget: parsed.recommendedChannelTarget,
     }

@@ -11,6 +11,8 @@ import AudioRecorder from '@/components/AudioRecorder'
 import LoadingTriage from '@/components/LoadingTriage'
 import Navbar from '@/components/Navbar'
 import { useAuth } from '@/hooks/useAuth'
+import { getTranslation } from '@/lib/i18n/translations'
+import { LANGUAGE_MAP } from '@/lib/i18n/languages'
 
 function IntakeContent() {
   const router = useRouter()
@@ -20,6 +22,8 @@ function IntakeContent() {
   const textParam = searchParams.get('text')
 
   const { language, setLanguage, scenarioId, setTriageResult, sharedImage, setSharedImage } = useTriage()
+  const t = getTranslation(language)
+  const meta = LANGUAGE_MAP[language] || LANGUAGE_MAP.en
   const { getUser } = useAuth()
   const hi = language === 'hi'
   const scenario = SCENARIOS.find(s => s.id === scenarioId)
@@ -114,12 +118,23 @@ function IntakeContent() {
         timeline: new Date().toLocaleString('en-IN'),
         summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${inferredCat}.`,
         summaryHi: `${inferredCat} के तहत साइबर घटना दर्ज की गई।`,
+        summaryRegional: language === 'hi'
+          ? `${inferredCat} के तहत साइबर घटना दर्ज की गई।`
+          : (language !== 'en' ? `[${meta.nativeName}]: Cyber incident reported under ${inferredCat}.` : undefined),
+        language,
         complaintDraft: onBehalfOfTarget
           ? `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint on behalf of ${onBehalfOfTarget} regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`
           : `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`,
         complaintDraftHi: onBehalfOfTarget
           ? `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, ${onBehalfOfTarget} की ओर से इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`
           : `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`,
+        complaintDraftRegional: language === 'hi'
+          ? (onBehalfOfTarget
+              ? `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, ${onBehalfOfTarget} की ओर से इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`
+              : `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`)
+          : (language !== 'en'
+              ? `[${meta.nativeName} Draft / ${meta.name}]:\nTo Station House Officer, Cyber Police Station.\nComplainant: ${detectedName}${onBehalfOfTarget ? ` (on behalf of ${onBehalfOfTarget})` : ''}.\nIncident: ${finalTxt || inferredCat}. Action requested under Section 66D IT Act.`
+              : undefined),
         freezeSteps: [
           {
             step: 1,
@@ -255,7 +270,7 @@ function IntakeContent() {
         {/* ── PAGE TITLE ── */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight mb-1.5 sm:mb-2">
-            {hi ? 'कुछ भी कहें...' : 'Say anything...'}
+            {t.intake.title}
           </h1>
         </div>
 
@@ -265,7 +280,7 @@ function IntakeContent() {
           {/* Voice — hero cell, spans both rows on desktop */}
           <div className="md:row-span-2 border border-zinc-200 rounded-xl bg-zinc-50 shadow-sm p-4 sm:p-5 flex flex-col min-h-[240px] sm:min-h-[280px]">
             <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2 sm:mb-3">
-              <span className="flex items-center gap-1.5"><Mic className="w-3.5 h-3.5" />{hi ? 'वॉइस नोट' : 'Voice Note'}</span>
+              <span className="flex items-center gap-1.5"><Mic className="w-3.5 h-3.5" />{t.intake.voiceCardTitle}</span>
             </label>
             <div className="flex-1">
               <AudioRecorder language={language} onAudioReady={setAudioBlob} onLiveTranscript={setVoiceTranscript} theme="light" />
@@ -275,13 +290,13 @@ function IntakeContent() {
           {/* Text */}
           <div className="border border-zinc-200 rounded-xl bg-white shadow-sm p-4 sm:p-5">
             <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-              <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />{hi ? 'विवरण लिखें' : 'Type Details'}</span>
+              <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />{t.intake.textCardTitle}</span>
             </label>
             <textarea
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
               rows={5}
-              placeholder={hi ? 'विस्तार से बताएं…' : 'Describe the incident in detail…'}
+              placeholder={t.intake.placeholder}
               className="w-full bg-zinc-50 border border-zinc-200 rounded-md p-3 sm:p-3.5 text-base sm:text-sm text-zinc-900 placeholder-zinc-400 resize-none outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
             />
             {voiceTranscript && (
@@ -295,7 +310,7 @@ function IntakeContent() {
           {/* Upload */}
           <div className="border border-zinc-200 rounded-xl bg-white shadow-sm p-4 sm:p-5">
             <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2 sm:mb-3">
-              <span className="flex items-center gap-1.5"><ImagePlus className="w-3.5 h-3.5" />{hi ? 'सबूत संलग्न करें' : 'Attach Evidence'}</span>
+              <span className="flex items-center gap-1.5"><ImagePlus className="w-3.5 h-3.5" />{t.intake.evidenceCardTitle}</span>
             </label>
             {imageFile ? (
               <div className="flex items-center gap-3 border border-zinc-200 rounded-md p-3 bg-zinc-50">
@@ -319,7 +334,7 @@ function IntakeContent() {
                 className="w-full h-24 rounded-lg border-2 border-dashed border-zinc-200 hover:border-zinc-400 bg-zinc-50 hover:bg-zinc-100 flex flex-col items-center justify-center gap-1 text-zinc-400 hover:text-zinc-600 transition-all cursor-pointer min-h-[44px]"
               >
                 <ImagePlus className="w-5 h-5" />
-                <span className="text-xs font-medium">{hi ? 'फ़ाइल अपलोड करें' : 'Upload Screenshot or File'}</span>
+                <span className="text-xs font-medium">{t.intake.uploadScreenshot}</span>
               </button>
             )}
             <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
@@ -341,7 +356,7 @@ function IntakeContent() {
           disabled={!textValue && !voiceTranscript && !audioBlob && !imageFile && !scenario}
           className="w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-white py-3.5 sm:py-4 text-sm bg-primary hover:bg-primary-hover transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px] cursor-pointer"
         >
-          {scenario ? (hi ? 'AI से तैयार करें' : 'Run AI Triage') : (hi ? 'AI से विश्लेषण करें' : 'Analyze with AI')}
+          {t.intake.submitForTriage}
           <ArrowRight className="w-4 h-4" />
         </button>
 

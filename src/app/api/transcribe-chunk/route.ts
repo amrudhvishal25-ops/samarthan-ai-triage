@@ -27,10 +27,13 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await audioFile.arrayBuffer())
     const fileObj = new File([buffer], audioFile.name || 'chunk.webm', { type: audioFile.type || 'audio/webm' })
 
+    const VALID_WHISPER_LANGS = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'gu', 'ur', 'kn', 'ml', 'pa']
+    const whisperLang = VALID_WHISPER_LANGS.includes(language.toLowerCase()) ? language.toLowerCase() : undefined
+
     const transcription = await openai.audio.transcriptions.create({
       file: fileObj,
       model: 'whisper-1',
-      language: language === 'hi' ? 'hi' : 'en',
+      ...(whisperLang ? { language: whisperLang } : {}),
     })
 
     const text = typeof transcription === 'string' ? transcription : (transcription as any).text || ''

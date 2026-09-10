@@ -1,3 +1,5 @@
+import { SupportedLanguage } from '@/lib/i18n/languages'
+
 export type FraudType =
   | 'Financial Fraud'
   | 'Women/Children Related Crime'
@@ -80,13 +82,16 @@ export interface TriageResult {
   accountNumber: string
   upiId?: string
   timeline: string
+  language?: SupportedLanguage
   complaintDraft: string
   complaintDraftHi: string
+  complaintDraftRegional?: string
   freezeSteps: FreezeStep[]
   applicableLaws: ApplicableLaw[]
   urgencyLevel: UrgencyLevel
   summary: string
   summaryHi: string
+  summaryRegional?: string
   // Situation-aware escalation route decided by the triage AI. Optional so
   // older persisted/mock records still typecheck; UI falls back to 'helpline'.
   recommendedChannel?: RecommendedChannel

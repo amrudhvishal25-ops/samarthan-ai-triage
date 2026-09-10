@@ -11,6 +11,7 @@ import { useTriage } from '@/context/TriageContext'
 import { COMPLAINT_STATUS_LABELS } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
 import Navbar from '@/components/Navbar'
+import { getTranslation } from '@/lib/i18n/translations'
 
 const URGENCY_COLORS: Record<string, string> = {
   CRITICAL: 'bg-red-100 text-red-800 border-red-200',
@@ -23,6 +24,7 @@ export default function ComplaintsPage() {
   const router = useRouter()
   const { getAll } = useComplaints()
   const { setTriageResult, language, setLanguage } = useTriage()
+  const t = getTranslation(language)
   const [complaints, setComplaints] = useState<SavedComplaint[]>([])
   const [loading, setLoading] = useState(true)
   const hi = language === 'hi'
@@ -44,8 +46,11 @@ export default function ComplaintsPage() {
       urgencyLevel: c.urgencyLevel,
       summary: c.summary,
       summaryHi: c.summaryHi,
+      summaryRegional: c.summaryRegional,
+      language: c.language,
       complaintDraft: c.complaintDraft,
       complaintDraftHi: c.complaintDraftHi,
+      complaintDraftRegional: c.complaintDraftRegional,
       frauderContact: c.frauderContact,
       bankName: c.bankName,
       accountNumber: c.accountNumber,
@@ -82,12 +87,10 @@ export default function ComplaintsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
-              {hi ? 'मेरी शिकायतें' : 'My Complaints'}
+              {t.complaints.title}
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              {hi
-                ? 'समर्थन एआई ट्रायज के माध्यम से दर्ज की गई सभी शिकायतें एवं स्थिति।'
-                : 'All complaints and recovery dossiers filed through Samarthan AI.'}
+              {t.complaints.subtitle}
             </p>
           </div>
 
@@ -95,7 +98,7 @@ export default function ComplaintsPage() {
             onClick={() => router.push('/')}
             className="self-start sm:self-auto inline-flex items-center gap-2 text-xs font-semibold bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-xl px-4 py-2.5 transition-all shadow-sm cursor-pointer min-h-[44px]"
           >
-            {hi ? 'नई शिकायत दर्ज करें' : 'File a New Report'}
+            {t.complaints.fileNew}
             <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
@@ -114,18 +117,16 @@ export default function ComplaintsPage() {
               <FileText className="w-6 h-6 text-zinc-400" />
             </div>
             <p className="text-base font-semibold text-zinc-800">
-              {hi ? 'कोई शिकायत दर्ज नहीं है' : 'No complaints registered yet'}
+              {t.complaints.emptyTitle}
             </p>
             <p className="text-xs text-zinc-500 mt-1.5 max-w-sm leading-relaxed">
-              {hi
-                ? 'जैसे ही आप पहली रिपोर्ट दर्ज करेंगे, आपकी शिकायत और रिकवरी डॉसियर यहाँ दिखाई देगा।'
-                : 'Your filed cybercrime complaints, legal draft, and bank freeze action steps will appear here.'}
+              {t.complaints.emptyDesc}
             </p>
             <button
               onClick={() => router.push('/')}
               className="mt-6 inline-flex items-center gap-2 text-xs font-semibold bg-[#1A3A6B] hover:bg-[#152d54] text-white rounded-xl px-5 py-3 transition-all shadow-sm cursor-pointer min-h-[44px]"
             >
-              {hi ? 'शिकायत दर्ज करें' : 'File a Complaint'}
+              {t.complaints.fileNew}
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </motion.div>

@@ -20,11 +20,13 @@ import {
 import { useRouter } from 'next/navigation'
 import { useTriage } from '@/context/TriageContext'
 import { TriageResult } from '@/data/scenarios'
+import { SupportedLanguage } from '@/lib/i18n/languages'
+import { getLanguageSwitchedMessage } from '@/lib/whatsapp-templates'
 
 interface WhatsAppSimulatorModalProps {
   isOpen: boolean
   onClose: () => void
-  language?: 'en' | 'hi'
+  language?: SupportedLanguage
 }
 
 interface Message {
@@ -39,21 +41,66 @@ interface Message {
   incidentId?: string
 }
 
-const PRESETS = [
+const BCP47_MAP: Record<SupportedLanguage, string> = {
+  en: 'en-IN',
+  hi: 'hi-IN',
+  bn: 'bn-IN',
+  mr: 'mr-IN',
+  te: 'te-IN',
+  ta: 'ta-IN',
+  gu: 'gu-IN',
+  ur: 'ur-IN',
+  kn: 'kn-IN',
+  or: 'or-IN',
+  ml: 'ml-IN',
+  pa: 'pa-IN',
+}
+
+const PRESETS: Array<{ label: string; [k: string]: string }> = [
   {
     label: '⚡ Electricity Scam',
     en: 'My father was scammed of ₹45,000 via a fake electricity bill APK call. Beneficiary UPI is electricitybill@ybl, UTR: 429104829102.',
     hi: 'मेरे पिता से फर्जी बिजली बिल ऐप के नाम पर 45,000 रुपये ठग लिए गए। UPI आईडी: electricitybill@ybl, UTR: 429104829102 है।',
+    bn: 'আমার বাবার কাছ থেকে ভুয়ো বিদ্যুৎ বিল APK কলের মাধ্যমে ₹৪৫,০০০ প্রতারণা করা হয়েছে। প্রাপক UPI হলো electricitybill@ybl, UTR: 429104829102।',
+    mr: 'माझ्या वडिलांची बनावट वीज बिल APK कॉलद्वारे ₹४५,००० ची फसवणूक झाली. लाभार्थी UPI electricitybill@ybl आहे, UTR: 429104829102.',
+    te: 'నకిలీ విద్యుత్ బిల్లు APK కాల్ ద్వారా మా నాన్న నుండి ₹45,000 మోసం చేశారు. లబ్ధిదారు UPI: electricitybill@ybl, UTR: 429104829102.',
+    ta: 'போலி மின்சார கட்டண APK அழைப்பு மூலம் என் தந்தையிடம் ₹45,000 மோசடி செய்யப்பட்டது. பயனாளர் UPI: electricitybill@ybl, UTR: 429104829102.',
+    gu: 'મારા પિતા સાથે નકલી વીજળી બિલ APK કૉલ દ્વારા ₹45,000 ની છેતરપિંડી થઈ છે. લાભાર્થી UPI: electricitybill@ybl, UTR: 429104829102 છે.',
+    ur: 'میرے والد سے جعلی بجلی کے بل APK کال کے ذریعے ₹45,000 کا فراڈ کیا گیا ہے۔ فائدہ اٹھانے والے کا UPI: electricitybill@ybl, UTR: 429104829102 ہے۔',
+    kn: 'ನಕಲಿ ವಿದ್ಯುತ್ ಬಿಲ್ APK ಕರೆ ಮೂಲಕ ನನ್ನ ತಂದೆಗೆ ₹45,000 ವಂಚಿಸಲಾಗಿದೆ. ಫಲಾನುಭವಿ UPI: electricitybill@ybl, UTR: 429104829102.',
+    or: 'ଜାଲ୍ ବିଦ୍ୟୁତ୍ ବିଲ୍ APK କଲ୍ ମାଧ୍ୟମରେ ମୋ ବାପାଙ୍କଠାରୁ ₹୪୫,୦୦୦ ଠକେଇ ହୋଇଛି। ହିତାଧିକାରୀ UPI: electricitybill@ybl, UTR: 429104829102।',
+    ml: 'വ്യാജ വൈദ്യുതി ബിൽ APK കോൾ വഴി എന്റെ പിതാവിൽ നിന്ന് ₹45,000 തട്ടിയെടുത്തു. ഗുണഭോക്താവിന്റെ UPI: electricitybill@ybl, UTR: 429104829102.',
+    pa: 'ਨਕਲੀ ਬਿਜਲੀ ਬਿੱਲ APK ਕਾਲ ਰਾਹੀਂ ਮੇਰੇ ਪਿਤਾ ਨਾਲ ₹45,000 ਦੀ ਧੋਖਾਧੜੀ ਹੋਈ ਹੈ। ਲਾਭਪਾਤਰੀ UPI: electricitybill@ybl, UTR: 429104829102 ਹੈ।',
   },
   {
     label: '📈 Trading Fraud',
     en: 'I joined a WhatsApp stock trading group by Vinod Agarwal. Deposited ₹1,20,000 in StockPro app and now they are refusing withdrawal.',
     hi: 'मैंने विनोद अग्रवाल के स्टॉक ट्रेडिंग व्हाट्सएप ग्रुप में 1,20,000 रुपये जमा किए थे, अब वे पैसे निकालने नहीं दे रहे हैं।',
+    bn: 'আমি বিনোদ আগরওয়ালের একটি হোয়াটসঅ্যাপ স্টক ট্রেডিং গ্রুপে যোগ দিয়েছিলাম। StockPro অ্যাপে ₹১,২০,০০০ জমা করেছি এবং এখন তারা টাকা তুলতে দিচ্ছে না।',
+    mr: 'मी विनोद अगरवाल यांच्या व्हॉट्सॲप स्टॉक ट्रेडिंग ग्रुपमध्ये सामील झालो. StockPro ॲपमध्ये ₹१,२०,००० जमा केले आणि आता ते पैसे काढू देत नाहीत.',
+    te: 'నేను వినోద్ అగర్వాల్ వాట్సాప్ స్టాక్ ట్రేడింగ్ గ్రూప్‌లో చేరాను. StockPro యాప్‌లో ₹1,20,000 డిపాజిట్ చేసాను, ఇప్పుడు వారు ఉపసంహరణను తిరస్కరిస్తున్నారు.',
+    ta: 'நான் வினோத் அகர்வால் வாட்ஸ்அப் பங்கு வர்த்தக குழுவில் சேர்ந்தேன். StockPro செயலியில் ₹1,20,000 டெபாசிட் செய்தேன், இப்போது அவர்கள் பணத்தை எடுக்க அனுமதிக்கவில்லை.',
+    gu: 'હું વિનોદ અગ્રવાલના વ્હોટ્સએપ સ્ટોક ટ્રેડિંગ ગ્રૂપમાં જોડાયો હતો. StockPro એપમાં ₹1,20,000 જમા કરાવ્યા અને હવે તેઓ ઉપાડ કરવાનો ઇનકાર કરી રહ્યા છે.',
+    ur: 'میں نے ونود اگروال کے واٹس ایپ اسٹاک ٹریڈنگ گروپ میں شمولیت اختیار کی۔ StockPro ایپ میں ₹1,20,000 جمع کرائے اور اب وہ رقم نکالنے سے انکار کر رہے ہیں۔',
+    kn: 'ನಾನು ವಿನೋದ್ ಅಗರ್ವಾಲ್ ಅವರ ವಾಟ್ಸಾಪ್ ಸ್ಟಾಕ್ ಟ್ರೇಡಿಂಗ್ ಗ್ರೂಪ್ ಸೇರಿದ್ದೆ. StockPro ಆ್ಯಪ್‌ನಲ್ಲಿ ₹1,20,000 ಠೇವಣಿ ಮಾಡಿದ್ದೇನೆ, ಈಗ ಅವರು ಹಿಂಪಡೆಯಲು ನಿರಾಕರಿಸುತ್ತಿದ್ದಾರೆ.',
+    or: 'ମୁଁ ବିନୋଦ ଅଗ୍ରୱାଲଙ୍କ ଏକ ହ୍ୱାଟସ୍‌ଆପ୍ ଷ୍ଟକ୍ ଟ୍ରେଡିଂ ଗ୍ରୁପ୍‌ରେ ଯୋଗ ଦେଇଥିଲି। StockPro ଆପ୍‌ରେ ₹୧,୨୦,୦୦୦ ଜମା କରିଥିଲି ଏବଂ ଏବେ ସେମାନେ ଉଠାଣ ପାଇଁ ମନା କରୁଛନ୍ତି।',
+    ml: 'വിനോദ് അഗർവാളിന്റെ വാട്ട്‌സ്ആപ്പ് സ്റ്റോക്ക് ട്രേഡിംഗ് ഗ്രൂപ്പിൽ ഞാൻ ചേർന്നു. StockPro ആപ്പിൽ ₹1,20,000 നിക്ഷേപിച്ചു, ഇപ്പോൾ പണം പിൻവലിക്കാൻ അനുവദിക്കുന്നില്ല.',
+    pa: 'ਮੈਂ ਵਿਨੋਦ ਅਗਰਵਾਲ ਦੇ ਵਟਸਐਪ ਸਟਾਕ ਟ੍ਰੇਡਿੰਗ ਗਰੁੱਪ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਇਆ ਸੀ। StockPro ਐਪ ਵਿੱਚ ₹1,20,000 ਜਮ੍ਹਾ ਕਰਵਾਏ ਅਤੇ ਹੁਣ ਉਹ ਪੈਸੇ ਕਢਵਾਉਣ ਤੋਂ ਇਨਕਾਰ ਕਰ ਰਹੇ ਹਨ।',
   },
   {
     label: '🚨 Extortion Call',
     en: 'Received threat on Instagram from @cyber_hacker demanding ₹25,000 or they will leak my morphed photos.',
     hi: 'इंस्टाग्राम पर @cyber_hacker द्वारा मेरी तस्वीरें लीक करने की धमकी देकर 25,000 रुपये मांगे जा रहे हैं।',
+    bn: 'ইনস্টাগ্রামে @cyber_hacker থেকে হুমকি পেয়েছি, ₹২৫,০০০ দাবি করছে নতুবা আমার বিকৃত ছবি ফাঁস করার হুমকি দিচ্ছে।',
+    mr: 'इन्स्टाग्रामवर @cyber_hacker कडून ₹२५,००० ची मागणी करणारी धमकी आली आहे, अन्यथा माझे मॉर्फ केलेले फोटो लीक करण्याची धमकी दिली आहे.',
+    te: 'ఇన్‌స్టాగ్రామ్‌లో @cyber_hacker నుండి ₹25,000 డిమాండ్ చేస్తూ బెదిరింపు వచ్చింది, లేకపోతే నా మార్ఫ్ చేసిన ఫోటోలను లీక్ చేస్తానని బెదిరిస్తున్నారు.',
+    ta: 'இன்ஸ்டாகிராமில் @cyber_hacker என்பவரிடமிருந்து ₹25,000 கேட்டு மிரட்டல் வந்துள்ளது, இல்லையெனில் எனது மார்ஃப் செய்யப்பட்ட புகைப்படங்களை கசியவிடுவதாக மிரட்டுகிறார்.',
+    gu: 'ઇન્સ્ટાગ્રામ પર @cyber_hacker તરફથી ₹25,000 ની માંગણી કરતી ધમકી મળી છે, નહીં તો મારા મોર્ફ કરેલા ફોટા લીક કરવાની ધમકી આપી રહ્યા છે.',
+    ur: 'انسٹاگرام پر @cyber_hacker سے ₹25,000 کا مطالبہ کرنے والی دھمکی موصول ہوئی ہے بصورت دیگر میری مورف شدہ تصاویر لیک کر دیں گے۔',
+    kn: 'ಇನ್‌ಸ್ಟಾಗ್ರಾಮ್‌ನಲ್ಲಿ @cyber_hacker ನಿಂದ ₹25,000 ಬೇಡಿಕೆಯ ಬೆದರಿಕೆ ಬಂದಿದೆ, ಇಲ್ಲದಿದ್ದರೆ ನನ್ನ ಮಾರ್ಫ್ ಮಾಡಿದ ಫೋಟೋಗಳನ್ನು ಲೀಕ್ ಮಾಡುವುದಾಗಿ ಬೆದರಿಸುತ್ತಿದ್ದಾರೆ.',
+    or: 'ଇନଷ୍ଟାଗ୍ରାମରେ @cyber_hacker ଠାରୁ ₹୨୫,୦୦୦ ଦାବି କରି ଧମକ ମିଳିଛି, ନଚେତ୍ ମୋର ମର୍ଫ୍ ହୋଇଥିବା ଫଟୋ ଲିକ୍ କରିଦେବେ।',
+    ml: 'ഇൻസ്റ്റാഗ്രാമിൽ @cyber_hacker-ൽ നിന്ന് ₹25,000 ആവശ്യപ്പെട്ട് ഭീഷണി സന്ദേശം ലഭിച്ചു, അല്ലെങ്കിൽ മോർഫ് ചെയ്ത ഫോട്ടോകൾ പ്രചരിപ്പിക്കുമെന്ന് ഭീഷണിപ്പെടുത്തുന്നു.',
+    pa: 'ਇੰਸਟਾਗ੍ਰਾਮ \'ਤੇ @cyber_hacker ਤੋਂ ₹25,000 ਦੀ ਮੰਗ ਕਰਨ ਵਾਲੀ ਧਮਕੀ ਮਿਲੀ ਹੈ, ਨਹੀਂ ਤਾਂ ਮੇਰੀਆਂ ਮੋਰਫ ਕੀਤੀਆਂ ਫੋਟੋਆਂ ਲੀਕ ਕਰਨ ਦੀ ਧਮਕੀ ਦੇ ਰਹੇ ਹਨ।',
   },
 ]
 
@@ -218,9 +265,11 @@ export default function WhatsAppSimulatorModal({
   )
   const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null)
 
-  const initialGreeting = isHi
+  const initialGreeting = language === 'hi'
     ? '👋 *नमस्ते! मैं समर्थन (Samarthan) व्हाट्सएप AI एजेंट हूँ।*\n\nमैं 24x7 आपातकालीन साइबर धोखाधड़ी रिपोर्टिंग और 1930 गोल्डन ऑवर फंड फ्रीज में आपकी सहायता करूँगा।\n\n📋 *अगले चरण के लिए आवश्यक बुनियादी जानकारी:*\n• क्या हुआ (फर्जी कॉल, UPI फ्रॉड, निवेश स्कैम, ब्लैकमेल)\n• खोई हुई राशि (₹)\n• धोखेबाज़ की जानकारी (UPI ID, फोन नंबर, खाता)\n• 12-अंकों का UTR संदर्भ नंबर (यदि पैसे कटे हों)\n\n🎙️ आप **वॉइस नोट 🎤**, टेक्स्ट संदेश ✍️, या लेनदेन का **स्क्रीनशॉट 📸** भेज सकते हैं। मैं तुरंत विश्लेषण कर आपकी FIR शिकायत तैयार करूँगा!'
-    : '👋 *Hi, I\'m the Samarthan WhatsApp AI Agent.*\n\nI provide 24x7 automated emergency cybercrime triage and golden-hour fund freeze assistance under the Indian IT Act 2000.\n\n📋 *Basic information needed before the next stage:*\n• What happened (fake bank call, UPI scam, loan app, or investment fraud)\n• Total amount lost in ₹\n• Fraudster details (UPI ID, phone, account, or scam link)\n• 12-digit UTR reference number (if money was debited)\n\n🎙️ Send a **Voice Note 🎤**, type your incident ✍️, or upload a **Payment Screenshot 📸** to begin!'
+    : language === 'en'
+    ? '👋 *Hi, I\'m the Samarthan WhatsApp AI Agent.*\n\nI provide 24x7 automated emergency cybercrime triage and golden-hour fund freeze assistance under the Indian IT Act 2000.\n\n📋 *Basic information needed before the next stage:*\n• What happened (fake bank call, UPI scam, loan app, or investment fraud)\n• Total amount lost in ₹\n• Fraudster details (UPI ID, phone, account, or scam link)\n• 12-digit UTR reference number (if money was debited)\n\n🎙️ Send a **Voice Note 🎤**, type your incident ✍️, or upload a **Payment Screenshot 📸** to begin!'
+    : getLanguageSwitchedMessage(language)
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -311,9 +360,11 @@ export default function WhatsAppSimulatorModal({
       {
         id: `init-${Date.now()}`,
         role: 'assistant',
-        content: isHi
+        content: language === 'hi'
           ? '👋 *नई सिम्युलेशन शुरू हुई।*\n\nअपनी घटना का विवरण बोलकर बताएं 🎤, संदेश लिखें ✍️, या भुगतान स्क्रीनशॉट 📸 साझा करें।'
-          : '👋 *Simulation reset. Ready for a new complaint.*\n\nDescribe what happened: record a voice note 🎤, type your incident ✍️, or upload a payment screenshot 📸.',
+          : language === 'en'
+          ? '👋 *Simulation reset. Ready for a new complaint.*\n\nDescribe what happened: record a voice note 🎤, type your incident ✍️, or upload a payment screenshot 📸.'
+          : getLanguageSwitchedMessage(language),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ])
@@ -329,6 +380,7 @@ export default function WhatsAppSimulatorModal({
           phoneNumber: freshSimId,
           resetSession: true,
           isSimulator: true,
+          language,
         }),
       })
     } catch {}
@@ -352,7 +404,7 @@ export default function WhatsAppSimulatorModal({
       .trim()
 
     const utterance = new SpeechSynthesisUtterance(cleanText)
-    utterance.lang = isHi ? 'hi-IN' : 'en-IN'
+    utterance.lang = BCP47_MAP[language] || 'en-IN'
     utterance.rate = 1.05
 
     utterance.onend = () => setSpeakingMsgId(null)
@@ -388,6 +440,7 @@ export default function WhatsAppSimulatorModal({
           message: text,
           activeIncidentId: activeIncidentId || undefined,
           isSimulator: true,
+          language,
         }),
       })
 
@@ -472,7 +525,7 @@ export default function WhatsAppSimulatorModal({
             const recognition = new SpeechRec()
             recognition.continuous = true
             recognition.interimResults = true
-            recognition.lang = isHi ? 'hi-IN' : 'en-IN'
+            recognition.lang = BCP47_MAP[language] || 'en-IN'
 
             recognition.onresult = (event: any) => {
               let text = ''
@@ -593,6 +646,7 @@ export default function WhatsAppSimulatorModal({
             audioMimeType: recordedMimeTypeRef.current || 'audio/webm',
             activeIncidentId: activeIncidentId || undefined,
             isSimulator: true,
+            language,
           }),
         })
 
@@ -662,6 +716,7 @@ export default function WhatsAppSimulatorModal({
           imageBase64: cleanBase64,
           activeIncidentId: activeIncidentId || undefined,
           isSimulator: true,
+          language,
         }),
       })
 
@@ -908,7 +963,7 @@ export default function WhatsAppSimulatorModal({
             <button
               type="button"
               key={idx}
-              onClick={() => handleSendText(isHi ? p.hi : p.en)}
+              onClick={() => handleSendText(p[language] || p.en)}
               className="whitespace-nowrap px-2.5 py-1 bg-white dark:bg-[#202c33] hover:bg-zinc-100 dark:hover:bg-[#2a3942] text-zinc-700 dark:text-zinc-200 rounded-full border border-zinc-300 dark:border-zinc-700 text-[11px] shadow-2xs transition-colors cursor-pointer"
             >
               {p.label}

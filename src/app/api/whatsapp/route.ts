@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOrCreateSession, processWhatsAppTurn } from '@/lib/whatsapp-agent'
+import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
 import OpenAI, { toFile } from 'openai'
 
 export const dynamic = 'force-dynamic'
@@ -74,6 +75,9 @@ export async function POST(req: NextRequest) {
       const session = getOrCreateSession(from)
       if (json.isSimulator) {
         ;(session as any).isSimulator = true
+      }
+      if (json.language && json.language in LANGUAGE_MAP) {
+        session.language = json.language as SupportedLanguage
       }
 
       if (isExplicitReset) {
@@ -193,7 +197,7 @@ async function transcribeAudioUrl(audioUrl: string): Promise<string | null> {
 async function transcribeAudioBase64(
   base64Data: string,
   mimeType: string = 'audio/webm',
-  language?: 'en' | 'hi'
+  language?: SupportedLanguage
 ): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
@@ -211,11 +215,12 @@ async function transcribeAudioBase64(
   const file = await toFile(buffer, `voicenote.${ext}`, { type: cleanMime })
 
   const openai = new OpenAI({ apiKey })
+  const whisperLang = language ? LANGUAGE_MAP[language]?.whisperCode : undefined
   try {
     const transcription = await openai.audio.transcriptions.create({
       file,
       model: 'whisper-1',
-      language: language === 'hi' ? 'hi' : undefined,
+      language: whisperLang,
     })
     return transcription.text
   } catch (err: any) {

@@ -4,8 +4,11 @@ import { useState, useRef, useEffect } from 'react'
 import { Mic, Square, Loader2 } from 'lucide-react'
 import clsx from 'clsx'
 
+import { SupportedLanguage } from '@/lib/i18n/languages'
+import { getTranslation } from '@/lib/i18n/translations'
+
 interface AudioRecorderProps {
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   onAudioReady: (blob: Blob) => void
   onLiveTranscript?: (text: string) => void
   theme?: 'light' | 'dark'
@@ -16,8 +19,9 @@ const BAR_COUNT = 28
 const CHUNK_MS = 4000
 
 export default function AudioRecorder({ language, onAudioReady, onLiveTranscript, theme = 'light' }: AudioRecorderProps) {
-  const hi = language === 'hi'
+  const t = getTranslation(language)
   const isDark = theme === 'dark'
+  const hi = language === 'hi'
 
   const [recording, setRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
@@ -112,7 +116,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
       // haven't managed a single successful caption yet, so one dropped
       // chunk mid-stream doesn't overwrite text that's already showing.
       if (!finalTranscriptRef.current) {
-        setCaptionError(hi ? 'लाइव कैप्शन अभी उपलब्ध नहीं' : 'Live captions unavailable right now')
+        setCaptionError(language === 'en' ? 'Live captions unavailable right now' : `${t.intake.listening}`)
       }
     }
   }
@@ -298,8 +302,8 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
 
         <p className={clsx("text-xs text-center", isDark ? "text-white/60" : "text-gray-500")}>
           {recording
-            ? (hi ? 'रिकॉर्ड हो रहा है… रोकने के लिए दबाएं' : 'Recording… tap to stop')
-            : (hi ? 'माइक दबाकर बोलना शुरू करें' : 'Tap the mic to start speaking')}
+            ? t.intake.stopRecording
+            : t.intake.startRecording}
         </p>
       </div>
 
@@ -308,7 +312,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
         <div className={clsx("rounded-md p-2.5 text-xs min-h-[2.5rem] max-h-24 overflow-y-auto", isDark ? "bg-white/5 text-white/80" : "bg-white text-zinc-600 border border-zinc-200")}>
           {liveText || (captionError
             ? <span className="text-amber-600">{captionError}</span>
-            : <span className="opacity-50 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" />{hi ? 'सुन रहा है…' : 'Listening…'}</span>
+            : <span className="opacity-50 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" />{t.intake.listening}</span>
           )}
         </div>
       )}
@@ -317,7 +321,7 @@ export default function AudioRecorder({ language, onAudioReady, onLiveTranscript
       {blobUrl && !recording && (
         <div className={clsx("rounded-lg p-2.5 border", isDark ? "bg-green-500/10 border-green-500/30" : "bg-green-50 border-green-200")}>
           <p className={clsx("text-[10px] font-semibold mb-1.5 uppercase tracking-wide", isDark ? "text-green-400" : "text-green-700")}>
-            {hi ? 'रिकॉर्डिंग तैयार है' : 'Recording ready'}
+            {language === 'en' ? 'Recording ready' : '✓ Audio Ready'}
           </p>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <audio controls src={blobUrl} className={clsx("w-full h-8", isDark ? "opacity-90 grayscale-[0.2]" : "")} />

@@ -1,37 +1,39 @@
 import React from 'react'
 import { ShieldCheck, Fingerprint, TrendingUp, AlertTriangle } from 'lucide-react'
+import { SupportedLanguage } from '@/lib/i18n/languages'
+import { getTranslation } from '@/lib/i18n/translations'
 
 interface TrustStripProps {
-  language: 'en' | 'hi'
+  language: SupportedLanguage
 }
 
 export default function TrustStrip({ language }: TrustStripProps) {
-  const isHi = language === 'hi'
+  const t = getTranslation(language)
 
   const items = [
     {
       icon: <TrendingUp className="w-4 h-4 text-primary" />,
-      label: isHi ? 'वार्षिक साइबर मामले' : 'Annual Cyber Frauds',
-      value: isHi ? '11.3 लाख+' : '11.3 Lakh+',
-      sub: isHi ? '2024 NCRP भारत रिपोर्ट' : 'Reported on 1930 in 2024',
+      label: t.trust.reportedFraudsLabel,
+      value: t.trust.reportedFrauds,
+      sub: language === 'hi' ? '2024 NCRP भारत रिपोर्ट' : 'Reported on 1930 in 2024',
     },
     {
       icon: <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />,
-      label: isHi ? 'डिजिटल नुकसान' : 'Digital Losses',
-      value: isHi ? '₹66,000 करोड़' : '₹66,000 Cr',
-      sub: isHi ? 'वार्षिक राष्ट्रीय वित्तीय हानि' : 'Lost to digital financial fraud',
+      label: t.trust.lostToFraudLabel,
+      value: t.trust.lostToFraud,
+      sub: language === 'hi' ? 'वार्षिक राष्ट्रीय वित्तीय हानि' : 'Lost to digital financial fraud',
     },
     {
       icon: <Fingerprint className="w-4 h-4 text-primary" />,
-      label: isHi ? 'पहचान सत्यापन' : 'Identity Verification',
+      label: t.nav.digiLockerVerified,
       value: 'DigiLocker',
-      sub: isHi ? '1-क्लिक आधार व पैन सत्यापित कानूनी शिकायतें' : '1-click tamper-evident Aadhaar & PAN verification',
+      sub: language === 'hi' ? '1-क्लिक आधार व पैन सत्यापित कानूनी शिकायतें' : '1-click tamper-evident Aadhaar & PAN verification',
     },
     {
       icon: <ShieldCheck className="w-4 h-4 text-primary" />,
-      label: isHi ? 'समर्थन AI ट्रायज' : 'Samarthan AI Triage',
-      value: '60s',
-      sub: isHi ? 'घबराहट से FIR व बैंक फ्रीज डोजियर' : 'Immediate freeze dossier generated',
+      label: t.trust.triageSpeedLabel,
+      value: t.trust.triageSpeed,
+      sub: language === 'hi' ? 'घबराहट से FIR व बैंक फ्रीज डोजियर' : 'Immediate freeze dossier generated',
     },
   ]
 

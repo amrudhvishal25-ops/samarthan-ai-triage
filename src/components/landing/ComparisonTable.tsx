@@ -2,9 +2,10 @@
 
 import React from 'react'
 import { ShieldCheck, Check, X, ArrowRight } from 'lucide-react'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 interface ComparisonTableProps {
-  language: 'en' | 'hi'
+  language: SupportedLanguage
 }
 
 export default function ComparisonTable({ language }: ComparisonTableProps) {

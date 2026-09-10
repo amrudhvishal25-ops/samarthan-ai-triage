@@ -2,9 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { TriageResult } from '@/data/scenarios'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
-type Language = 'en' | 'hi'
-type InputType = 'voice' | 'screenshot' | 'text'
+export type Language = SupportedLanguage
+export type InputType = 'voice' | 'screenshot' | 'text'
 
 interface TriageContextValue {
   language: Language

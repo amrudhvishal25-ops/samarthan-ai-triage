@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BreathingIcon from './BreathingIcon'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 interface LoadingTriageProps {
-  language: 'en' | 'hi'
+  language: SupportedLanguage
 }
 
 const stepsEn = [

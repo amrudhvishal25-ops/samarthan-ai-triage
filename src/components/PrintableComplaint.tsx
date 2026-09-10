@@ -1,19 +1,34 @@
 'use client'
 
 import { TriageResult } from '@/data/scenarios'
+import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
+import { getTranslation } from '@/lib/i18n/translations'
 
 interface PrintableComplaintProps {
   result: TriageResult
-  language: 'en' | 'hi'
+  language: SupportedLanguage
+  activeDraft?: 'english' | 'regional'
 }
 
 function formatAckNumber(id: string) {
   return id.replace(/(\d{4})(?=\d)/g, '$1 ').trim()
 }
 
-export default function PrintableComplaint({ result, language }: PrintableComplaintProps) {
+export default function PrintableComplaint({ result, language, activeDraft }: PrintableComplaintProps) {
   const hi = language === 'hi'
-  const draft = hi ? result.complaintDraftHi : result.complaintDraft
+  const t = getTranslation(language)
+  const meta = LANGUAGE_MAP[language] || LANGUAGE_MAP.en
+  
+  let draft = result.complaintDraft
+  if (activeDraft === 'regional') {
+    draft = language === 'hi'
+      ? (result.complaintDraftHi || result.complaintDraft)
+      : (result.complaintDraftRegional || result.complaintDraft)
+  } else if (activeDraft === 'english') {
+    draft = result.complaintDraft
+  } else {
+    draft = language === 'hi' ? result.complaintDraftHi : (result.complaintDraftRegional || result.complaintDraft)
+  }
   const now = new Date()
 
   const summaryRows: [string, string, string][] = [

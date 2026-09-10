@@ -3,10 +3,11 @@
 import clsx from 'clsx'
 import { AlertTriangle, AlertCircle, Info, CheckCircle } from 'lucide-react'
 import { UrgencyLevel } from '@/data/scenarios'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 interface UrgencyBadgeProps {
   level: UrgencyLevel
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   size?: 'sm' | 'lg'
 }
 

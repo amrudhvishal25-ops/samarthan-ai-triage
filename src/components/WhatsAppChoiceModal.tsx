@@ -13,12 +13,13 @@ import {
   CheckCircle2,
   ArrowRight,
 } from 'lucide-react'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 interface WhatsAppChoiceModalProps {
   isOpen: boolean
   onClose: () => void
   onOpenSimulator: () => void
-  language?: 'en' | 'hi'
+  language?: SupportedLanguage
   prefilledText?: string
 }
 

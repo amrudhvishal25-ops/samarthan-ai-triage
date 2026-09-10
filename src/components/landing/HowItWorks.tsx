@@ -1,8 +1,10 @@
 import React from 'react'
 import { Clock, MessageSquare, Mic, FileImage, ShieldCheck, Scale, Phone, Building2, RefreshCw } from 'lucide-react'
+import { SupportedLanguage } from '@/lib/i18n/languages'
+import { getTranslation } from '@/lib/i18n/translations'
 
 interface HowItWorksProps {
-  language: 'en' | 'hi'
+  language: SupportedLanguage
 }
 
 interface StepItem {
@@ -16,6 +18,7 @@ interface StepItem {
 
 export default function HowItWorks({ language }: HowItWorksProps) {
   const isHi = language === 'hi'
+  const t = getTranslation(language)
 
   const steps: StepItem[] = isHi
     ? [
@@ -107,10 +110,10 @@ export default function HowItWorks({ language }: HowItWorksProps) {
         {/* Section Header */}
         <div className="mb-10 sm:mb-14 md:mb-16 max-w-2xl mx-auto text-center">
           <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">
-            {isHi ? 'प्रक्रिया • 60 सेकंड समाधान' : 'The Process • 60-Second Resolution'}
+            {t.howItWorks.eyebrow}
           </p>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
-            {isHi ? 'तीन सरल कदम। एक मिनट में समाधान।' : 'Three clear steps. Finished in under a minute.'}
+            {t.howItWorks.title}
           </h2>
           <p className="mt-2.5 sm:mt-3 text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
             {isHi

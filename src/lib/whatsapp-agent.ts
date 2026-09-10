@@ -1,6 +1,17 @@
 import OpenAI from 'openai'
 import { generateId, TriageResult, FreezeStep, ApplicableLaw, IT_ACT_SECTIONS } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
+import { SupportedLanguage, LANGUAGE_MAP, SUPPORTED_LANGUAGES } from '@/lib/i18n/languages'
+import {
+  getWelcomeMessage,
+  getLanguageSwitchedMessage,
+  getStartNewComplaintPrompt,
+  getActiveComplaintGreeting,
+  getNoActiveComplaintFoundMsg,
+  formatStatusReport,
+  formatComplaintFiledReply,
+  formatUpdateConfirmation,
+} from '@/lib/whatsapp-templates'
 
 const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://samarthan-ai-parichay-s-projects.vercel.app')
 const APP_URL = (rawAppUrl.includes('samarthan-ai.vercel.app') ? 'https://samarthan-ai-parichay-s-projects.vercel.app' : rawAppUrl).replace(/\/$/, '')
@@ -24,7 +35,7 @@ export interface WhatsAppSession {
   stage: WhatsAppStage
   history: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }>
   accumulatedText: string
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   extractedData?: Partial<TriageResult>
   missingFields: string[]
   incidentId?: string
@@ -62,9 +73,148 @@ export function getOrCreateSession(phoneNumber: string): WhatsAppSession {
   return session
 }
 
-function detectLanguage(text: string): 'en' | 'hi' {
-  const hindiPattern = /[\u0900-\u097F]|mera|meri|gaya|gaye|paisa|paise|karo|bhai|sahab|khata|kat|gayi|dhokha|thagi|kya|hua|hain|maine/i
-  return hindiPattern.test(text) ? 'hi' : 'en'
+export function detectLanguage(text: string): SupportedLanguage {
+  const trimmed = text.trim()
+  if (!trimmed) return 'en'
+
+  // Unicode Script Regexes
+  if (/[\u0980-\u09FF]/.test(trimmed)) return 'bn' // Bengali / Assamese
+  if (/[\u0C00-\u0C7F]/.test(trimmed)) return 'te' // Telugu
+  if (/[\u0B80-\u0BFF]/.test(trimmed)) return 'ta' // Tamil
+  if (/[\u0A80-\u0AFF]/.test(trimmed)) return 'gu' // Gujarati
+  if (/[\u0600-\u06FF]/.test(trimmed)) return 'ur' // Urdu / Arabic script
+  if (/[\u0C80-\u0CFF]/.test(trimmed)) return 'kn' // Kannada
+  if (/[\u0B00-\u0B7F]/.test(trimmed)) return 'or' // Odia
+  if (/[\u0D00-\u0D7F]/.test(trimmed)) return 'ml' // Malayalam
+  if (/[\u0A00-\u0A7F]/.test(trimmed)) return 'pa' // Punjabi (Gurmukhi)
+
+  // Devanagari script: differentiate Marathi vs Hindi
+  if (/[\u0900-\u097F]/.test(trimmed)) {
+    const marathiMarkers = /(?:माझे|माझा|माझी|झाले|झाला|झाली|गेले|गेला|पैसे|तक्रार|खाते|खात्यातून|घोटाळा|पोलीस|आहे|नाही|नाहीत|केले|केला|होते|होता|फसवणूक|रुपये|बँक|नोंदवा|करण्यात)/
+    if (marathiMarkers.test(trimmed)) {
+      return 'mr'
+    }
+    return 'hi'
+  }
+
+  // Romanized transliteration heuristics
+  if (/\b(?:amar|amader|taka|hoyche|hoyechhe|geche|katlo|katse|thokano|bengali|bangla)\b/i.test(trimmed)) return 'bn'
+  if (/\b(?:majhe|mazhe|pese|paise|jhale|gela|gele|fusavli|takraar|marathi)\b/i.test(trimmed)) return 'mr'
+  if (/\b(?:naa|naku|dabbulu|poyayi|jarigindi|mosam|chudandi|telugu)\b/i.test(trimmed)) return 'te'
+  if (/\b(?:ennoda|panam|pochu|yematram|kaasu|tamil)\b/i.test(trimmed)) return 'ta'
+  if (/\b(?:maru|mara|paisa|thaya|chhe|khata|thagi|gujarati)\b/i.test(trimmed)) return 'gu'
+  if (/\b(?:urdu)\b/i.test(trimmed)) return 'ur'
+  if (/\b(?:nanna|hana|kaledu|hoyithu|mosam|kannada)\b/i.test(trimmed)) return 'kn'
+  if (/\b(?:mora|tanka|katigala|odia|oriya)\b/i.test(trimmed)) return 'or'
+  if (/\b(?:ente|panam|poyi|thattippu|malayalam)\b/i.test(trimmed)) return 'ml'
+  if (/\b(?:mera|mere|paise|katte|kaddhe|punjabi)\b/i.test(trimmed) && /\b(?:punjabi|pind|gall)\b/i.test(trimmed)) return 'pa'
+  if (/\b(?:mera|meri|gaya|gaye|paisa|paise|karo|bhai|sahab|khata|kat|gayi|dhokha|thagi|kya|hua|hain|maine|apne)\b/i.test(trimmed)) return 'hi'
+
+  return 'en'
+}
+
+export function matchLanguageSwitch(trimmed: string): SupportedLanguage | null {
+  const t = trimmed.trim().toLowerCase()
+
+  // 1. Exact numeric picks (1 to 12)
+  if (/^(?:1|1\.|1️⃣)$/.test(t)) return 'en'
+  if (/^(?:2|2\.|2️⃣)$/.test(t)) return 'hi'
+  if (/^(?:3|3\.|3️⃣)$/.test(t)) return 'bn'
+  if (/^(?:4|4\.|4️⃣)$/.test(t)) return 'mr'
+  if (/^(?:5|5\.|5️⃣)$/.test(t)) return 'te'
+  if (/^(?:6|6\.|6️⃣)$/.test(t)) return 'ta'
+  if (/^(?:7|7\.|7️⃣)$/.test(t)) return 'gu'
+  if (/^(?:8|8\.|8️⃣)$/.test(t)) return 'ur'
+  if (/^(?:9|9\.|9️⃣)$/.test(t)) return 'kn'
+  if (/^(?:10|10\.|🔟|1️⃣0️⃣)$/.test(t)) return 'or'
+  if (/^(?:11|11\.|1️⃣1️⃣)$/.test(t)) return 'ml'
+  if (/^(?:12|12\.|1️⃣2️⃣)$/.test(t)) return 'pa'
+
+  // 2. Language name keywords / scripts
+  if (/^(?:en|english|angrezi|angreji)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:talk|speak|converse|reply|chat)\s*(?:in\s+)?(?:english|angrezi)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?english/i.test(t)) {
+    return 'en'
+  }
+
+  if (/^(?:hi|hindi|हिंदी|हिन्दी)(?:\s+(?:please|plz|bhasha|language))?$/i.test(t) ||
+      /(?:hindi|हिन्दी|हिंदी)\s*(?:mai|me|mein|pe)?\s*(?:baat|bat|bolo|bol|batao|karo|kijiye|help|support|me)/i.test(t) ||
+      /(?:talk|speak|converse|reply|chat)\s*(?:in\s+)?(?:hindi|हिन्दी|हिंदी)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:hindi|हिंदी|हिन्दी)/i.test(t)) {
+    return 'hi'
+  }
+
+  if (/^(?:bn|bengali|bangla|বাংলা)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:bangla|bengali|বাংলা)\s*(?:te|e)?\s*(?:kotha|bolo|bolun|bat|baat|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:bangla|bengali|বাংলা)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:bangla|bengali|বাংলা)/i.test(t)) {
+    return 'bn'
+  }
+
+  if (/^(?:mr|marathi|मराठी)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:marathi|मराठी)\s*(?:madhe|mdhe)?\s*(?:bola|baat|bol|bolave|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:marathi|मराठी)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:marathi|मराठी)/i.test(t)) {
+    return 'mr'
+  }
+
+  if (/^(?:te|telugu|తెలుగు)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:telugu|తెలుగు)\s*(?:lo)?\s*(?:matladu|matladandi|cheppandi|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:telugu|తెలుగు)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:telugu|తెలుగు)/i.test(t)) {
+    return 'te'
+  }
+
+  if (/^(?:ta|tamil|தமிழ்)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:tamil|தமிழ்)\s*(?:il|la)?\s*(?:pesu|pesunga|sollunga|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:tamil|தமிழ்)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:tamil|தமிழ்)/i.test(t)) {
+    return 'ta'
+  }
+
+  if (/^(?:gu|gujarati|ગુજરાતી)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:gujarati|ગુજરાતી)\s*(?:ma)?\s*(?:vaat|bolo|karo|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:gujarati|ગુજરાતી)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:gujarati|ગુજરાતી)/i.test(t)) {
+    return 'gu'
+  }
+
+  if (/^(?:ur|urdu|اردو)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:urdu|اردو)\s*(?:mein|me)?\s*(?:baat|karo|bataiye|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:urdu|اردو)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:urdu|اردو)/i.test(t)) {
+    return 'ur'
+  }
+
+  if (/^(?:kn|kannada|ಕನ್ನಡ)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:kannada|ಕನ್ನಡ)\s*(?:alli)?\s*(?:mathadi|heli|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:kannada|ಕನ್ನಡ)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:kannada|ಕನ್ನಡ)/i.test(t)) {
+    return 'kn'
+  }
+
+  if (/^(?:or|odia|oriya|ଓଡ଼ିଆ)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:odia|oriya|ଓଡ଼ିଆ)\s*(?:re)?\s*(?:katha|kuha|barta|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:odia|oriya|ଓଡ଼ିଆ)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:odia|ଓଡ଼ିଆ)/i.test(t)) {
+    return 'or'
+  }
+
+  if (/^(?:ml|malayalam|മലയാളം)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:malayalam|മലയാളം)\s*(?:il)?\s*(?:samsarikkuka|parayoo|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:malayalam|മലയാളം)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:malayalam|മലയാളം)/i.test(t)) {
+    return 'ml'
+  }
+
+  if (/^(?:pa|punjabi|ਪੰਜਾਬੀ)(?:\s+(?:please|plz|language))?$/i.test(t) ||
+      /(?:punjabi|ਪੰਜਾਬੀ)\s*(?:ch|vich)?\s*(?:gall|karo|help)/i.test(t) ||
+      /(?:talk|speak|chat)\s*(?:in\s+)?(?:punjabi|ਪੰਜਾਬੀ)/i.test(t) ||
+      /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:punjabi|ਪੰਜਾਬੀ)/i.test(t)) {
+    return 'pa'
+  }
+
+  return null
 }
 
 // Fast heuristic to extract UTR, amount, and handles from free text
@@ -87,12 +237,12 @@ export function isDetailedIncidentPrompt(text: string, voiceTranscript?: string)
   if (!full) return false
 
   // Disqualify short navigation keywords, greetings, and system numbers
-  if (/^(status|track|reset|\/reset|restart|clear|hi|hello|hey|namaste|help|madad|pranam|hlo|hii|1|2|yes|no)$/i.test(full)) {
+  if (/^(status|track|reset|\/reset|restart|clear|hi|hello|hey|namaste|help|madad|pranam|hlo|hii|yes|no|[1-9]|1[0-2]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|8️⃣|9️⃣|🔟|1️⃣0️⃣|1️⃣1️⃣|1️⃣2️⃣)$/i.test(full)) {
     return false
   }
 
-  // Disqualify language switch requests (e.g. "hindi mai bat karo", "talk in hindi") unless accompanied by financial crime details
-  if (/(?:hindi|english|हिन्दी|हिंदी)\s*(?:mai|me|mein)?\s*(?:baat|bat|bolo|bol|batao|karo|kijiye)|(?:talk|speak|chat)\s*(?:in\s+)?(?:hindi|english)/i.test(full)) {
+  // Disqualify language switch requests unless accompanied by financial crime details
+  if (matchLanguageSwitch(full)) {
     const ext = quickExtract(full)
     if (!ext.amount && !ext.utr && !ext.upi && full.length < 70) {
       return false
@@ -226,9 +376,7 @@ export async function handleStatusQuery(
   }
 
   if (!complaint) {
-    const noCaseMsg = isHi
-      ? `🔍 *कोई सक्रिय शिकायत नहीं मिली।*\n\nआपकी फोन संख्या (+${session.phoneNumber}) से जुड़ी कोई शिकायत रिकॉर्ड में नहीं मिली।\n\nयदि आपके पास घटना आईडी है, तो इस प्रकार भेजें:\n👉 *status INC-2026-XXXX*\n\nया नई शिकायत दर्ज करने के लिए अपनी घटना का विवरण (या वॉयस नोट 🎤) भेजें।`
-      : `🔍 *No Active Complaint Found.*\n\nNo complaint on record linked to phone +${session.phoneNumber}.\n\nIf you have an Incident ID, send it like:\n👉 *status INC-2026-XXXX*\n\nOr send a voice note 🎤 / message to file a new cybercrime report.`
+    const noCaseMsg = getNoActiveComplaintFoundMsg(session.language, session.phoneNumber)
     session.history.push({ role: 'assistant', content: noCaseMsg, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
     return { reply: noCaseMsg }
   }
@@ -253,42 +401,7 @@ export async function handleStatusQuery(
   const latestUpdate = updatesList.length > 0 ? updatesList[updatesList.length - 1] : null
 
   const trackingLink = `${APP_URL}/dashboard?id=${id}`
-
-  const statusCard = isHi
-    ? `📊 *शिकायत स्थिति रिपोर्ट (CASE STATUS)*
-━━━━━━━━━━━━━━━━━━━━
-📌 *घटना आईडी:* ${id}
-${emoji} *वर्तमान स्थिति:* *${curStatus}*
-🏷️ *श्रेणी:* ${complaint.fraud_type || 'वित्तीय धोखाधड़ी'}
-💰 *धोखाधड़ी राशि:* ₹${Number(complaint.amount || 0).toLocaleString('en-IN')}
-👤 *आरोपी विवरण:* ${complaint.frauder_contact || complaint.fraudster_identifier || 'दर्ज नहीं'}
-🏦 *बैंक / नोडल:* ${complaint.bank_name || 'NCRP 1930 Triage'}
-🕒 *दर्ज तिथि:* ${new Date(complaint.saved_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-
-📝 *नवीनतम अपडेट:*
-${latestUpdate ? `"${latestUpdate.note}"` : 'शिकायत दर्ज। 1930 व बैंक फ्रीज टोकन सक्रिय।'}
-
-📄 *लाइव डॉसियर व औपचारिक FIR ड्राफ्ट:*
-${trackingLink}
-━━━━━━━━━━━━━━━━━━━━
-💡 *सुझाव:* नया विवरण जोड़ने के लिए संदेश/वॉयस नोट/स्क्रीनशॉट भेजें, या नई शिकायत के लिए *NEW* लिखें।`
-    : `📊 *CASE STATUS REPORT*
-━━━━━━━━━━━━━━━━━━━━
-📌 *Incident ID:* ${id}
-${emoji} *Current Status:* *${curStatus}*
-🏷️ *Category:* ${complaint.fraud_type || 'Financial Fraud'}
-💰 *Disputed Amount:* ₹${Number(complaint.amount || 0).toLocaleString('en-IN')}
-👤 *Fraudster Ref:* ${complaint.frauder_contact || complaint.fraudster_identifier || 'Not Specified'}
-🏦 *Bank / Nodal Desk:* ${complaint.bank_name || 'NCRP 1930 Triage'}
-🕒 *Filed At:* ${new Date(complaint.saved_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-
-📝 *Latest Timeline Update:*
-${latestUpdate ? `"${latestUpdate.note}"` : 'Complaint lodged. Golden Hour freeze token active.'}
-
-📄 *View Full Case Dossier & Police Draft:*
-${trackingLink}
-━━━━━━━━━━━━━━━━━━━━
-💡 *Tip:* Reply anytime with a UTR, voice note, or payment screenshot to add to this case, or reply *NEW* for another case.`
+  const statusCard = formatStatusReport(session.language, complaint, curStatus, emoji, latestUpdate, trackingLink)
 
   session.history.push({ role: 'assistant', content: statusCard, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
   return { reply: statusCard, incidentId: id }
@@ -414,31 +527,7 @@ export async function processWhatsAppTurn(
     session.pendingMediaUrl = undefined
     session.forceNewComplaint = false
 
-    const welcomeMsg = `👋 *Hi, I'm the Samarthan AI Cybercrime Triage Bot.*
-नमस्ते! मैं समर्थन (Samarthan) AI साइबर अपराध ट्रायज बॉट हूँ।
-
-I provide 24x7 automated emergency cybercrime triage, golden-hour recovery assistance, and official police FIR complaint drafting under the Indian IT Act 2000.
-
-🛡️ *What I do for you / मैं आपकी क्या मदद कर सकता हूँ:*
-1️⃣ *Emergency Action:* Guide you to dial 1930 & freeze stolen funds via bank nodal officers.
-2️⃣ *AI FIR Drafting:* Automatically analyze your incident and draft an official police complaint in English and Hindi.
-3️⃣ *Live Case Tracking:* Provide a live portal tracking link to follow your case updates in real time.
-
-📋 *Basic information needed before the next stage / अगले चरण के लिए आवश्यक बुनियादी जानकारी:*
-• *What happened:* Scam summary (e.g. fake bank call, UPI fraud, investment scam, blackmail)
-• *Amount lost:* Total money lost in ₹ (if financial)
-• *Fraudster details:* UPI ID, mobile number, bank account, or scam link
-• *Payment reference:* 12-digit UTR number (from your payment app SMS or receipt)
-
-🎙️ *How to send details:*
-You can send a **Voice Note 🎤**, type your message ✍️, or share a **Screenshot / Receipt 📸**.
-
-🌐 *Please select your language to begin / कृपया भाषा चुनें:*
-1️⃣ Reply *1* for English
-2️⃣ Reply *2* for हिन्दी (Hindi)
-
-👉 _Or simply send a voice note or describe what happened right now to proceed directly!_`
-
+    const welcomeMsg = getWelcomeMessage()
     session.history.push({ role: 'assistant', content: welcomeMsg, timestamp })
     return { reply: welcomeMsg }
   }
@@ -448,35 +537,17 @@ You can send a **Voice Note 🎤**, type your message ✍️, or share a **Scree
     return sendLanguageGreeting()
   }
 
-  // Natural Language & Conversational Language Switch Intent (e.g. "hindi mai bat karo", "talk in hindi", "english please", etc.)
-  const isHindiSwitchRequest =
-    /^(2|2\.|2️⃣)$/.test(trimmed) ||
-    /^(?:hindi|हिन्दी|हिंदी)(?:\s+(?:please|plz|bhasha|language))?$/i.test(trimmed) ||
-    /(?:hindi|हिन्दी|हिंदी)\s*(?:mai|me|mein|pe)?\s*(?:baat|bat|bolo|bol|batao|karo|kijiye|help|support|me)/i.test(trimmed) ||
-    /(?:baat|bat|bolo|bol)\s*(?:in\s+)?(?:hindi|हिन्दी|हिंदी)/i.test(trimmed) ||
-    /(?:talk|speak|converse|reply|chat)\s*(?:in\s+)?(?:hindi|हिन्दी|हिंदी)/i.test(trimmed) ||
-    /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:hindi|हिंदी|हिन्दी)/i.test(trimmed) ||
-    /(?:hindi|हिंदी|हिन्दी)\s*(?:chahiye|chuna|select)/i.test(trimmed)
-
-  const isEnglishSwitchRequest =
-    /^(1|1\.|1️⃣)$/.test(trimmed) ||
-    /^(?:english|angrezi|angreji)(?:\s+(?:please|plz|language))?$/i.test(trimmed) ||
-    /(?:talk|speak|converse|reply|chat)\s*(?:in\s+)?(?:english|angrezi|angreji)/i.test(trimmed) ||
-    /(?:english|angrezi|angreji)\s*(?:mai|me|mein)?\s*(?:baat|bat|bolo|bol|batao|karo|kijiye)/i.test(trimmed) ||
-    /(?:change|switch|set)\s*(?:language\s*)?(?:to\s*)?(?:english)/i.test(trimmed)
-
-  if (isHindiSwitchRequest) {
-    session.language = 'hi'
+  // 12-Language Switch Intent (covers numbers 1-12 and all native scripts/names)
+  const switchedLang = matchLanguageSwitch(trimmed)
+  if (switchedLang) {
+    session.language = switchedLang
     if (session.stage === 'SELECT_LANGUAGE') {
       session.stage = 'AWAITING_INCIDENT'
     }
 
-    // Check if user also provided incident details along with language switch
     const ext = quickExtract(trimmed)
-    // A bare language / menu pick ("1", "2", "english", "hindi") is NOT incident content.
-    // quickExtract would otherwise read "1" / "2" as an amount and file a ₹1 complaint.
-    const isBareLangPick = /^(1|2|1️⃣|2️⃣|en|english|angrezi|angreji|hi|hindi|हिंदी|हिन्दी|hinglish)$/i.test(trimmed)
-    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye)/i.test(trimmed)))
+    const isBareLangPick = /^(?:[1-9]|1[0-2]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|8️⃣|9️⃣|🔟|1️⃣0️⃣|1️⃣1️⃣|1️⃣2️⃣|en|english|angrezi|angreji|hi|hindi|हिंदी|हिन्दी|bn|bengali|bangla|বাংলা|mr|marathi|मराठी|te|telugu|తెలుగు|ta|tamil|தமிழ்|gu|gujarati|ગુજરાતી|ur|urdu|اردو|kn|kannada|ಕನ್ನಡ|or|odia|oriya|ଓଡ଼ିଆ|ml|malayalam|മലയാളം|pa|punjabi|ਪੰਜਾਬੀ|hinglish)$/i.test(trimmed)
+    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye|taka|paisa|paise|dabbulu|panam)/i.test(trimmed)))
     const hasIncidentDetails = !isBareLangPick && Boolean(
       voiceTranscript || hasRealAmount || ext.upi || ext.phone || ext.utr || trimmed.length > 55
     )
@@ -486,66 +557,7 @@ You can send a **Voice Note 🎤**, type your message ✍️, or share a **Scree
       return await createAndSaveNewComplaint(session, session.accumulatedText, mediaUrl, voiceTranscript)
     }
 
-    const reply = (!session.forceNewComplaint && session.incidentId)
-      ? `✅ *भाषा बदलकर हिन्दी (Hindi) कर दी गई है।*
-
-नमस्ते! अब आपके सभी अपडेट और केस रिपोर्ट हिन्दी में प्रोसेस होंगे।
-📌 *सक्रिय घटना आईडी:* ${session.incidentId}
-
-🤖 आप नया विवरण, UTR नंबर, बैंक का नाम, या वॉयस नोट 🎤 भेजें — AI इसे स्वतः आपकी शिकायत में जोड़ देगा।
-👉 नई शिकायत शुरू करने के लिए *NEW* लिखकर भेजें।`
-      : `✅ *भाषा बदलकर हिन्दी (Hindi) कर दी गई है।*
-
-नमस्ते! अब हम हिन्दी में बात करेंगे। कृपया अपनी घटना का विवरण दें:
-• क्या हुआ? (जैसे: फर्जी बैंक कॉल, UPI धोखाधड़ी, निवेश घोटाला, ब्लैकमेल)
-• खोई हुई राशि (₹)
-• धोखेबाज़ का UPI ID, फोन नंबर, या बैंक खाता
-• 12-अंकों का UTR नंबर (यदि पैसे कटे हों)
-
-🎙️ आप एक **वॉयस नोट 🎤** भेज सकते हैं, लिखकर बता सकते हैं ✍️, या सीधे लेनदेन का **स्क्रीनशॉट 📸** भेज सकते हैं!`
-
-    session.history.push({ role: 'assistant', content: reply, timestamp })
-    return { reply, incidentId: session.incidentId }
-  }
-
-  if (isEnglishSwitchRequest) {
-    session.language = 'en'
-    if (session.stage === 'SELECT_LANGUAGE') {
-      session.stage = 'AWAITING_INCIDENT'
-    }
-
-    const ext = quickExtract(trimmed)
-    // A bare language / menu pick ("1", "2", "english", "hindi") is NOT incident content.
-    // quickExtract would otherwise read "1" / "2" as an amount and file a ₹1 complaint.
-    const isBareLangPick = /^(1|2|1️⃣|2️⃣|en|english|angrezi|angreji|hi|hindi|हिंदी|हिन्दी|hinglish)$/i.test(trimmed)
-    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye)/i.test(trimmed)))
-    const hasIncidentDetails = !isBareLangPick && Boolean(
-      voiceTranscript || hasRealAmount || ext.upi || ext.phone || ext.utr || trimmed.length > 55
-    )
-    if (hasIncidentDetails) {
-      session.stage = 'AWAITING_INCIDENT'
-      session.accumulatedText = (voiceTranscript || trimmed).trim()
-      return await createAndSaveNewComplaint(session, session.accumulatedText, mediaUrl, voiceTranscript)
-    }
-
-    const reply = (!session.forceNewComplaint && session.incidentId)
-      ? `✅ *Language switched to English.*
-
-All future updates and case reports will now be processed in English.
-📌 *Active Incident ID:* ${session.incidentId}
-
-🤖 You can send any additional details, UTR numbers, bank names, or voice notes 🎤 — AI will automatically add them to this complaint.
-👉 Reply *NEW* to start a fresh complaint.`
-      : `✅ *Language set to English.*
-
-Hello! We will now converse in English. Please describe what happened:
-• What occurred? (e.g. fake bank call, UPI fraud, investment scam)
-• Approximate amount lost (₹)
-• Fraudster's name, phone number, or UPI ID (if known)
-• 12-digit UTR reference (if money was debited)
-
-🎙️ You can send a **Voice Note 🎤**, type a message ✍️, or share a **Screenshot 📸** to begin!`
-
+    const reply = getLanguageSwitchedMessage(switchedLang, !session.forceNewComplaint ? session.incidentId : undefined)
     session.history.push({ role: 'assistant', content: reply, timestamp })
     return { reply, incidentId: session.incidentId }
   }
@@ -555,34 +567,18 @@ Hello! We will now converse in English. Please describe what happened:
   // update their existing complaint (unless they ask for status, greeting, or explicit new complaint).
   // Suppressed entirely while forceNewComplaint is set — the user is mid-way through filing a fresh case.
   if (!session.forceNewComplaint && session.incidentId && (session.stage === 'FILED' || session.stage === 'AWAITING_UPDATE_OR_NEW')) {
-    const isHi = session.language === 'hi'
     const noteText = (voiceTranscript || userInput).trim()
 
     // 1. Greeting with active case
     if (isInitialGreeting || isWebsiteDefaultMsg) {
       session.stage = 'FILED'
-      const greetingActiveCase = isHi
-        ? `👋 *नमस्ते! आपकी सक्रिय शिकायत हमारे पास दर्ज है:*
-📌 *घटना आईडी:* ${session.incidentId}
-
-🤖 *ऑटोमैटिक केस अपडेट सक्रिय है:*
-आप जो भी नया विवरण, UTR नंबर, बैंक का नाम, वॉयस नोट 🎤 या लेनदेन स्क्रीनशॉट 📸 भेजेंगे, AI उसे स्वतः पढ़कर आपकी शिकायत (*${session.incidentId}*) में जोड़ देगा।
-
-👉 यदि आप पूरी तरह से एक *नई शिकायत* दर्ज करना चाहते हैं, तो *NEW* या *नई शिकायत* लिखकर भेजें।`
-        : `👋 *Welcome back! You have an active complaint on file:*
-📌 *Incident ID:* ${session.incidentId}
-
-🤖 *Automatic Case Sync Active:*
-Any additional message, UTR number, bank details, voice note 🎤, or payment screenshot 📸 you send will be automatically read by AI and updated directly into this complaint (*${session.incidentId}*).
-
-👉 If you want to start a brand *NEW complaint* instead, simply reply *NEW*.`
-
+      const greetingActiveCase = getActiveComplaintGreeting(session.language, session.incidentId)
       session.history.push({ role: 'assistant', content: greetingActiveCase, timestamp })
       return { reply: greetingActiveCase, incidentId: session.incidentId }
     }
 
     // 2. Explicit command to start a brand new complaint
-    const isExplicitNew = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test(noteText)
+    const isExplicitNew = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत|নতুন|नवीन|కొత్త|புதிய|નવી|نیا|ಹೊಸ|ନୂତନ|പുതിയ|ਨਵੀਂ)$/i.test(noteText)
     if (isExplicitNew) {
       session.stage = 'AWAITING_INCIDENT'
       session.accumulatedText = ''
@@ -593,12 +589,7 @@ Any additional message, UTR number, bank details, voice note 🎤, or payment sc
       session.pendingVisionEvidence = undefined
       session.forceNewComplaint = true
 
-      const promptMsg = isHi
-        ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*
-कृपया अपनी नई घटना का विवरण दें: एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
-        : `🆕 *Starting a NEW Complaint in its entirety.*
-Please describe your new incident: send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
-
+      const promptMsg = getStartNewComplaintPrompt(session.language)
       session.history.push({ role: 'assistant', content: promptMsg, timestamp })
       return { reply: promptMsg }
     }
@@ -613,32 +604,23 @@ Please describe your new incident: send a **Voice Note 🎤** or type what happe
   // Route straight to createAndSaveNewComplaint; the flag is cleared there on success.
   if (session.forceNewComplaint) {
     const newText = (voiceTranscript || trimmed).trim()
-    const isJustNewCommand = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत)$/i.test(newText)
-    // Bare menu / navigation / language tokens are NOT an incident narrative. "1" and "2"
-    // in particular would otherwise be read by quickExtract as an amount of ₹1 / ₹2 and
-    // file a garbage complaint. Anything this short and keyword-like just re-prompts.
-    const isNavToken = /^(1|2|1️⃣|2️⃣|en|english|hi|hindi|हिंदी|हिन्दी|yes|no|ok|okay|start|menu|hello|hey|namaste)$/i.test(newText)
+    const isJustNewCommand = /^(new|start new|file new|new complaint|fresh|naya|nai|नई|नया|नई शिकायत|নতুন|नवीन|కొత్త|புதிய|ਨਵੀ|نیا|ಹೊಸ|ନୂତନ|പുതിയ|ਨਵੀਂ)$/i.test(newText)
+    const isNavToken = /^(?:[1-9]|1[0-2]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|8️⃣|9️⃣|🔟|1️⃣0️⃣|1️⃣1️⃣|1️⃣2️⃣|en|english|hi|hindi|bn|bengali|mr|marathi|te|telugu|ta|tamil|gu|gujarati|ur|urdu|kn|kannada|or|odia|ml|malayalam|pa|punjabi|yes|no|ok|okay|start|menu|hello|hey|namaste)$/i.test(newText)
     const ext = quickExtract(newText)
-    // Only trust an extracted amount when it actually looks like money (>= 3 digits or has a ₹/rs marker),
-    // not a lone "1" from a menu pick.
-    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye)/i.test(newText)))
+    const hasRealAmount = Boolean(ext.amount && (ext.amount >= 100 || /(?:rs\.?|inr|₹|rupees|rupaye|taka|paisa|paise)/i.test(newText)))
     const looksSubstantive = !isNavToken && Boolean(
       voiceTranscript || mediaUrl || imageBase64 ||
       (newText.length >= 25 && !isJustNewCommand) ||
       hasRealAmount || ext.upi || ext.phone || ext.utr
     )
-    // Bare "NEW" (or anything too thin to triage) — acknowledge and wait for the story.
     if (!looksSubstantive) {
-      const isHi = session.language === 'hi'
-      const askMsg = isHi
-        ? `🆕 *नई शिकायत दर्ज करना शुरू करें।*\nकृपया अपनी नई घटना का विवरण दें — एक **वॉयस नोट 🎤** भेजें या लिखकर बताएं कि क्या हुआ, कितनी राशि का नुकसान हुआ, और धोखेबाज़ की जानकारी।`
-        : `🆕 *Starting a NEW complaint.*\nPlease describe your new incident — send a **Voice Note 🎤** or type what happened, the amount lost, and any fraudster details.`
+      const askMsg = getStartNewComplaintPrompt(session.language)
       session.stage = 'AWAITING_INCIDENT'
       session.accumulatedText = ''
       session.history.push({ role: 'assistant', content: askMsg, timestamp })
       return { reply: askMsg }
     }
-    session.language = detectLanguage(newText || voiceTranscript || '') === 'hi' ? 'hi' : 'en'
+    session.language = detectLanguage(newText || voiceTranscript || '')
     session.stage = 'AWAITING_INCIDENT'
     const narrative = [session.accumulatedText, newText].filter(Boolean).join(' ').trim()
     session.accumulatedText = narrative
@@ -653,7 +635,7 @@ Please describe your new incident: send a **Voice Note 🎤** or type what happe
     console.log(`\n⚡ [WhatsApp Agent] DIRECT INCIDENT PROMPT DETECTED from +${session.phoneNumber}!`)
     console.log(`[WhatsApp Agent] Skipping intermediate menus and filing complaint directly...`)
 
-    session.language = detectLanguage(fullIncidentText) === 'hi' ? 'hi' : 'en'
+    session.language = detectLanguage(fullIncidentText)
     session.stage = 'AWAITING_INCIDENT'
     session.accumulatedText = fullIncidentText
     session.pendingUpdateText = undefined
@@ -669,54 +651,15 @@ Please describe your new incident: send a **Voice Note 🎤** or type what happe
 
   // STAGE 1: SELECT_LANGUAGE
   if (session.stage === 'SELECT_LANGUAGE') {
-    const isSelectEn = /^(1|1\.|1️⃣|en|english)$/i.test(trimmed)
-    const isSelectHi = /^(2|2\.|2️⃣|hindi|हिंदी|हिन्दी)$/i.test(trimmed)
-
-    if (isSelectEn) {
-      session.language = 'en'
-      session.stage = 'AWAITING_INCIDENT'
-      const reply = `✅ *Language set to English.*
-
-🎙️ *Voice Feature Ready — Test it out!*
-You can now test our voice feature capabilities! Send a **Voice Note 🎤** (or type a message) explaining what happened:
-
-• What occurred? (e.g. fake bank call, UPI fraud, investment scam)
-• Approximate amount lost (₹)
-• Fraudster's name, phone number, or UPI ID (if known)
-
-Send your voice note now, and I will listen, extract the details, and draft your official FIR complaint!`
-
-      session.history.push({ role: 'assistant', content: reply, timestamp })
-      return { reply }
-    }
-
-    if (isSelectHi) {
-      session.language = 'hi'
-      session.stage = 'AWAITING_INCIDENT'
-      const reply = `✅ *भाषा हिन्दी सेट की गई।*
-
-🎙️ *वॉयस सुविधा तैयार — अभी आज़माएं!*
-आप हमारी वॉयस सुविधा का परीक्षण कर सकते हैं! अपनी घटना बताते हुए एक **वॉयस नोट 🎤** (या लिखकर संदेश) भेजें:
-
-• क्या हुआ? (जैसे: फर्जी बैंक कॉल, UPI धोखाधड़ी, निवेश घोटाला)
-• खोई हुई राशि (₹)
-• आरोपी का नाम, मोबाइल नंबर या UPI ID (यदि उपलब्ध हो)
-
-अभी अपना वॉयस नोट भेजें, मैं इसे सुनकर कानूनी धाराओं की पहचान करूंगा और आपकी औपचारिक FIR शिकायत तैयार करूंगा!`
-
-      session.history.push({ role: 'assistant', content: reply, timestamp })
-      return { reply }
-    }
-
-    // Direct incident text or voice without picking 1/2
     const ext = quickExtract(trimmed)
-    const hasIncidentDetails = Boolean(voiceTranscript || ext.amount || ext.upi || ext.phone || trimmed.length > 40)
+    const isBareLangPick = /^(?:[1-9]|1[0-2]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|8️⃣|9️⃣|🔟|1️⃣0️⃣|1️⃣1️⃣|1️⃣2️⃣|en|english|hi|hindi|bn|bengali|mr|marathi|te|telugu|ta|tamil|gu|gujarati|ur|urdu|kn|kannada|or|odia|ml|malayalam|pa|punjabi)$/i.test(trimmed)
+    const hasIncidentDetails = !isBareLangPick && Boolean(voiceTranscript || ext.amount || ext.upi || ext.phone || trimmed.length > 40)
 
     if (!hasIncidentDetails) {
       return sendLanguageGreeting()
     }
 
-    session.language = detectLanguage(voiceTranscript || trimmed) === 'hi' ? 'hi' : 'en'
+    session.language = detectLanguage(voiceTranscript || trimmed)
     session.stage = 'AWAITING_INCIDENT'
   }
 
@@ -925,51 +868,7 @@ async function updateExistingComplaint(
   }
 
   const trackingLink = `${APP_URL}/dashboard?id=${incidentId}`
-  let reply = ''
-
-  if (filledItems.length > 0) {
-    reply = isHi
-      ? `✅ *शिकायत (${incidentId}) में विवरण स्वतः जोड़ दिया गया!*
-📌 *घटना आईडी:* ${incidentId}
-
-🤖 *AI ने पढ़ा और अपडेट किया:*
-${filledItems.map(f => `• ${f}`).join('\n')}
-
-⚖️ आपकी आधिकारिक पुलिस FIR शिकायत व बैंक फ्रीज निर्देश अपडेट कर दिए गए हैं।
-
-📄 *अपडेटेड शिकायत देखें:*
-${trackingLink}
-
-💡 *सुझाव:* नई शिकायत शुरू करने के लिए कभी भी *NEW* लिखें।`
-      : `✅ *Complaint (${incidentId}) Automatically Updated!*
-📌 *Incident ID:* ${incidentId}
-
-🤖 *AI Understood & Applied:*
-${filledItems.map(f => `• ${f}`).join('\n')}
-
-⚖️ Your official FIR draft and bank freeze instructions have been updated with these details.
-
-📄 *View Updated Complaint:*
-${trackingLink}
-
-💡 *Tip:* To start a brand new complaint anytime, reply *NEW*.`
-  } else {
-    reply = isHi
-      ? `✅ *अतिरिक्त जानकारी पुरानी शिकायत (${incidentId}) से जोड़ दी गई।*
-आपकी जानकारी घटना आईडी *${incidentId}* में दर्ज कर ली गई है।
-
-📄 *अपडेटेड केस देखें:*
-${trackingLink}
-
-💡 *सुझाव:* नई शिकायत शुरू करने के लिए *NEW* लिखें।`
-      : `✅ *Update Recorded on Complaint (${incidentId}).*
-Your note has been attached to Incident ID *${incidentId}*.
-
-📄 *Track Case:*
-${trackingLink}
-
-💡 *Tip:* To start a brand new complaint anytime, reply *NEW*.`
-  }
+  const reply = formatUpdateConfirmation(session.language, incidentId, filledItems, trackingLink)
 
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   session.history.push({ role: 'assistant', content: reply, timestamp })
@@ -984,6 +883,9 @@ async function createAndSaveNewComplaint(
   voiceTranscript?: string
 ): Promise<{ reply: string; filedComplaint: TriageResult; incidentId: string }> {
   const isHi = session.language === 'hi'
+  const langMeta = LANGUAGE_MAP[session.language] || LANGUAGE_MAP['en']
+  const targetLangName = langMeta.name
+  const targetNative = langMeta.nativeName
   const extracted = quickExtract(incidentText)
   const apiKey = process.env.OPENAI_API_KEY
   let triageResult: TriageResult
@@ -996,7 +898,7 @@ async function createAndSaveNewComplaint(
         messages: [
           {
             role: 'system',
-            content: `You are an Indian cybercrime triage officer. Return ONLY JSON matching TriageResult schema. Fields: fraudType (Financial Fraud, Women/Children Related Crime, Extortion & Blackmail, Identity Theft, E-Commerce Scams, Investment Scam, Other Cyber Crime), fraudsterIdentifier, complainantName, amount (number), bankName, accountNumber, upiId, timeline, summary (2 sentences), summaryHi, complaintDraft (formal police complaint), complaintDraftHi, freezeSteps (string[]), applicableLaws (string[]), frauderContact, recommendedChannel ("bank"|"agency"|"platform"|"helpline"), recommendedChannelTarget.
+            content: `You are an Indian cybercrime triage officer. Return ONLY JSON matching TriageResult schema. Fields: fraudType (Financial Fraud, Women/Children Related Crime, Extortion & Blackmail, Identity Theft, E-Commerce Scams, Investment Scam, Other Cyber Crime), fraudsterIdentifier, complainantName, amount (number), bankName, accountNumber, upiId, timeline, summary (2 sentences in English), summaryHi (2 sentences in Hindi), summaryRegional (2 sentences in ${targetLangName} / ${targetNative}), complaintDraft (formal police complaint in English), complaintDraftHi (formal police complaint in Hindi), complaintDraftRegional (formal police complaint in ${targetLangName} / ${targetNative}), freezeSteps (string[]), applicableLaws (string[]), frauderContact, recommendedChannel ("bank"|"agency"|"platform"|"helpline"), recommendedChannelTarget.
 
 COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a real name if the person explicitly states their own name in the narrative ("my name is X", "mera naam X hai"). If filing on behalf of someone else (e.g. "on behalf of X"), X is the victim, NOT the complainant! Set complainantName to the filer's name (or "Anonymous Complainant" if unnamed), and open complaintDraft with "I am filing this complaint on behalf of X regarding...". Otherwise set it to "Anonymous Complainant", open complaintDraft with "I am filing this complaint regarding..." (never "I, Anonymous Complainant"), and leave the address/city as "[Address / city — to be provided]".`,
           },
@@ -1083,8 +985,11 @@ COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a rea
         urgencyLevel: 'CRITICAL',
         summary: parsed.summary || 'Cyber fraud reported via WhatsApp triage bot.',
         summaryHi: parsed.summaryHi || 'व्हाट्सएप ट्रायज बॉट के माध्यम से साइबर धोखाधड़ी दर्ज की गई।',
+        summaryRegional: parsed.summaryRegional || (session.language === 'hi' ? parsed.summaryHi : undefined),
         complaintDraft: parsed.complaintDraft || `Formal complaint regarding unauthorized cyber fraud of ₹${extracted.amount || 0}.`,
         complaintDraftHi: parsed.complaintDraftHi || `अनधिकृत साइबर धोखाधड़ी की औपचारिक शिकायत।`,
+        complaintDraftRegional: parsed.complaintDraftRegional || (session.language === 'hi' ? parsed.complaintDraftHi : undefined),
+        language: session.language,
         frauderContact: parsed.frauderContact || (extracted.utr ? `UTR: ${extracted.utr}` : 'Not Provided'),
         bankName: parsed.bankName || 'Not Provided',
         accountNumber: parsed.accountNumber || 'Not Provided',
@@ -1096,10 +1001,10 @@ COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a rea
         recommendedChannelTarget: channelInfo.target,
       }
     } catch {
-      triageResult = generateFallbackResult(incidentText, extracted)
+      triageResult = generateFallbackResult(incidentText, extracted, session.language)
     }
   } else {
-    triageResult = generateFallbackResult(incidentText, extracted)
+    triageResult = generateFallbackResult(incidentText, extracted, session.language)
   }
 
   // Merge pending vision evidence if available
@@ -1129,6 +1034,9 @@ COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a rea
       const dbUrl = process.env.DATABASE_URL
       const { neon } = await import('@neondatabase/serverless')
       const sql = neon(dbUrl)
+      const regionalSummaryToSave = triageResult.summaryRegional || triageResult.summaryHi
+      const regionalDraftToSave = triageResult.complaintDraftRegional || triageResult.complaintDraftHi
+
       await sql`
         INSERT INTO complaints (
           incident_id, fraud_type, fraudster_identifier, complainant_name,
@@ -1141,9 +1049,9 @@ COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a rea
         ) VALUES (
           ${triageResult.incidentId}, ${triageResult.fraudType}, ${triageResult.fraudsterIdentifier}, ${triageResult.complainantName || ''},
           ${triageResult.amount}, ${triageResult.urgencyLevel},
-          ${triageResult.summary}, ${triageResult.summaryHi}, ${triageResult.complaintDraft}, ${triageResult.complaintDraftHi},
+          ${triageResult.summary}, ${regionalSummaryToSave}, ${triageResult.complaintDraft}, ${regionalDraftToSave},
           ${triageResult.frauderContact}, ${triageResult.bankName}, ${triageResult.accountNumber}, ${triageResult.upiId}, ${triageResult.timeline},
-          ${JSON.stringify(triageResult.freezeSteps)}, ${JSON.stringify(triageResult.applicableLaws)}, ${new Date().toISOString()}, ${isHi ? 'hi' : 'en'},
+          ${JSON.stringify(triageResult.freezeSteps)}, ${JSON.stringify(triageResult.applicableLaws)}, ${new Date().toISOString()}, ${session.language},
           'SUBMITTED', ${JSON.stringify([{ status: 'SUBMITTED', at: new Date().toISOString(), note: `Filed automatically via WhatsApp Bot (${session.phoneNumber})` }])},
           ${JSON.stringify(mediaUrl ? [mediaUrl] : [])}, ${JSON.stringify([{ id: `init-${Date.now()}`, citizenPhone: session.phoneNumber, note: 'Intake via WhatsApp' }])},
           ${triageResult.recommendedChannel || 'bank'}, ${triageResult.recommendedChannelTarget || 'Bank Nodal Officer'},
@@ -1172,47 +1080,14 @@ COMPLAINANT: This report comes via WhatsApp. Only set "complainantName" to a rea
     .map((l: any) => (typeof l === 'string' ? l : (l.section || l.title || 'IT Act')))
     .join(', ')
 
-  const voiceHeader = voiceTranscript
-    ? isHi
-      ? `🎙️ *वॉयस नोट सुना और ट्रांसक्राइब किया गया:*\n"${voiceTranscript}"\n\n`
-      : `🎙️ *Voice Note Heard & Transcribed:*\n"${voiceTranscript}"\n\n`
-    : ''
-
-  const reply = isHi
-    ? `${voiceHeader}🚨 *नई शिकायत सफलतापूर्वक दर्ज की गई!*
-📌 *घटना आईडी:* ${triageResult.incidentId}
-⚖️ *लागू कानून:* ${lawsList}
-💰 *राशि:* ₹${triageResult.amount.toLocaleString('en-IN')}
-👤 *आरोपी:* ${triageResult.fraudsterIdentifier}
-
-📋 *शिकायत का विवरण:*
-${triageResult.summaryHi || triageResult.summary}
-
-⚡ *तत्काल गोल्डन ऑवर कार्रवाई:*
-1. तुरंत 1930 हेल्पलाइन डायल करें और उपरोक्त घटना आईडी बताएं।
-2. अपने बैंक को कॉल करके UTR नंबर ${extracted.utr || 'लेनदेन संदर्भ'} फ्रीज करने को कहें।
-
-📄 *लाइव स्टेटस और औपचारिक FIR ड्राफ्ट देखें:*
-${trackingLink}
-
-💡 *सुझाव:* इस शिकायत में नया विवरण जोड़ने के लिए कभी भी संदेश भेजें, या नई रिपोर्ट के लिए *NEW* लिखें।`
-    : `${voiceHeader}🚨 *NEW COMPLAINT FILED IN ITS ENTIRETY!*
-📌 *Incident ID:* ${triageResult.incidentId}
-⚖️ *Applicable Laws:* ${lawsList}
-💰 *Amount:* ₹${triageResult.amount.toLocaleString('en-IN')}
-👤 *Reported Against:* ${triageResult.fraudsterIdentifier}
-
-📋 *Official Summary:*
-${triageResult.summary}
-
-⚡ *IMMEDIATE GOLDEN HOUR ACTIONS:*
-1. Dial 1930 Helpline immediately and quote Incident ID: ${triageResult.incidentId}.
-2. Contact your bank nodal desk to freeze beneficiary account (Ref: ${extracted.utr || 'Pending'}).
-
-📄 *Track Live & Download Formal Complaint:*
-${trackingLink}
-
-💡 *Tip:* Send updates (like UTRs) anytime to add to this case, or reply *NEW* for another case.`
+  const reply = formatComplaintFiledReply(
+    session.language,
+    triageResult,
+    lawsList,
+    extracted.utr,
+    trackingLink,
+    voiceTranscript
+  )
 
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   session.history.push({ role: 'assistant', content: reply, timestamp })
@@ -1224,7 +1099,7 @@ ${trackingLink}
   }
 }
 
-function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtract>): TriageResult {
+function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtract>, lang: SupportedLanguage = 'en'): TriageResult {
   const incidentId = generateId()
   const amount = ext.amount || 45000
   const fraudster = ext.upi || ext.phone || 'Fraudulent Entity'
@@ -1269,6 +1144,16 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
     ? `${namedComplainant ? `मैं, ${namedComplainant},` : 'मैं'} ${onBehalfOfTarget} की ओर से यह औपचारिक शिकायत दर्ज करा रहा हूँ:`
     : (namedComplainant ? `मैं, ${namedComplainant}, अपने खाते से` : 'मैं अपने खाते से')
 
+  const meta = LANGUAGE_MAP[lang] || LANGUAGE_MAP['en']
+
+  let summaryRegional: string | undefined = undefined
+  let complaintDraftRegional: string | undefined = undefined
+
+  if (lang !== 'en' && lang !== 'hi') {
+    summaryRegional = `${meta.nativeName}: ₹${amount.toLocaleString('en-IN')} WhatsApp AI Triage incident report.`
+    complaintDraftRegional = `Formal cybercrime complaint in ${meta.name} (${meta.nativeName}):\n${draftOpenerEn} an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from ${onBehalfOfTarget ? `${onBehalfOfTarget}'s account` : 'my account'}. Fraudster identifier: ${fraudster}. Registered under Section 66C and 66D IT Act 2000.`
+  }
+
   return {
     incidentId,
     fraudType: 'Financial Fraud',
@@ -1278,10 +1163,13 @@ function generateFallbackResult(text: string, ext: ReturnType<typeof quickExtrac
     urgencyLevel: 'CRITICAL',
     summary: `Unauthorized financial debit of ₹${amount.toLocaleString('en-IN')} reported via WhatsApp Bot.`,
     summaryHi: `व्हाट्सएप बॉट के माध्यम से ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी दर्ज की गई।`,
+    summaryRegional,
     complaintDraft: `To The Station House Officer / Cyber Crime Cell,
 ${draftOpenerEn} an unauthorized debit of ₹${amount.toLocaleString('en-IN')} from ${onBehalfOfTarget ? `${onBehalfOfTarget}'s account` : 'my account'}. The beneficiary identifier is ${fraudster}${ext.utr ? ` with transaction reference UTR: ${ext.utr}` : ''}. I request immediate lien-marking of funds and registration of FIR under Section 66C and 66D of Information Technology Act.${namedComplainant ? '' : '\n\n[Complainant address / city — to be provided]'}`,
     complaintDraftHi: `थाना प्रभारी / साइबर अपराध शाखा,
 ${draftOpenerHi} ₹${amount.toLocaleString('en-IN')} की अनधिकृत निकासी की औपचारिक शिकायत। आरोपी का पहचानकर्ता ${fraudster} है। कृपया आईटी अधिनियम की धारा 66C और 66D के तहत कार्रवाई करें।${namedComplainant ? '' : '\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]'}`,
+    complaintDraftRegional,
+    language: lang,
     frauderContact: ext.utr ? `Ref UTR: ${ext.utr}; Contact: ${ext.phone || 'Not Provided'}` : (ext.phone || 'Not Provided'),
     bankName: 'Bank Nodal Desk',
     accountNumber: 'Not Provided',

@@ -18,6 +18,8 @@ import ComplaintUpdates from '@/components/ComplaintUpdates'
 import CompulsoryDetailsReminder from '@/components/CompulsoryDetailsReminder'
 import { useComplaints, EvidenceImage, ComplaintUpdate } from '@/hooks/useComplaints'
 import { ComplaintStatus } from '@/data/scenarios'
+import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
+import { getTranslation } from '@/lib/i18n/translations'
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -33,6 +35,9 @@ function DashboardContent() {
   const searchParams = useSearchParams()
   const paramId = searchParams?.get('id')
   const { triageResult, setTriageResult, language, setLanguage, reset, sharedImage } = useTriage()
+  const t = getTranslation(language)
+  const meta = LANGUAGE_MAP[language] || LANGUAGE_MAP.en
+  const [activeDraftTab, setActiveDraftTab] = useState<'english' | 'regional'>(language === 'en' ? 'english' : 'regional')
   const { save, getById, advanceStatus, setStatusAtLeast, addEvidenceImage, removeEvidenceImage, addUpdate } = useComplaints()
   const [status, setStatus] = useState<ComplaintStatus>('SUBMITTED')
   const [evidenceImages, setEvidenceImages] = useState<EvidenceImage[]>([])
@@ -81,6 +86,9 @@ function DashboardContent() {
             summaryHi: record.summaryHi,
             complaintDraft: record.complaintDraft,
             complaintDraftHi: record.complaintDraftHi,
+            complaintDraftRegional: record.complaintDraftRegional,
+            summaryRegional: record.summaryRegional,
+            language: record.language,
             frauderContact: record.frauderContact,
             bankName: record.bankName,
             accountNumber: record.accountNumber,
@@ -127,8 +135,10 @@ function DashboardContent() {
     urgencyLevel: r.urgencyLevel,
     summary: r.summary,
     summaryHi: r.summaryHi,
+    summaryRegional: r.summaryRegional,
     complaintDraft: r.complaintDraft,
     complaintDraftHi: r.complaintDraftHi,
+    complaintDraftRegional: r.complaintDraftRegional,
     frauderContact: r.frauderContact,
     bankName: r.bankName,
     accountNumber: r.accountNumber,
@@ -359,7 +369,7 @@ function DashboardContent() {
           </motion.div>
         )}
       </AnimatePresence>
-      <PrintableComplaint result={r} language={language} />
+      <PrintableComplaint result={r} language={language} activeDraft={activeDraftTab} />
 
       <div className="no-print">
         <Navbar language={language} onLanguageToggle={() => setLanguage(language === 'en' ? 'hi' : 'en')} />
@@ -373,7 +383,7 @@ function DashboardContent() {
         incidentId={r.incidentId}
         fraudType={r.fraudType}
         amount={r.amount}
-        summary={hi ? r.summaryHi : r.summary}
+        summary={r.summaryRegional || (hi ? r.summaryHi : r.summary)}
         followUpPoints={allFollowUpPoints}
         updates={updates}
       />
@@ -384,7 +394,7 @@ function DashboardContent() {
         <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight">
-              {hi ? 'आपकी शिकायत तैयार है' : 'Your Report is Ready'}
+              {t.dashboard.title}
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">
               {hi ? 'AI द्वारा विवरण निकाला गया। संपादित करें और तुरंत कार्रवाई करें।'
@@ -532,19 +542,60 @@ function DashboardContent() {
                   />
                 </div>
 
-                {/* Complaint Draft */}
+                {/* Complaint Draft with Dual-Draft Tabs (English / Regional) */}
                 <div>
-                  <label htmlFor="complaint-draft" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5 flex justify-between">
-                    <span>{hi ? 'शिकायत मसौदा' : 'Complaint Draft'}</span>
-                    <span className="text-zinc-400 normal-case font-normal">{hi ? 'संपादन योग्य' : 'Editable'}</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="complaint-draft" className="block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                      <span>{t.dashboard.formalComplaintTitle}</span>
+                    </label>
+                    <span className="text-zinc-400 text-xs font-normal">{hi ? 'संपादन योग्य' : 'Editable'}</span>
+                  </div>
+
+                  {language !== 'en' && (
+                    <div className="flex items-center gap-1.5 mb-2.5 p-1 bg-zinc-100 rounded-lg w-fit">
+                      <button
+                        type="button"
+                        onClick={() => setActiveDraftTab('english')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                          activeDraftTab === 'english'
+                            ? 'bg-white text-zinc-900 shadow-xs font-semibold'
+                            : 'text-zinc-500 hover:text-zinc-900'
+                        }`}
+                      >
+                        {t.dashboard.tabEnglish}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveDraftTab('regional')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                          activeDraftTab === 'regional'
+                            ? 'bg-primary text-white shadow-xs font-semibold'
+                            : 'text-zinc-500 hover:text-zinc-900'
+                        }`}
+                      >
+                        {t.dashboard.tabRegional}
+                      </button>
+                    </div>
+                  )}
+
                   <textarea
                     id="complaint-draft"
-                    value={hi ? r.complaintDraftHi : r.complaintDraft}
-                    onChange={(e) => hi
-                      ? handleUpdate('complaintDraftHi', e.target.value)
-                      : handleUpdate('complaintDraft', e.target.value)
+                    value={
+                      activeDraftTab === 'english'
+                        ? (r.complaintDraft || '')
+                        : (language === 'hi'
+                            ? (r.complaintDraftHi || r.complaintDraft || '')
+                            : (r.complaintDraftRegional || r.complaintDraft || ''))
                     }
+                    onChange={(e) => {
+                      if (activeDraftTab === 'english') {
+                        handleUpdate('complaintDraft', e.target.value)
+                      } else if (language === 'hi') {
+                        handleUpdate('complaintDraftHi', e.target.value)
+                      } else {
+                        handleUpdate('complaintDraftRegional', e.target.value)
+                      }
+                    }}
                     rows={10}
                     className="w-full border border-zinc-200 rounded-md p-3 sm:p-4 text-base sm:text-sm font-mono leading-relaxed text-zinc-900 bg-zinc-50 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none"
                   />

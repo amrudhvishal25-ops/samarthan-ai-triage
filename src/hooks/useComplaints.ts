@@ -6,6 +6,7 @@ import {
   ComplaintStatus, ComplaintStatusEvent, COMPLAINT_STATUSES,
   RecommendedChannel,
 } from '@/data/scenarios'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 
 export interface EvidenceImage {
   id: string
@@ -31,8 +32,10 @@ export interface SavedComplaint {
   urgencyLevel: UrgencyLevel
   summary: string
   summaryHi: string
+  summaryRegional?: string
   complaintDraft: string
   complaintDraftHi: string
+  complaintDraftRegional?: string
   frauderContact: string
   bankName: string
   accountNumber: string
@@ -43,7 +46,7 @@ export interface SavedComplaint {
   recommendedChannel: RecommendedChannel
   recommendedChannelTarget: string
   savedAt: string
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   status: ComplaintStatus
   statusHistory: ComplaintStatusEvent[]
   evidenceImages: EvidenceImage[]
@@ -53,6 +56,7 @@ export interface SavedComplaint {
 const STORAGE_KEY = 'samarthan_complaints'
 
 function normalize(c: Partial<SavedComplaint>): SavedComplaint {
+  const isRegional = c.language && c.language !== 'en' && c.language !== 'hi'
   return {
     ...c,
     // Coerce every field the UI does math/string ops on, so a partial or
@@ -65,8 +69,10 @@ function normalize(c: Partial<SavedComplaint>): SavedComplaint {
     urgencyLevel: c.urgencyLevel ?? 'HIGH',
     summary: c.summary ?? '',
     summaryHi: c.summaryHi ?? '',
+    summaryRegional: c.summaryRegional ?? (isRegional ? c.summaryHi : undefined),
     complaintDraft: c.complaintDraft ?? '',
     complaintDraftHi: c.complaintDraftHi ?? '',
+    complaintDraftRegional: c.complaintDraftRegional ?? (isRegional ? c.complaintDraftHi : undefined),
     frauderContact: c.frauderContact ?? 'Not Provided',
     bankName: c.bankName ?? 'Not Provided',
     accountNumber: c.accountNumber ?? 'Not Provided',
@@ -90,6 +96,7 @@ function normalize(c: Partial<SavedComplaint>): SavedComplaint {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fromRow(row: Record<string, any>): SavedComplaint {
+  const isRegional = row.language && row.language !== 'en' && row.language !== 'hi'
   return normalize({
     incidentId: row.incident_id,
     fraudType: row.fraud_type,
@@ -99,8 +106,10 @@ function fromRow(row: Record<string, any>): SavedComplaint {
     urgencyLevel: row.urgency_level,
     summary: row.summary,
     summaryHi: row.summary_hi,
+    summaryRegional: row.summary_regional || (isRegional ? row.summary_hi : undefined),
     complaintDraft: row.complaint_draft,
     complaintDraftHi: row.complaint_draft_hi,
+    complaintDraftRegional: row.complaint_draft_regional || (isRegional ? row.complaint_draft_hi : undefined),
     frauderContact: row.frauder_contact,
     bankName: row.bank_name,
     accountNumber: row.account_number,
@@ -120,6 +129,7 @@ function fromRow(row: Record<string, any>): SavedComplaint {
 }
 
 function toRow(c: SavedComplaint) {
+  const isRegional = c.language && c.language !== 'en' && c.language !== 'hi'
   return {
     incident_id: c.incidentId,
     fraud_type: c.fraudType,
@@ -128,9 +138,9 @@ function toRow(c: SavedComplaint) {
     amount: c.amount,
     urgency_level: c.urgencyLevel,
     summary: c.summary,
-    summary_hi: c.summaryHi,
+    summary_hi: (isRegional ? c.summaryRegional : c.summaryHi) || c.summaryHi || '',
     complaint_draft: c.complaintDraft,
-    complaint_draft_hi: c.complaintDraftHi,
+    complaint_draft_hi: (isRegional ? c.complaintDraftRegional : c.complaintDraftHi) || c.complaintDraftHi || '',
     frauder_contact: c.frauderContact,
     bank_name: c.bankName,
     account_number: c.accountNumber,

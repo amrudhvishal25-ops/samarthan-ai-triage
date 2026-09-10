@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Phone, ExternalLink, Copy, CheckCheck } from 'lucide-react'
 import { FreezeStep } from '@/data/scenarios'
+import { SupportedLanguage } from '@/lib/i18n/languages'
 import clsx from 'clsx'
 
 interface FreezeStepperProps {
   steps: FreezeStep[]
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   onHotlineClick?: (hotline: string) => void
 }
 
