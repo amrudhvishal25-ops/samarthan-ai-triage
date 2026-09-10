@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { SCENARIOS, TriageResult, generateId, IT_ACT_SECTIONS } from '@/data/scenarios'
 import { inferChannelFromFraudType } from '@/data/escalationChannels'
 import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
+import {
+  extractMultilingualComplainant,
+  extractMultilingualOnBehalfOf,
+  extractMultilingualAmount,
+  normalizeCategoryHint,
+  getRegionalComplaintDraft
+} from '@/lib/i18n/multilingualRegex'
 import OpenAI from 'openai'
 import { Buffer } from 'node:buffer'
 
@@ -165,12 +172,15 @@ export async function POST(req: NextRequest) {
   let targetLanguage = 'en'
 
   const getDynamicMock = async (): Promise<TriageResult> => {
-    const inferredCategory = (categoryHint && categoryHint !== 'auto') 
+    const normalizedHint = normalizeCategoryHint(categoryHint)
+    const inferredCategory = normalizedHint || ((categoryHint && categoryHint !== 'auto') 
       ? categoryHint 
-      : 'Other Cyber Crime'
+      : 'Other Cyber Crime')
     
     const { channel: mockChannel, target: mockChannelTarget } =
       inferChannelFromFraudType(inferredCategory as any)
+
+    const cleanAmt = extractMultilingualAmount(userText) || (inferredCategory === 'Financial Fraud' ? 10000 : 0)
 
     return {
       incidentId: generateId(),
@@ -180,7 +190,7 @@ export async function POST(req: NextRequest) {
       recommendedChannel: mockChannel,
       recommendedChannelTarget: mockChannelTarget,
       frauderContact: 'Unknown',
-      amount: inferredCategory === 'Financial Fraud' ? 10000 : 0,
+      amount: cleanAmt,
       bankName: 'N/A',
       accountNumber: 'N/A',
       upiId: undefined,
@@ -191,7 +201,9 @@ export async function POST(req: NextRequest) {
       summaryRegional: `${inferredCategory} - AI Triage Summary`,
       complaintDraft: `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Cybercrime Complaint regarding ${inferredCategory}\n\nRespected Sir/Madam,\n\nI am filing this complaint regarding a cyber incident (${inferredCategory}). Please investigate this matter and take appropriate action.\n\n[Complainant address / city — to be provided]`,
       complaintDraftHi: `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCategory} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं ${inferredCategory} से संबंधित एक साइबर घटना की औपचारिक शिकायत दर्ज कर रहा हूँ। कृपया मामले की जांच करें और उचित कार्रवाई करें।\n\n[शिकायतकर्ता का पता / शहर — दिया जाना है]`,
-      complaintDraftRegional: `Formal Cybercrime Complaint regarding ${inferredCategory}.\n\n[Official Police Complaint Draft in selected language]`,
+      complaintDraftRegional: (targetLanguage && targetLanguage !== 'en')
+        ? getRegionalComplaintDraft(targetLanguage as SupportedLanguage, 'Anonymous Complainant', null, inferredCategory, userText || inferredCategory, cleanAmt)
+        : `Formal Cybercrime Complaint regarding ${inferredCategory}.\n\n[Official Police Complaint Draft in selected language]`,
       freezeSteps: [
         {
           step: 1,
@@ -403,40 +415,12 @@ In addition to the mandatory English "complaintDraft" (which is required by Cent
     }
 
     // Resolve complainant name with priority:
-    // 1. Explicit self-intro of the filer from narrative (e.g. "I am Rajesh", "Mera naam Rahul hai")
+    // 1. Explicit self-intro of the filer from narrative across all 12 languages
     // 2. Logged-in user's identity (e.g. from DigiLocker session)
     // 3. "Anonymous Complainant" — no name given and not signed in
     // CRITICAL: If the narrative says "on behalf of X", X is the victim, NOT the complainant!
-    let onBehalfOfTarget: string | null = null
-    const behalfAfterMatch = userText.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-    if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
-      onBehalfOfTarget = behalfAfterMatch[1].trim()
-    }
-    if (!onBehalfOfTarget) {
-      const behalfBeforeMatch = userText.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
-      if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
-        onBehalfOfTarget = behalfBeforeMatch[1].trim()
-      }
-    }
-
-    let selfIntroName: string | null = null
-    const explicitNameMatch = userText.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-    if (explicitNameMatch && explicitNameMatch[1]) {
-      const candidate = explicitNameMatch[1].trim()
-      if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
-        selfIntroName = candidate
-      }
-    }
-    if (!selfIntroName) {
-      const iAmMatch = userText.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-      if (iAmMatch && iAmMatch[1]) {
-        const candidate = iAmMatch[1].trim()
-        const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
-        if (!isVerbOrGrammar) {
-          selfIntroName = candidate
-        }
-      }
-    }
+    const onBehalfOfTarget = extractMultilingualOnBehalfOf(userText)
+    const selfIntroName = extractMultilingualComplainant(userText)
 
     const rawExtractedName = typeof parsed.complainantName === 'string' ? parsed.complainantName.trim() : ''
     const isGeneric = !rawExtractedName || /^(not (provided|identified|stated)|citizen complainant|anonymous complainant|unknown|none|na|n\/a)$/i.test(rawExtractedName)
@@ -505,18 +489,26 @@ In addition to the mandatory English "complaintDraft" (which is required by Cent
       return Number.isFinite(n) && n >= 0 ? n : 0
     }
 
+    const parsedAmt = num(parsed.amount)
+    const finalAmount = parsedAmt > 0 ? parsedAmt : extractMultilingualAmount(userText)
+
+    const normalizedCategoryHint = normalizeCategoryHint(categoryHint)
+    const resolvedFraudType = (VALID_FRAUD_TYPES.includes(parsed.fraudType)
+      ? parsed.fraudType
+      : (normalizedCategoryHint || (categoryHint && VALID_FRAUD_TYPES.includes(categoryHint) ? categoryHint : 'Other Cyber Crime'))) as TriageResult['fraudType']
+
     const safe: TriageResult = {
       incidentId: str(parsed.incidentId, generateId()),
       fraudsterIdentifier: str(parsed.fraudsterIdentifier, 'Not Identified'),
       complainantName: str(parsed.complainantName, 'Anonymous Complainant'),
-      fraudType: (VALID_FRAUD_TYPES.includes(parsed.fraudType) ? parsed.fraudType : (categoryHint && VALID_FRAUD_TYPES.includes(categoryHint) ? categoryHint : 'Other Cyber Crime')) as TriageResult['fraudType'],
+      fraudType: resolvedFraudType,
       frauderContact: str(parsed.frauderContact, 'Not Provided'),
-      amount: num(parsed.amount),
+      amount: finalAmount,
       bankName: str(parsed.bankName, 'Not Provided'),
       accountNumber: str(parsed.accountNumber, 'Not Provided'),
       upiId: typeof parsed.upiId === 'string' && parsed.upiId.trim() ? parsed.upiId.trim() : undefined,
       timeline: str(parsed.timeline, 'Not Provided'),
-      complaintDraft: str(parsed.complaintDraft, `I am filing this complaint regarding a cyber incident (${str(parsed.fraudType, 'Other Cyber Crime')}). ${str(parsed.summary, '')}`.trim()),
+      complaintDraft: str(parsed.complaintDraft, `I am filing this complaint regarding a cyber incident (${resolvedFraudType}). ${str(parsed.summary, '')}`.trim()),
       complaintDraftHi: str(parsed.complaintDraftHi, str(parsed.summaryHi, 'साइबर घटना के संबंध में औपचारिक शिकायत।')),
       freezeSteps: Array.isArray(parsed.freezeSteps) && parsed.freezeSteps.length
         ? parsed.freezeSteps
@@ -539,7 +531,18 @@ In addition to the mandatory English "complaintDraft" (which is required by Cent
       language: (targetLanguage || 'en') as SupportedLanguage,
       complaintDraftRegional: str(
         parsed.complaintDraftRegional,
-        targetLanguage === 'hi' ? str(parsed.complaintDraftHi, '') : str(parsed.complaintDraft, '')
+        targetLanguage === 'hi'
+          ? str(parsed.complaintDraftHi, '')
+          : (targetLanguage !== 'en'
+              ? getRegionalComplaintDraft(
+                  (targetLanguage || 'en') as SupportedLanguage,
+                  str(parsed.complainantName, 'Anonymous Complainant'),
+                  onBehalfOfTarget,
+                  resolvedFraudType,
+                  userText || resolvedFraudType,
+                  finalAmount
+                )
+              : str(parsed.complaintDraft, ''))
       ),
       summary: str(parsed.summary, 'A cyber incident was reported and triaged for immediate action.'),
       summaryHi: str(parsed.summaryHi, 'एक साइबर घटना दर्ज की गई और तत्काल कार्रवाई के लिए ट्रायज की गई।'),

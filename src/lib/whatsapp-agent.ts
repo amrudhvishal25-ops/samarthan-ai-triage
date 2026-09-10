@@ -12,6 +12,12 @@ import {
   formatComplaintFiledReply,
   formatUpdateConfirmation,
 } from '@/lib/whatsapp-templates'
+import {
+  normalizeIndicNumerals,
+  extractMultilingualAmount,
+  extractMultilingualComplainant,
+  MULTILINGUAL_GREETINGS_OR_NAV_REGEX
+} from '@/lib/i18n/multilingualRegex'
 
 const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://samarthan-ai-parichay-s-projects.vercel.app')
 const APP_URL = (rawAppUrl.includes('samarthan-ai.vercel.app') ? 'https://samarthan-ai-parichay-s-projects.vercel.app' : rawAppUrl).replace(/\/$/, '')
@@ -77,25 +83,59 @@ export function detectLanguage(text: string): SupportedLanguage {
   const trimmed = text.trim()
   if (!trimmed) return 'en'
 
-  // Unicode Script Regexes
-  if (/[\u0980-\u09FF]/.test(trimmed)) return 'bn' // Bengali / Assamese
-  if (/[\u0C00-\u0C7F]/.test(trimmed)) return 'te' // Telugu
-  if (/[\u0B80-\u0BFF]/.test(trimmed)) return 'ta' // Tamil
-  if (/[\u0A80-\u0AFF]/.test(trimmed)) return 'gu' // Gujarati
-  if (/[\u0600-\u06FF]/.test(trimmed)) return 'ur' // Urdu / Arabic script
-  if (/[\u0C80-\u0CFF]/.test(trimmed)) return 'kn' // Kannada
-  if (/[\u0B00-\u0B7F]/.test(trimmed)) return 'or' // Odia
-  if (/[\u0D00-\u0D7F]/.test(trimmed)) return 'ml' // Malayalam
-  if (/[\u0A00-\u0A7F]/.test(trimmed)) return 'pa' // Punjabi (Gurmukhi)
-
-  // Devanagari script: differentiate Marathi vs Hindi
-  if (/[\u0900-\u097F]/.test(trimmed)) {
-    const marathiMarkers = /(?:माझे|माझा|माझी|झाले|झाला|झाली|गेले|गेला|पैसे|तक्रार|खाते|खात्यातून|घोटाळा|पोलीस|आहे|नाही|नाहीत|केले|केला|होते|होता|फसवणूक|रुपये|बँक|नोंदवा|करण्यात)/
-    if (marathiMarkers.test(trimmed)) {
-      return 'mr'
-    }
-    return 'hi'
+  // Script frequency counting for maximum robustness against stray numerals/characters
+  const counts: Partial<Record<SupportedLanguage, number>> = {}
+  const addCount = (lang: SupportedLanguage, n: number) => {
+    counts[lang] = (counts[lang] || 0) + n
   }
+
+  const bnMatches = trimmed.match(/[\u0980-\u09FF]/g)
+  if (bnMatches) addCount('bn', bnMatches.length)
+
+  const teMatches = trimmed.match(/[\u0C00-\u0C7F]/g)
+  if (teMatches) addCount('te', teMatches.length)
+
+  const taMatches = trimmed.match(/[\u0B80-\u0BFF]/g)
+  if (taMatches) addCount('ta', taMatches.length)
+
+  const guMatches = trimmed.match(/[\u0A80-\u0AFF]/g)
+  if (guMatches) addCount('gu', guMatches.length)
+
+  const urMatches = trimmed.match(/[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]/g)
+  if (urMatches) addCount('ur', urMatches.length)
+
+  const knMatches = trimmed.match(/[\u0C80-\u0CFF]/g)
+  if (knMatches) addCount('kn', knMatches.length)
+
+  const orMatches = trimmed.match(/[\u0B00-\u0B7F]/g)
+  if (orMatches) addCount('or', orMatches.length)
+
+  const mlMatches = trimmed.match(/[\u0D00-\u0D7F]/g)
+  if (mlMatches) addCount('ml', mlMatches.length)
+
+  const paMatches = trimmed.match(/[\u0A00-\u0A7F]/g)
+  if (paMatches) addCount('pa', paMatches.length)
+
+  const devMatches = trimmed.match(/[\u0900-\u097F]/g)
+  if (devMatches) {
+    const marathiMarkers = /(?:माझे|माझा|माझी|माझ्या|झाले|झाला|झाली|गेले|गेला|पैसे|तक्रार|खाते|खात्यातून|घोटाळा|पोलीस|आहे|नाही|नाहीत|केले|केला|होते|होता|फसवणूक|रुपये|रुपयांची|बँक|नोंदवा|करण्यात|खंडणी|मागणी|दिसत)/
+    if (marathiMarkers.test(trimmed)) {
+      addCount('mr', devMatches.length)
+    } else {
+      addCount('hi', devMatches.length)
+    }
+  }
+
+  let topLang: SupportedLanguage | null = null
+  let maxCount = 0
+  for (const [l, count] of Object.entries(counts)) {
+    if (count && count > maxCount) {
+      maxCount = count
+      topLang = l as SupportedLanguage
+    }
+  }
+
+  if (topLang) return topLang
 
   // Romanized transliteration heuristics
   if (/\b(?:amar|amader|taka|hoyche|hoyechhe|geche|katlo|katse|thokano|bengali|bangla)\b/i.test(trimmed)) return 'bn'
@@ -219,13 +259,15 @@ export function matchLanguageSwitch(trimmed: string): SupportedLanguage | null {
 
 // Fast heuristic to extract UTR, amount, and handles from free text
 export function quickExtract(text: string) {
-  const amountMatch = text.match(/(?:rs\.?|inr|₹|amount|rupees|rupaye)?\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+)(?:\s*(?:rs|rupees|inr|hazar|k|lakh))?/i)
-  const utrMatch = text.match(/(?:utr|ref|reference|txn|transaction|imps|neft|upi\s*ref)[\s:#-]*([0-9]{12})/i)
-  const phoneMatch = text.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})/i)
-  const upiMatch = text.match(/[\w.-]+@[\w.-]+/i)
+  const normText = normalizeIndicNumerals(text)
+  const multilingualAmount = extractMultilingualAmount(normText)
+  const amountMatch = normText.match(/(?:rs\.?|inr|₹|amount|rupees|rupaye)?\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+)(?:\s*(?:rs|rupees|inr|hazar|k|lakh))?/i)
+  const utrMatch = normText.match(/(?:utr|ref|reference|txn|transaction|imps|neft|upi\s*ref)[\s:#-]*([0-9]{12})/i)
+  const phoneMatch = normText.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})/i)
+  const upiMatch = normText.match(/[\w.-]+@[\w.-]+/i)
 
   return {
-    amount: amountMatch ? parseInt(amountMatch[1].replace(/,/g, ''), 10) : undefined,
+    amount: multilingualAmount ?? (amountMatch ? parseInt(amountMatch[1].replace(/,/g, ''), 10) : undefined),
     utr: utrMatch ? utrMatch[1] : undefined,
     phone: phoneMatch ? phoneMatch[1] : undefined,
     upi: upiMatch ? upiMatch[0] : undefined,
@@ -236,8 +278,8 @@ export function isDetailedIncidentPrompt(text: string, voiceTranscript?: string)
   const full = (voiceTranscript || text).trim()
   if (!full) return false
 
-  // Disqualify short navigation keywords, greetings, and system numbers
-  if (/^(status|track|reset|\/reset|restart|clear|hi|hello|hey|namaste|help|madad|pranam|hlo|hii|yes|no|[1-9]|1[0-2]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|8️⃣|9️⃣|🔟|1️⃣0️⃣|1️⃣1️⃣|1️⃣2️⃣)$/i.test(full)) {
+  // Disqualify short navigation keywords, greetings, and system numbers across all 12 languages
+  if (MULTILINGUAL_GREETINGS_OR_NAV_REGEX.test(full) || /^(status|track|reset|\/reset|restart|clear|hi|hello|hey|namaste|help|madad|pranam|hlo|hii|yes|no|[1-9]|1[0-2]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|8️⃣|9️⃣|🔟|1️⃣0️⃣|1️⃣1️⃣|1️⃣2️⃣)$/i.test(full)) {
     return false
   }
 
@@ -676,12 +718,14 @@ async function extractUpdateDetailsWithAI(note: string) {
   const upiMatch = note.match(/[\w.-]+@[\w.-]+/)
   const phoneMatch = note.match(/(?:(?:\+?91)?[ -]?)?([6-9]\d{9})\b/)
   const accountMatch = note.match(/(?:a\/c|acc|account)[\s:#-]*([0-9]{9,18})/i)
-  let updateComplainantName: string | null = null
-  const explicitNameMatch = note.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-  if (explicitNameMatch && explicitNameMatch[1]) {
-    const candidate = explicitNameMatch[1].trim()
-    if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
-      updateComplainantName = candidate
+  let updateComplainantName: string | null = extractMultilingualComplainant(note)
+  if (!updateComplainantName) {
+    const explicitNameMatch = note.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
+    if (explicitNameMatch && explicitNameMatch[1]) {
+      const candidate = explicitNameMatch[1].trim()
+      if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
+        updateComplainantName = candidate
+      }
     }
   }
   if (!updateComplainantName) {
@@ -704,7 +748,7 @@ async function extractUpdateDetailsWithAI(note: string) {
     upiId: upiMatch ? upiMatch[0] : null,
     fraudsterIdentifier: fraudsterCorrectionMatch ? fraudsterCorrectionMatch[1].trim() : (phoneMatch ? phoneMatch[1] : upiMatch ? upiMatch[0] : null),
     accountNumber: accountMatch ? accountMatch[1] : null,
-    amount: null,
+    amount: extractMultilingualAmount(note) ?? null,
     amountIsAdditional: false,
     complainantName: updateComplainantName,
   }

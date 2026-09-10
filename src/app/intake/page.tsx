@@ -13,6 +13,13 @@ import Navbar from '@/components/Navbar'
 import { useAuth } from '@/hooks/useAuth'
 import { getTranslation } from '@/lib/i18n/translations'
 import { LANGUAGE_MAP } from '@/lib/i18n/languages'
+import {
+  extractMultilingualComplainant,
+  extractMultilingualOnBehalfOf,
+  extractMultilingualAmount,
+  normalizeCategoryHint,
+  getRegionalComplaintDraft
+} from '@/lib/i18n/multilingualRegex'
 
 function IntakeContent() {
   const router = useRouter()
@@ -59,81 +66,50 @@ function IntakeContent() {
     const buildClientFallback = (): TriageResult => {
       const finalTxt = finalTxtForFallback
       const user = getUser()
-      let onBehalfOfTarget: string | null = null
-      const behalfAfterMatch = finalTxt.match(/(?:on behalf of|behalf of)\s+(?:my\s+(?:father|mother|brother|sister|friend|wife|husband|colleague|relative|parent|uncle|aunt)\s+)?([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-      if (behalfAfterMatch && behalfAfterMatch[1] && !/^(him|her|them|someone|a|an|the|my|this|anyone|family|i|we)$/i.test(behalfAfterMatch[1])) {
-        onBehalfOfTarget = behalfAfterMatch[1].trim()
-      }
-      if (!onBehalfOfTarget) {
-        const behalfBeforeMatch = finalTxt.match(/([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)\s+(?:ke behalf (?:pe|par)?|ki taraf se)/i)
-        if (behalfBeforeMatch && behalfBeforeMatch[1] && !/^(unke|iske|apne|kisi|kisi ke|sabke)$/i.test(behalfBeforeMatch[1])) {
-          onBehalfOfTarget = behalfBeforeMatch[1].trim()
-        }
-      }
-
-      let detectedSelfName: string | null = null
-      const explicitNameMatch = finalTxt.match(/(?:my name is|mera naam|naam hai)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-      if (explicitNameMatch && explicitNameMatch[1]) {
-        const candidate = explicitNameMatch[1].trim()
-        if (!/^(a|an|the|not|none|unknown)$/i.test(candidate)) {
-          detectedSelfName = candidate
-        }
-      }
-      if (!detectedSelfName) {
-        const iAmMatch = finalTxt.match(/(?:i am|main hoon|mai hoon)\s+([A-Za-z\u0900-\u097F]+(?:\s+[A-Za-z\u0900-\u097F]+)?)/i)
-        if (iAmMatch && iAmMatch[1]) {
-          const candidate = iAmMatch[1].trim()
-          const isVerbOrGrammar = /\b(filing|writing|lodging|reporting|calling|facing|complaining|reaching|seeking|trying|unable|contacting|victim|scammed|cheated|looted|here|a|an|the|not|sorry|now|very)\b/i.test(candidate)
-          if (!isVerbOrGrammar) {
-            detectedSelfName = candidate
-          }
-        }
-      }
-
+      const onBehalfOfTarget = extractMultilingualOnBehalfOf(finalTxt)
+      const detectedSelfName = extractMultilingualComplainant(finalTxt)
       const detectedName = detectedSelfName || user?.name || 'Parichay Prabhu'
 
-      const inferredCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
-      const rawAmount = (finalTxt.match(/(?:₹|rs\.?|inr)\s*([\d,]+)/i) || finalTxt.match(/(\d+)\s*(?:rupees|rs)/i))?.[1]
-      const cleanAmount = rawAmount ? parseInt(rawAmount.replace(/,/g, ''), 10) : 0
+      const rawCat = (categoryParam && categoryParam !== 'auto') ? categoryParam : 'Financial Fraud'
+      const mappedCat = normalizeCategoryHint(rawCat) || 'Financial Fraud'
+      const cleanAmount = extractMultilingualAmount(finalTxt)
       const idNum = generateId()
+      const inferred = inferChannelFromFraudType(mappedCat)
 
-      const categoryMap: Record<string, string> = {'वित्तीय धोखाधड़ी': 'Financial Fraud', 'महिला/बाल अपराध': 'Women/Children Related Crime', 'जबरन वसूली': 'Extortion & Blackmail', 'पहचान की चोरी': 'Identity Theft', 'ई-कॉमर्स धोखाधड़ी': 'E-Commerce Scams', 'अन्य साइबर अपराध': 'Other Cyber Crime'}
-      const mappedCat = categoryMap[inferredCat] || inferredCat
-      const inferred = inferChannelFromFraudType(mappedCat as any)
       return {
         incidentId: idNum,
         fraudsterIdentifier: 'Not Identified',
         complainantName: detectedName,
-        fraudType: inferredCat as any,
+        fraudType: mappedCat,
         recommendedChannel: inferred.channel,
         recommendedChannelTarget:
           inferred.channel === 'bank'
             ? (finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'the bank')
             : inferred.target,
         frauderContact: 'Unknown',
-        amount: cleanAmount || (inferredCat === 'Financial Fraud' ? 15000 : 0),
+        amount: cleanAmount || (mappedCat === 'Financial Fraud' ? 15000 : 0),
         bankName: finalTxt.match(/sbi|hdfc|icici|axis|kotak|pnb/i)?.[0]?.toUpperCase() || 'N/A',
         accountNumber: 'N/A',
         upiId: finalTxt.match(/[\w.-]+@[\w.-]+/)?.[0] || undefined,
         timeline: new Date().toLocaleString('en-IN'),
-        summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${inferredCat}.`,
-        summaryHi: `${inferredCat} के तहत साइबर घटना दर्ज की गई।`,
+        summary: finalTxt.length > 20 ? finalTxt.substring(0, 180) + '...' : `Cyber incident reported under ${mappedCat}.`,
+        summaryHi: `${mappedCat} के तहत साइबर घटना दर्ज की गई।`,
         summaryRegional: language === 'hi'
-          ? `${inferredCat} के तहत साइबर घटना दर्ज की गई।`
-          : (language !== 'en' ? `[${meta.nativeName}]: Cyber incident reported under ${inferredCat}.` : undefined),
+          ? `${mappedCat} के तहत साइबर घटना दर्ज की गई।`
+          : (language !== 'en' ? `[${meta.nativeName}]: ${finalTxt.substring(0, 140) || mappedCat}` : undefined),
         language,
         complaintDraft: onBehalfOfTarget
-          ? `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint on behalf of ${onBehalfOfTarget} regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`
-          : `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${inferredCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings.\n\nYours faithfully,\n${detectedName}`,
+          ? `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${mappedCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint on behalf of ${onBehalfOfTarget} regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings under IT Act.\n\nYours faithfully,\n${detectedName}`
+          : `To,\nThe Station House Officer,\nCyber Crime Cell\n\nSubject: Formal Complaint Regarding ${mappedCat}\n\nRespected Sir/Madam,\n\nI, ${detectedName}, hereby lodge a formal complaint regarding an unauthorized incident: ${finalTxt || 'Online cyber fraud'}.\n\nKindly investigate the matter and initiate legal proceedings under IT Act.\n\nYours faithfully,\n${detectedName}`,
         complaintDraftHi: onBehalfOfTarget
-          ? `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, ${onBehalfOfTarget} की ओर से इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`
-          : `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`,
+          ? `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${mappedCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, ${onBehalfOfTarget} की ओर से इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया आईटी अधिनियम के तहत त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`
+          : `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${mappedCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया आईटी अधिनियम के तहत त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`,
         complaintDraftRegional: language === 'hi'
           ? (onBehalfOfTarget
-              ? `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, ${onBehalfOfTarget} की ओर से इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`
-              : `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${inferredCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`)
+              ? `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${mappedCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, ${onBehalfOfTarget} की ओर से इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`
+              : `सेवा में,\nथाना प्रभारी,\nसाइबर क्राइम सेल\n\nविषय: ${mappedCat} के संबंध में औपचारिक शिकायत\n\nमहोदय,\n\nमैं, ${detectedName}, इस अनधिकृत घटना की रिपोर्ट दर्ज करा रहा हूँ: ${finalTxt || 'साइबर धोखाधड़ी'}।\n\nकृपया त्वरित कानूनी कार्रवाई करें।\n\nभवदीय,\n${detectedName}`)
           : (language !== 'en'
-              ? `[${meta.nativeName} Draft / ${meta.name}]:\nTo Station House Officer, Cyber Police Station.\nComplainant: ${detectedName}${onBehalfOfTarget ? ` (on behalf of ${onBehalfOfTarget})` : ''}.\nIncident: ${finalTxt || inferredCat}. Action requested under Section 66D IT Act.`
+              ? getRegionalComplaintDraft(language, detectedName, onBehalfOfTarget, mappedCat, finalTxt || mappedCat, cleanAmount)
               : undefined),
         freezeSteps: [
           {
