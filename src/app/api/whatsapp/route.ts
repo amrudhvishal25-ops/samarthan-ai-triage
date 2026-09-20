@@ -1,169 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getOrCreateSession, processWhatsAppTurn, clearAllWhatsAppSessions } from '@/lib/whatsapp-agent'
+import { getOrCreateSession, processWhatsAppTurn } from '@/lib/whatsapp-agent'
 import { SupportedLanguage, LANGUAGE_MAP } from '@/lib/i18n/languages'
 import OpenAI, { toFile } from 'openai'
-import { NEUTRAL_WHISPER_PROMPT, normalizeSpeechTranscript } from '@/lib/speech-normalizer'
+import { NEUTRAL_WHISPER_PROMPT } from '@/lib/speech-normalizer'
+import { checkDailyLimit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// GET /api/whatsapp -> Meta Cloud API Webhook verification
-export async function GET(req: NextRequest) {
-  if (req.nextUrl.searchParams.get('action') === 'clear') {
-    clearAllWhatsAppSessions()
-    return NextResponse.json({ status: 'cleared', message: 'All active WhatsApp bot sessions cleared' })
-  }
+const MAX_SIMULATOR_REQUEST_BYTES = 4_000_000
 
+// Reserved for a future, signed WhatsApp provider integration. The public
+// browser demo does not expose session reset, bot controls, or webhook access.
+export async function GET(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get('hub.mode')
   const token = req.nextUrl.searchParams.get('hub.verify_token')
   const challenge = req.nextUrl.searchParams.get('hub.challenge')
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN
 
-  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'samarthan_token_2026'
-
-  if (mode === 'subscribe' && token === verifyToken) {
+  if (mode === 'subscribe' && verifyToken && token === verifyToken && challenge) {
     return new Response(challenge, { status: 200 })
   }
 
-  return NextResponse.json({ status: 'active', service: 'Samarthan WhatsApp Cybercrime Bot' })
+  return NextResponse.json({ error: 'Not found' }, { status: 404 })
 }
 
-// POST /api/whatsapp -> Inbound message handler
+// The only supported public caller is the in-app simulator. Reports and chat
+// context are held in the browser/current function session and are not saved.
 export async function POST(req: NextRequest) {
+  const contentLength = Number(req.headers.get('content-length') || '0')
+  if (contentLength > MAX_SIMULATOR_REQUEST_BYTES) {
+    return NextResponse.json({ error: 'This file is too large for the demo.' }, { status: 413 })
+  }
+
+  if (!req.headers.get('content-type')?.includes('application/json')) {
+    return NextResponse.json({ error: 'JSON requests only.' }, { status: 415 })
+  }
+
   try {
-    const contentType = req.headers.get('content-type') || ''
-    let from = 'anonymous-citizen'
-    let body = ''
-    let mediaUrl: string | undefined
-    let isTwilio = false
-    let voiceTranscript = ''
-    let isResetPing = false
+    const json = await req.json()
+    if (json.isSimulator !== true) {
+      return NextResponse.json({ error: 'This endpoint is only for the in-app demo.' }, { status: 403 })
+    }
 
-    let imageBase64: string | undefined = undefined
+    const { allowed } = await checkDailyLimit(req, { scope: 'simulator', limit: 25 })
+    if (!allowed) {
+      return NextResponse.json({
+        error: 'Demo limit reached. Please try again tomorrow or use the main report form.',
+      }, { status: 429 })
+    }
 
-    if (contentType.includes('application/x-www-form-urlencoded')) {
-      isTwilio = true
-      const formData = await req.formData()
-      from = (formData.get('From') as string) || 'whatsapp:+919876543210'
-      body = (formData.get('Body') as string) || ''
-      const numMedia = parseInt((formData.get('NumMedia') as string) || '0', 10)
+    const from = typeof json.phoneNumber === 'string' && json.phoneNumber.length <= 100
+      ? json.phoneNumber
+      : 'simulated-user'
+    let body = typeof json.message === 'string' ? json.message.slice(0, 12_000) : ''
+    let voiceTranscript = typeof json.voiceTranscript === 'string' ? json.voiceTranscript.slice(0, 12_000) : ''
+    const mediaUrl = typeof json.mediaUrl === 'string' ? json.mediaUrl : undefined
+    const imageBase64 = typeof json.imageBase64 === 'string' ? json.imageBase64 : undefined
+    const activeIncidentId = typeof json.activeIncidentId === 'string' ? json.activeIncidentId : undefined
+    const isExplicitReset = json.activeIncidentId === null || json.resetSession === true
+    const forceNew = json.forceNew === true
+    const isResetPing = json.resetSession === true || forceNew || json.activeIncidentId === null
 
-      if (numMedia > 0) {
-        mediaUrl = (formData.get('MediaUrl0') as string) || undefined
-        const mediaType = (formData.get('MediaContentType0') as string) || ''
+    const session = getOrCreateSession(from)
+    ;(session as any).isSimulator = true
+    if (typeof json.language === 'string' && json.language in LANGUAGE_MAP) {
+      session.language = json.language as SupportedLanguage
+      if (session.stage === 'SELECT_LANGUAGE') session.stage = 'AWAITING_INCIDENT'
+    }
 
-        // If it's a voice note, transcribe into English
-        if (mediaType.includes('audio') && mediaUrl) {
-          try {
-            const transcribed = await transcribeAudioUrl(mediaUrl)
-            if (transcribed?.text) {
-              voiceTranscript = transcribed.text
-              body = body ? `${body} (Voice note: "${transcribed.text}")` : transcribed.text
-            }
-          } catch (e) {
-            console.error('[WhatsApp Webhook] Audio transcription error:', e)
-          }
-        }
-      }
-    } else {
-      const json = await req.json()
-      from = json.phoneNumber || json.From || 'simulated-user'
-      body = json.message || json.Body || ''
-      mediaUrl = json.mediaUrl
-      voiceTranscript = json.voiceTranscript || ''
-      imageBase64 = json.imageBase64
-      const activeIncidentId = json.activeIncidentId || undefined
-      const isExplicitReset = json.activeIncidentId === null || json.resetSession === true
-      // Sticky signal from the bot: user is in "NEW complaint" mode and stays there
-      // (across every follow-up message) until a fresh complaint is actually filed.
-      const forceNew = json.forceNew === true
-      isResetPing = json.resetSession === true || json.forceNew === true || json.activeIncidentId === null
-
-      const session = getOrCreateSession(from)
-      if (json.isSimulator) {
-        ;(session as any).isSimulator = true
-      }
-      if (json.isSimulator && json.language && json.language in LANGUAGE_MAP) {
-        session.language = json.language as SupportedLanguage
-        if (session.stage === 'SELECT_LANGUAGE') {
-          session.stage = 'AWAITING_INCIDENT'
-        }
-      } else if (!json.isSimulator) {
-        // Real WhatsApp bot is strictly English per user requirement
-        session.language = 'en'
-      }
-
-      if (isExplicitReset) {
-        // Explicitly clear the incident and session memory
-        session.incidentId = undefined
+    if (isExplicitReset) {
+      session.incidentId = undefined
+      session.stage = 'AWAITING_INCIDENT'
+      session.history = []
+      session.accumulatedText = ''
+      session.extractedData = undefined
+      session.pendingUpdateText = undefined
+      session.pendingMediaUrl = undefined
+      session.pendingVisionEvidence = undefined
+      session.missingFields = []
+      session.forceNewComplaint = true
+    } else if (forceNew) {
+      session.forceNewComplaint = true
+      session.incidentId = undefined
+      if (session.stage === 'FILED' || session.stage === 'SELECT_LANGUAGE') {
         session.stage = 'AWAITING_INCIDENT'
-        session.history = []
-        session.accumulatedText = ''
-        session.extractedData = undefined
-        session.pendingUpdateText = undefined
-        session.pendingMediaUrl = undefined
-        session.pendingVisionEvidence = undefined
-        session.missingFields = []
-        session.forceNewComplaint = true
-        ;(session as any)._skipDbRestore = true
-      } else if (forceNew) {
-        // Do NOT clear an in-progress force-new session's accumulated narrative here -
-        // only (re)assert the sticky flag and make sure no stale incident is attached.
-        session.forceNewComplaint = true
-        session.incidentId = undefined
-        if (session.stage === 'FILED' || session.stage === 'SELECT_LANGUAGE') {
-          session.stage = 'AWAITING_INCIDENT'
-        }
-        session.pendingUpdateText = undefined
-        session.pendingVisionEvidence = undefined
-        ;(session as any)._skipDbRestore = true
-      } else if (activeIncidentId) {
-        session.incidentId = activeIncidentId
-        session.stage = 'FILED'
       }
+      session.pendingUpdateText = undefined
+      session.pendingVisionEvidence = undefined
+    } else if (activeIncidentId) {
+      // This only preserves the current simulator's flow; it is never used to
+      // look up a report in shared storage.
+      session.incidentId = activeIncidentId
+      session.stage = 'FILED'
+    }
 
-      const audioMimeType = json.audioMimeType || 'audio/webm'
-      if (!voiceTranscript && json.audioBase64) {
-        try {
-          const transcribed = await transcribeAudioBase64(json.audioBase64, audioMimeType)
-          if (transcribed?.text) {
-            voiceTranscript = transcribed.text
-            body = body ? `${body} (Voice Note: "${transcribed.text}")` : transcribed.text
-            session.language = 'en'
-            if (session.stage === 'SELECT_LANGUAGE') session.stage = 'AWAITING_INCIDENT'
-          } else if (!body) {
-            body = 'Voice note complaint details'
-          }
-        } catch (e) {
-          console.error('[WhatsApp Webhook] Audio base64 transcription error:', e)
-          if (!body) body = 'Voice note audio'
-        }
+    const audioMimeType = typeof json.audioMimeType === 'string' ? json.audioMimeType : 'audio/webm'
+    if (!voiceTranscript && typeof json.audioBase64 === 'string') {
+      const transcribed = await transcribeAudioBase64(json.audioBase64, audioMimeType)
+      if (transcribed?.text) {
+        voiceTranscript = transcribed.text
+        body = body ? `${body} (Voice Note: "${transcribed.text}")` : transcribed.text
+      } else if (!body) {
+        body = 'Voice note complaint details'
       }
     }
 
     if (!body && !mediaUrl && !voiceTranscript && !imageBase64) {
-      // A reset ping legitimately carries no message - the session was already
-      // cleared above. Acknowledge with 200 instead of a 400 the caller ignores.
-      if (isResetPing) {
-        return NextResponse.json({ success: true, reply: '', reset: true }, { status: 200 })
-      }
+      if (isResetPing) return NextResponse.json({ success: true, reply: '', reset: true })
       return NextResponse.json({ error: 'Empty message' }, { status: 400 })
     }
 
-    const session = getOrCreateSession(from)
     const result = await processWhatsAppTurn(session, body, mediaUrl, voiceTranscript, imageBase64)
-
-    if (isTwilio) {
-      // Return TwiML XML response for Twilio WhatsApp
-      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Message>${escapeXml(result.reply)}</Message>
-</Response>`
-      return new Response(twiml, {
-        status: 200,
-        headers: { 'Content-Type': 'text/xml' },
-      })
-    }
-
     return NextResponse.json({
       success: true,
       reply: result.reply,
@@ -176,100 +124,43 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error: unknown) {
-    console.error('[WhatsApp Webhook] Error:', error)
-    // Never dead-end a WhatsApp user. Return HTTP 200 with a helpful reply so
-    // the bot relays something actionable instead of a vague sync message.
-    const friendly =
-      '⚠️ I could not fully process that just now. Please re-send your message, ' +
-      'or if this is urgent, call the 1930 cybercrime helpline immediately and ' +
-      'file at cybercrime.gov.in.'
-    return NextResponse.json({ success: false, reply: friendly }, { status: 200 })
-  }
-}
-
-async function transcribeAudioUrl(
-  audioUrl: string
-): Promise<{ text: string; detectedLanguage: SupportedLanguage } | null> {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
-    return { text: 'I transferred 45000 rupees to a fraudster.', detectedLanguage: 'en' }
-  }
-
-  const res = await fetch(audioUrl)
-  if (!res.ok) return null
-
-  const blob = await res.blob()
-  const buffer = Buffer.from(await blob.arrayBuffer())
-  const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' })
-
-  const openai = new OpenAI({ apiKey })
-
-  try {
-    // WhatsApp transcription must strictly be in English per user requirement
-    const translation = await openai.audio.translations.create({
-      file,
-      model: 'whisper-1',
-      prompt: NEUTRAL_WHISPER_PROMPT,
-    })
-
-    const text = translation.text.trim()
-    if (!text) return null
-
-    return { text, detectedLanguage: 'en' }
-  } catch (err: any) {
-    console.warn('[transcribeAudioUrl] Whisper translation error:', err?.message)
-    return null
+    console.error('[WhatsApp simulator] Error:', error)
+    return NextResponse.json({
+      success: false,
+      reply: 'I could not process that. Please try again, or call 1930 if this is urgent.',
+    }, { status: 200 })
   }
 }
 
 async function transcribeAudioBase64(
   base64Data: string,
-  mimeType: string = 'audio/webm'
+  mimeType = 'audio/webm',
 ): Promise<{ text: string; detectedLanguage: SupportedLanguage } | null> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey || apiKey === 'mock-key' || !apiKey.startsWith('sk-')) {
     return { text: 'I transferred 45000 rupees to a fraudster.', detectedLanguage: 'en' }
   }
 
-  const buffer = Buffer.from(base64Data, 'base64')
-  let ext = 'webm'
   const cleanMime = mimeType.split(';')[0].trim() || 'audio/webm'
-  if (cleanMime.includes('mp4') || cleanMime.includes('m4a') || cleanMime.includes('aac')) ext = 'mp4'
-  else if (cleanMime.includes('wav')) ext = 'wav'
-  else if (cleanMime.includes('ogg')) ext = 'ogg'
-  else if (cleanMime.includes('webm')) ext = 'webm'
-
-  const file = await toFile(buffer, `voicenote.${ext}`, { type: cleanMime })
-
-  const openai = new OpenAI({ apiKey })
+  const ext = cleanMime.includes('mp4') || cleanMime.includes('m4a') || cleanMime.includes('aac')
+    ? 'mp4'
+    : cleanMime.includes('wav')
+      ? 'wav'
+      : cleanMime.includes('ogg')
+        ? 'ogg'
+        : 'webm'
+  const file = await toFile(Buffer.from(base64Data, 'base64'), `voicenote.${ext}`, { type: cleanMime })
 
   try {
-    // WhatsApp transcription must strictly be in English per user requirement
-    const translation = await openai.audio.translations.create({
+    const translation = await new OpenAI({ apiKey }).audio.translations.create({
       file,
       model: 'whisper-1',
       prompt: NEUTRAL_WHISPER_PROMPT,
     })
-
     const text = translation.text.trim()
-    if (!text) return null
-
-    return { text, detectedLanguage: 'en' }
-  } catch (err: any) {
-    console.warn('[transcribeAudioBase64] Whisper translation error:', err?.message)
+    return text ? { text, detectedLanguage: 'en' } : null
+  } catch (error: unknown) {
+    console.warn('[WhatsApp simulator] Audio transcription failed:', error instanceof Error ? error.message : error)
     return null
   }
-}
-
-function escapeXml(unsafe: string): string {
-  return unsafe.replace(/[<>&'"]/g, (c) => {
-    switch (c) {
-      case '<': return '&lt;'
-      case '>': return '&gt;'
-      case '&': return '&amp;'
-      case '\'': return '&apos;'
-      case '"': return '&quot;'
-      default: return c
-    }
-  })
 }

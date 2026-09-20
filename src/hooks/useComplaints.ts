@@ -224,57 +224,11 @@ function writeLocal(all: SavedComplaint[]) {
   }
 }
 
-function invalidateCache() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (globalThis as any).__complaintsCache
-}
-
-async function apiGet(id?: string): Promise<Response> {
-  const url = id ? `/api/complaints?id=${encodeURIComponent(id)}` : '/api/complaints'
-  return fetch(url)
-}
-
-async function apiPost(body: unknown): Promise<Response> {
-  return fetch('/api/complaints', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-}
-
-async function apiPatch(body: unknown): Promise<Response> {
-  return fetch('/api/complaints', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-}
-
-const CACHE_TTL = 30000 // 30s
-
 export function useComplaints() {
-  const getAll = useCallback(async (forceRefresh = false): Promise<SavedComplaint[]> => {
-    // Read complaints filed on this user's browser/device only
-    const local = readLocal()
-    if (local.length === 0) return []
-
-    // If refresh requested, sync updates from DB for ONLY this user's incident IDs
-    if (forceRefresh) {
-      try {
-        const updated = await Promise.all(
-          local.map(async (c) => {
-            try {
-              const res = await apiGet(c.incidentId)
-              if (res.ok) {
-                const row = await res.json()
-                if (row && row.incident_id) {
-                  return fromRow(row)
-                }
-              }
-            } catch { /* keep local copy */ }
-            return c
-          })
-        )
-        writeLocal(updated)
-        return updated
-      } catch {
-        return local
-      }
-    }
-
-    return local
+  const getAll = useCallback(async (_forceRefresh = false): Promise<SavedComplaint[]> => {
+    // Reports never leave this browser. This deliberately avoids storing
+    // sensitive complaint details in the shared demo backend.
+    return readLocal()
   }, [])
 
   const save = useCallback(async (complaint: Omit<SavedComplaint, 'savedAt' | 'status' | 'statusHistory' | 'evidenceImages' | 'updates'>) => {
@@ -308,30 +262,10 @@ export function useComplaints() {
       writeLocal([record, ...all])
     }
 
-    try {
-      await apiPost(toRow(record))
-    } catch { /* localStorage already saved */ }
-
-    invalidateCache()
   }, [])
 
   const getById = useCallback(async (incidentId: string): Promise<SavedComplaint | undefined> => {
-    const localMatch = readLocal().find(c => c.incidentId === incidentId)
-    try {
-      const res = await apiGet(incidentId)
-      if (res.ok) {
-        const row = await res.json()
-        if (row && row.incident_id) {
-          const fresh = fromRow(row)
-          if (localMatch) {
-            const all = readLocal()
-            writeLocal(all.map(c => c.incidentId === incidentId ? fresh : c))
-          }
-          return fresh
-        }
-      }
-    } catch { /* fall through to local */ }
-    return localMatch
+    return readLocal().find(c => c.incidentId === incidentId)
   }, [])
 
   const writeStatus = useCallback(async (
@@ -345,11 +279,6 @@ export function useComplaints() {
       ? { ...c, status: next, statusHistory: nextHistory }
       : c))
 
-    try {
-      await apiPatch({ incident_id: incidentId, status: next, status_history: nextHistory })
-    } catch { /* localStorage already updated */ }
-
-    invalidateCache()
     return next
   }, [])
 
@@ -379,11 +308,6 @@ export function useComplaints() {
     const all = readLocal()
     writeLocal(all.map(c => c.incidentId === incidentId ? { ...c, evidenceImages: nextImages } : c))
 
-    try {
-      await apiPatch({ incident_id: incidentId, evidence_images: nextImages })
-    } catch { /* localStorage already updated */ }
-
-    invalidateCache()
     return nextImages
   }, [getById])
 
@@ -395,11 +319,6 @@ export function useComplaints() {
     const all = readLocal()
     writeLocal(all.map(c => c.incidentId === incidentId ? { ...c, evidenceImages: nextImages } : c))
 
-    try {
-      await apiPatch({ incident_id: incidentId, evidence_images: nextImages })
-    } catch { /* localStorage already updated */ }
-
-    invalidateCache()
     return nextImages
   }, [getById])
 
@@ -414,11 +333,6 @@ export function useComplaints() {
     const all = readLocal()
     writeLocal(all.map(c => c.incidentId === incidentId ? { ...c, updates: nextUpdates } : c))
 
-    try {
-      await apiPatch({ incident_id: incidentId, updates: nextUpdates })
-    } catch { /* localStorage already updated */ }
-
-    invalidateCache()
     return nextUpdates
   }, [getById])
 

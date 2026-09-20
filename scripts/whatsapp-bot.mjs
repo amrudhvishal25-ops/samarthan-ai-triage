@@ -10,7 +10,6 @@ import QRCode from 'qrcode'
 import fs from 'node:fs'
 import path from 'node:path'
 import OpenAI, { toFile } from 'openai'
-import { neon } from '@neondatabase/serverless'
 
 // Load .env.local if not already in environment
 try {
@@ -125,31 +124,8 @@ let isStarting = false
 let reconnectAttempts = 0
 let latestState = {}
 
-// DB handle - used so a cloud-hosted bot can publish its status +
-// QR to the same Postgres the Vercel site reads. Optional: falls back to the
-// local state file if DATABASE_URL is unset (pure local dev).
-const sqlDb = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null
-
 // Write PID
 fs.writeFileSync(PID_FILE, process.pid.toString(), 'utf-8')
-
-async function writeStateToDb(s) {
-  if (!sqlDb) return
-  try {
-    await sqlDb`
-      update bot_state set
-        status = ${s.status || 'INITIALIZING'},
-        qr_data_url = ${s.qrDataUrl || null},
-        user_phone = ${s.userPhone || null},
-        started_at = ${s.startedAt || startTime},
-        last_ping = ${Date.now()},
-        updated_at = now()
-      where id = 'whatsapp'
-    `
-  } catch (err) {
-    console.error('[DB State Write Error]:', err.message)
-  }
-}
 
 function updateState(partial) {
   latestState = { ...latestState, ...partial }
@@ -163,8 +139,6 @@ function updateState(partial) {
   } catch (err) {
     console.error('[State Write Error]:', err.message)
   }
-  // Fire-and-forget DB publish
-  writeStateToDb(latestState)
 }
 
 // Initial state

@@ -62,14 +62,11 @@ The product intentionally labels simulated bank, platform, agency, and status ac
 
 ### WhatsApp experience
 
-Samarthan has two WhatsApp surfaces backed by the same conversation engine:
-
-1. **In-app WhatsApp simulator** — the recommended demo path. It supports text, screenshots, voice notes, follow-up updates, complaint status questions, and starting a new case.
-2. **Optional companion bot** — a Baileys / WhatsApp Multi-Device worker that can be run separately and reports its connection state to the web app through Neon.
+Samarthan’s supported WhatsApp experience is the **in-app simulator**. It supports text, screenshots, voice notes, follow-up updates, complaint status questions, and starting a new case.
 
 The WhatsApp agent can distinguish an additive loss (for example, “another ₹15,000 was taken”) from a correction (“the amount was actually ₹80,000”). Its `NEW` command is deliberately sticky so messages cannot accidentally update an earlier case while a new complaint is being collected.
 
-The current live WhatsApp path is English-first: incoming voice notes are translated to English before triage. The web interface is the primary multilingual experience.
+Voice notes in the simulator are translated to English before triage. The web interface is the primary multilingual experience.
 
 ## How it works
 
@@ -121,19 +118,13 @@ Next.js 16 + React 19 + Tailwind CSS
 │   ├── /api/triage             multimodal web triage
 │   ├── /api/transcribe-chunk   live-caption transcription
 │   ├── /api/followup           follow-up extraction and draft updates
-│   ├── /api/complaints         complaint persistence
-│   ├── /api/whatsapp           WhatsApp/simulator webhook
-│   └── /api/whatsapp/live      companion-bot connection state
+│   ├── /api/whatsapp           in-app WhatsApp simulator
+│   └── /api/whatsapp/live      safe demo-only status
 │
 ├── OpenAI
 │   ├── Whisper
 │   ├── GPT-4o-mini
 │   └── GPT-4o / Vision
-│
-└── Neon Postgres (optional)
-    ├── complaints
-    ├── bot_state
-    └── daily_rate_limits
 ```
 
 ### Data model and persistence
@@ -141,10 +132,10 @@ Next.js 16 + React 19 + Tailwind CSS
 The application is local-first:
 
 - Every web complaint is saved to browser `localStorage` immediately.
-- If `DATABASE_URL` is configured, the same record is also persisted to Neon Postgres.
-- The complaint record contains structured incident details, the generated drafts, freeze steps, legal references, status history, evidence metadata, and follow-up updates.
+- The shared deployment does not save reports, evidence, phone numbers, or WhatsApp session data to a database.
+- Records remain on the device that created them. Clearing browser data removes them.
 
-The repository's seed scripts only use synthetic demo data. Do not use the prototype to store real personal, financial, or identity documents without adding production-grade authentication, access controls, encryption, retention controls, and consent handling.
+Do not use the prototype to store real personal, financial, or identity documents without adding production-grade authentication, access controls, encryption, retention controls, and consent handling.
 
 ## Local development
 
@@ -162,7 +153,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Without an OpenAI key, Samarthan uses its local rule-based fallback so that the complete user interface and complaint flow remain demoable.
 
-### Enable live AI and persistence
+### Enable live AI
 
 Copy the environment template:
 
@@ -174,24 +165,8 @@ Then provide the values you need:
 
 ```bash
 OPENAI_API_KEY=sk-...
-DATABASE_URL=postgres://...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
-
-Create the database tables and load synthetic demo cases:
-
-```bash
-npm run migrate
-npm run seed
-```
-
-### Optional: run the WhatsApp companion worker
-
-```bash
-npm run whatsapp-bot
-```
-
-The companion worker creates a QR-based WhatsApp Multi-Device connection and publishes connection state to Neon. For a reliable presentation, use the in-app WhatsApp simulator; it exercises the same conversation endpoint without requiring a linked device.
 
 ## Validation
 
@@ -213,11 +188,11 @@ Useful manual test scenarios are documented in:
 | `src/app` | Pages and API routes |
 | `src/components` | Intake, dashboard, WhatsApp, and landing-page UI |
 | `src/context/TriageContext.tsx` | In-progress triage state and selected language |
-| `src/hooks/useComplaints.ts` | Local/remote complaint persistence and record normalization |
+| `src/hooks/useComplaints.ts` | Browser-only complaint persistence and record normalization |
 | `src/lib/whatsapp-agent.ts` | Multi-turn WhatsApp complaint engine |
 | `src/lib/i18n` | Supported languages, translations, and multilingual extraction helpers |
 | `src/data` | Scenario data, types, legal-section catalog, and escalation copy |
-| `scripts` | Database migration, synthetic seeding, and WhatsApp worker utilities |
+| `scripts` | Legacy local-only database utilities; never use these with real reports |
 
 ## Scope and safety
 
