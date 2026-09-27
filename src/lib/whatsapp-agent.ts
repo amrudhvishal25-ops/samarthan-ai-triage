@@ -1097,6 +1097,32 @@ async function updateExistingComplaint(
     if (extractedUpdate.fraudsterIdentifier) session.extractedData.fraudsterIdentifier = extractedUpdate.fraudsterIdentifier
   }
 
+  if (process.env.DATABASE_URL) {
+    try {
+      const { neon } = await import('@neondatabase/serverless')
+      const sql = neon(process.env.DATABASE_URL)
+      const newUpdateObj = {
+        id: `upd-${Date.now()}`,
+        citizenPhone: session.phoneNumber,
+        note: noteText,
+        addedAt: new Date().toISOString(),
+        actionPoints: [noteText],
+      }
+      await sql`
+        UPDATE complaints SET
+          updates = updates || ${JSON.stringify([newUpdateObj])}::jsonb,
+          amount = CASE WHEN ${extractedUpdate.amount || null}::numeric IS NOT NULL THEN ${extractedUpdate.amount || 0} ELSE amount END,
+          bank_name = CASE WHEN ${extractedUpdate.bankName || null}::text IS NOT NULL THEN ${extractedUpdate.bankName || ''} ELSE bank_name END,
+          upi_id = CASE WHEN ${extractedUpdate.upiId || null}::text IS NOT NULL THEN ${extractedUpdate.upiId || ''} ELSE upi_id END,
+          account_number = CASE WHEN ${extractedUpdate.accountNumber || null}::text IS NOT NULL THEN ${extractedUpdate.accountNumber || ''} ELSE account_number END,
+          fraudster_identifier = CASE WHEN ${extractedUpdate.fraudsterIdentifier || null}::text IS NOT NULL THEN ${extractedUpdate.fraudsterIdentifier || ''} ELSE fraudster_identifier END
+        WHERE incident_id = ${targetIncidentId}
+      `
+    } catch (e: any) {
+      console.error('[WhatsApp Agent] Failed to update complaint in DB:', e.message)
+    }
+  }
+
   const trackingLink = `${APP_URL}/dashboard?id=${targetIncidentId}`
   const reply = formatUpdateConfirmation(session.language, targetIncidentId, filledItems, trackingLink)
 
@@ -1321,6 +1347,52 @@ CRITICAL CLASSIFICATION & ROUTING RULES:
     trackingLink,
     voiceTranscript
   )
+
+  // Save to database so dashboard tracking link loads the complaint
+  if (process.env.DATABASE_URL) {
+    try {
+      const dbUrl = process.env.DATABASE_URL
+      const { neon } = await import('@neondatabase/serverless')
+      const sql = neon(dbUrl)
+      const regionalSummaryToSave = triageResult.summaryRegional || triageResult.summaryHi
+      const regionalDraftToSave = triageResult.complaintDraftRegional || triageResult.complaintDraftHi
+
+      await sql`
+        INSERT INTO complaints (
+          incident_id, fraud_type, fraudster_identifier, complainant_name,
+          amount, urgency_level,
+          summary, summary_hi, complaint_draft, complaint_draft_hi,
+          frauder_contact, bank_name, account_number, upi_id, timeline,
+          freeze_steps, applicable_laws, saved_at, language,
+          status, status_history, evidence_images, updates,
+          recommended_channel, recommended_channel_target, citizen_phone
+        ) VALUES (
+          ${triageResult.incidentId}, ${triageResult.fraudType}, ${triageResult.fraudsterIdentifier}, ${triageResult.complainantName || ''},
+          ${triageResult.amount}, ${triageResult.urgencyLevel},
+          ${triageResult.summary}, ${regionalSummaryToSave}, ${triageResult.complaintDraft}, ${regionalDraftToSave},
+          ${triageResult.frauderContact}, ${triageResult.bankName}, ${triageResult.accountNumber}, ${triageResult.upiId}, ${triageResult.timeline},
+          ${JSON.stringify(triageResult.freezeSteps)}, ${JSON.stringify(triageResult.applicableLaws)}, ${new Date().toISOString()}, ${session.language},
+          'SUBMITTED', ${JSON.stringify([{ status: 'SUBMITTED', at: new Date().toISOString(), note: `Filed automatically via WhatsApp Bot (${session.phoneNumber})` }])},
+          ${JSON.stringify(mediaUrl ? [mediaUrl] : [])}, ${JSON.stringify([{ id: `init-${Date.now()}`, citizenPhone: session.phoneNumber, note: 'Intake via WhatsApp' }])},
+          ${triageResult.recommendedChannel || 'bank'}, ${triageResult.recommendedChannelTarget || 'Bank Nodal Officer'},
+          ${session.phoneNumber}
+        )
+        ON CONFLICT (incident_id) DO UPDATE SET
+          amount = EXCLUDED.amount,
+          urgency_level = EXCLUDED.urgency_level,
+          summary = EXCLUDED.summary,
+          complaint_draft = EXCLUDED.complaint_draft,
+          bank_name = EXCLUDED.bank_name,
+          upi_id = EXCLUDED.upi_id,
+          timeline = EXCLUDED.timeline,
+          freeze_steps = EXCLUDED.freeze_steps,
+          applicable_laws = EXCLUDED.applicable_laws,
+          citizen_phone = EXCLUDED.citizen_phone
+      `
+    } catch (dbErr: any) {
+      console.error('[WhatsApp Agent] Failed to save complaint to DB:', dbErr.message)
+    }
+  }
 
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   session.history.push({ role: 'assistant', content: reply, timestamp })

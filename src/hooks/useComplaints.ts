@@ -265,7 +265,25 @@ export function useComplaints() {
   }, [])
 
   const getById = useCallback(async (incidentId: string): Promise<SavedComplaint | undefined> => {
-    return readLocal().find(c => c.incidentId === incidentId)
+    const localMatch = readLocal().find(c => c.incidentId === incidentId)
+    if (localMatch) return localMatch
+
+    try {
+      const res = await fetch(`/api/complaints?id=${encodeURIComponent(incidentId)}`)
+      if (res.ok) {
+        const row = await res.json()
+        if (row && row.incident_id) {
+          const fresh = fromRow(row)
+          const all = readLocal()
+          if (!all.some(c => c.incidentId === incidentId)) {
+            writeLocal([fresh, ...all])
+          }
+          return fresh
+        }
+      }
+    } catch { /* fall back to undefined */ }
+
+    return undefined
   }, [])
 
   const writeStatus = useCallback(async (
