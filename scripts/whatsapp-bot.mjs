@@ -478,6 +478,7 @@ async function startWhatsAppBot() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            isSimulator: true,
             phoneNumber: senderPhone,
             activeIncidentId,
             forceNew: newMode,
